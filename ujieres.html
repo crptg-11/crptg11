@@ -1,0 +1,565 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CRPTG 11 — Ujieres</title>
+<script>
+  const tieneAcceso = localStorage.getItem("crptg11-auth")==="ok"||localStorage.getItem("crptg11-ver")==="ok";
+  if(!tieneAcceso){ document.documentElement.style.visibility="hidden"; }
+</script>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#0f1117;--surface:#181b24;--border:#2a2d40;--accent:#e8a838;--teal:#3ecfb8;--rose:#e86b8b;--lav:#8b7fe8;--text:#e8e8f0;--muted:#7a7d95}
+body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min-height:100vh}
+.header{background:var(--surface);border-bottom:1px solid var(--border);padding:14px 28px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px}
+.header-left{display:flex;align-items:center;gap:14px}
+.back{color:var(--muted);font-size:13px;text-decoration:none;transition:color .15s}.back:hover{color:var(--accent)}
+.header-title{font-family:'Playfair Display',serif;font-size:1.15rem;color:var(--accent)}
+.header-sub{font-size:11px;color:var(--muted);margin-top:3px}
+.main{max-width:1100px;margin:0 auto;padding:24px 28px 60px}
+.section-title{font-family:'Playfair Display',serif;font-size:1.1rem;color:var(--accent);margin-bottom:14px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:20px;margin-bottom:20px}
+/* Tabs días */
+.dia-tabs{display:flex;gap:8px;margin-bottom:18px;flex-wrap:wrap}
+.dtab{padding:7px 18px;border-radius:100px;border:1px solid var(--border);background:transparent;color:var(--muted);font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .15s}
+.dtab:hover{border-color:var(--accent);color:var(--accent)}
+.dtab.on{background:rgba(232,168,56,.15);border-color:var(--accent);color:var(--accent)}
+/* Grid turnos */
+.turnos-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px}
+.turno-card{background:#1f2333;border:1px solid var(--border);border-radius:10px;padding:16px}
+.turno-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:6px}
+.turno-label{font-size:12px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--accent)}
+.turno-tag{font-size:10px;padding:2px 8px;border-radius:100px;background:rgba(232,168,56,.12);color:var(--accent);border:1px solid rgba(232,168,56,.3)}
+/* Cantidad personas */
+.cantidad-wrap{display:flex;align-items:center;gap:8px;margin-bottom:12px;padding:8px 10px;background:rgba(232,168,56,.05);border-radius:8px;border:1px solid rgba(232,168,56,.15)}
+.cantidad-lbl{font-size:11px;color:var(--muted);flex:1}
+.cantidad-num{font-family:'Playfair Display',serif;font-size:1.2rem;font-weight:700;color:var(--accent);min-width:28px;text-align:center}
+.btn-cnt{width:26px;height:26px;border-radius:50%;border:1px solid var(--border);background:transparent;color:var(--muted);font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s;font-family:'DM Sans',sans-serif}
+.btn-cnt:hover{border-color:var(--accent);color:var(--accent)}
+.btn-cnt:disabled{opacity:.3;cursor:not-allowed}
+/* Selects ujier */
+.ujier-row{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+.ujier-num{font-size:11px;color:var(--muted);width:18px;flex-shrink:0;text-align:right}
+.sel-ujier{flex:1;padding:5px 8px;border-radius:7px;border:1px solid var(--border);background:#0f1117;color:var(--text);font-family:'DM Sans',sans-serif;font-size:12px;outline:none;cursor:pointer;transition:border-color .2s}
+.sel-ujier:focus{border-color:var(--accent)}
+.sel-ujier:disabled{opacity:.4;cursor:not-allowed;background:#181b24}
+.sel-ujier option{background:#0f1117}
+/* Tabla equipo */
+table{width:100%;border-collapse:collapse}
+th{background:#1f2333;color:var(--muted);font-size:10px;font-weight:600;letter-spacing:1px;text-transform:uppercase;padding:9px 13px;text-align:left;border-bottom:1px solid var(--border)}
+td{padding:9px 13px;font-size:13px;border-bottom:1px solid rgba(42,45,64,.5);vertical-align:middle}
+tr:last-child td{border-bottom:none}tr:hover td{background:rgba(232,168,56,.03)}
+.badge{display:inline-block;padding:2px 9px;border-radius:100px;font-size:11px;font-weight:600;background:rgba(232,168,56,.15);color:var(--accent)}
+/* Form agregar */
+.form-box{background:#1f2333;border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:14px}
+.form-row{display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end}
+.form-group label{display:block;font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;margin-bottom:4px;font-weight:600}
+.form-group input{background:#0f1117;border:1px solid var(--border);color:var(--text);font-family:'DM Sans',sans-serif;font-size:13px;padding:7px 10px;border-radius:7px;outline:none;transition:border-color .2s}
+.form-group input:focus{border-color:var(--accent)}
+.btn-gold{padding:8px 18px;border-radius:7px;border:none;background:var(--accent);color:#000;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:700;cursor:pointer;transition:opacity .15s}
+.btn-gold:hover{opacity:.85}
+.btn-cancel{padding:8px 14px;border-radius:7px;border:1px solid var(--border);background:transparent;color:var(--muted);font-family:'DM Sans',sans-serif;font-size:13px;cursor:pointer}
+.btn-outline{padding:5px 14px;border-radius:100px;border:1px solid rgba(232,168,56,.4);background:transparent;color:var(--accent);font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .15s}
+.btn-outline:hover{background:rgba(232,168,56,.1)}
+.btn-edit{padding:5px 16px;border-radius:100px;font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .15s;border:1px solid rgba(232,107,139,.4);background:transparent;color:var(--rose)}
+.btn-edit.on{border-color:#3ecfb8;color:#3ecfb8}
+.btn-del{padding:3px 9px;border-radius:6px;border:1px solid rgba(232,107,139,.4);background:transparent;color:var(--rose);font-size:11px;cursor:pointer;font-family:'DM Sans',sans-serif}
+.btn-del:hover{background:rgba(232,107,139,.1)}
+/* Notas */
+.nota-add{display:flex;gap:8px;margin-bottom:12px}
+.nota-input{flex:1;background:#1f2333;border:1px solid var(--border);color:var(--text);font-family:'DM Sans',sans-serif;font-size:13px;padding:9px 12px;border-radius:8px;outline:none;transition:border-color .2s}
+.nota-input:focus{border-color:var(--accent)}
+.nota-btn{padding:9px 16px;border-radius:8px;border:none;background:var(--accent);color:#000;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:700;cursor:pointer}
+.nota-item{background:#1f2333;border-left:3px solid var(--accent);border-radius:0 8px 8px 0;padding:10px 14px;margin-bottom:8px;font-size:13px;display:flex;justify-content:space-between;align-items:start;gap:10px}
+.nota-meta{font-size:11px;color:var(--muted);white-space:nowrap}
+.nota-del{background:none;border:none;color:var(--muted);cursor:pointer;font-size:14px;padding:0}.nota-del:hover{color:var(--rose)}
+.empty{color:var(--muted);font-size:13px;text-align:center;padding:20px}
+.alert{position:fixed;top:20px;right:20px;background:var(--accent);color:#000;padding:12px 20px;border-radius:10px;font-weight:600;font-size:13px;z-index:999;transform:translateX(200px);opacity:0;transition:all .3s}
+.alert.show{transform:translateX(0);opacity:1}.alert.error{background:var(--rose);color:#fff}
+@media(max-width:600px){.main{padding:14px 12px}.header{padding:10px 12px}.turnos-grid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-left">
+    <a href="index.html" class="back">← Panel Central</a>
+    <div>
+      <div class="header-title">🎟️ Ujieres — CRPTG 11</div>
+      <div class="header-sub">Programas nocturnos · Sesiones · Sábado</div>
+    </div>
+  </div>
+  <button id="btn-editar" onclick="toggleEdicion()"
+    style="padding:6px 18px;border-radius:100px;border:1px solid rgba(232,107,139,.4);background:transparent;color:var(--rose);font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .15s">
+    🔒 Editar
+  </button>
+</div>
+
+<div class="main">
+
+  <!-- PROGRAMAS NOCTURNOS -->
+  <div class="card">
+    <div class="section-title">
+      <span>🌙 Programas Nocturnos</span>
+      <small style="font-family:'DM Sans',sans-serif;font-size:11px;color:var(--muted);font-weight:400">Mié, Jue, Vie — Noche</small>
+    </div>
+    <div class="dia-tabs" id="tabs-noche"></div>
+    <div class="turnos-grid" id="grid-noche"></div>
+  </div>
+
+  <!-- SESIONES -->
+  <div class="card">
+    <div class="section-title">
+      <span>📖 Sesiones</span>
+      <small style="font-family:'DM Sans',sans-serif;font-size:11px;color:var(--muted);font-weight:400">Mié, Jue, Vie — Día</small>
+    </div>
+    <div class="dia-tabs" id="tabs-sesion"></div>
+    <div class="turnos-grid" id="grid-sesion"></div>
+  </div>
+
+  <!-- SÁBADO -->
+  <div class="card">
+    <div class="section-title">
+      <span>☀️ Sábado en el Día</span>
+      <small style="font-family:'DM Sans',sans-serif;font-size:11px;color:var(--muted);font-weight:400">Sáb 4 Abr</small>
+    </div>
+    <div class="turnos-grid" id="grid-sabado"></div>
+  </div>
+
+  <!-- EQUIPO -->
+  <div class="card">
+    <div class="section-title">
+      <span>👤 Equipo de Ujieres</span>
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+        <span id="contador" style="font-size:12px;color:var(--muted);font-family:'DM Sans',sans-serif;font-weight:400"></span>
+        <button id="btn-agregar" onclick="mostrarFormAgregar()" class="btn-outline" style="display:none">+ Agregar ujier</button>
+      </div>
+    </div>
+    <div id="form-agregar" style="display:none">
+      <div class="form-box">
+        <div style="font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;margin-bottom:10px">Nuevo ujier</div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Nombre</label>
+            <input type="text" id="new-nombre" placeholder="Nombre completo" style="width:200px"
+              onfocus="this.style.borderColor='#e8a838'" onblur="this.style.borderColor='#2a2d40'">
+          </div>
+          <div class="form-group">
+            <label>Congregación</label>
+            <input type="text" id="new-cong" placeholder="Congregación" style="width:160px"
+              onfocus="this.style.borderColor='#e8a838'" onblur="this.style.borderColor='#2a2d40'">
+          </div>
+          <div style="display:flex;gap:6px;align-items:flex-end">
+            <button class="btn-gold" onclick="agregarUjier()">Agregar</button>
+            <button class="btn-cancel" onclick="document.getElementById('form-agregar').style.display='none'">Cancelar</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div style="overflow:auto">
+      <table>
+        <thead><tr><th>#</th><th>Nombre</th><th>Congregación</th><th>Turnos asignados</th><th id="th-del"></th></tr></thead>
+        <tbody id="tbody-equipo"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- NOTAS -->
+  <div class="card">
+    <div class="section-title">📝 Notas y Observaciones</div>
+    <div class="nota-add">
+      <input type="text" class="nota-input" id="nota-input" placeholder="Agregar nota..." onkeydown="if(event.key==='Enter')agregarNota()">
+      <button class="nota-btn" onclick="agregarNota()">+ Agregar</button>
+    </div>
+    <div id="notas-lista"><div class="empty">Sin notas aún.</div></div>
+  </div>
+
+</div>
+
+<!-- Auth overlay -->
+<div id="auth-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:200;align-items:center;justify-content:center">
+  <div style="background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:34px 38px;text-align:center;max-width:340px;width:90%">
+    <div style="font-size:2.2rem;margin-bottom:10px">🎟️</div>
+    <div style="font-family:'Playfair Display',serif;font-size:1.2rem;color:var(--text);margin-bottom:5px">Editar Ujieres</div>
+    <div style="color:var(--muted);font-size:12px;margin-bottom:20px">Ingresa la clave para asignar y modificar turnos</div>
+    <input type="password" id="auth-input" placeholder="••••••••"
+      onkeydown="if(event.key==='Enter')verificarClave()"
+      style="width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);font-family:'DM Sans',sans-serif;font-size:14px;padding:10px 14px;border-radius:10px;outline:none;text-align:center;letter-spacing:2px;margin-bottom:10px;transition:border-color .2s;box-sizing:border-box"
+      onfocus="this.style.borderColor='#e8a838'" onblur="this.style.borderColor='#2a2d40'">
+    <button onclick="verificarClave()" style="width:100%;padding:10px;border-radius:10px;border:none;background:var(--accent);color:#000;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:700;cursor:pointer">Desbloquear</button>
+    <div id="auth-error" style="color:var(--rose);font-size:12px;margin-top:8px;min-height:16px"></div>
+    <button onclick="document.getElementById('auth-overlay').style.display='none'"
+      style="margin-top:12px;background:transparent;border:none;color:var(--muted);font-size:13px;cursor:pointer">Cancelar</button>
+  </div>
+</div>
+
+<div id="acceso-overlay" style="display:none;position:fixed;inset:0;background:rgba(11,13,19,.97);z-index:9999;align-items:center;justify-content:center;flex-direction:column">
+  <div style="background:#13161f;border:1px solid #22263a;border-radius:24px;padding:40px 42px;text-align:center;max-width:360px;width:90%;box-shadow:0 24px 64px rgba(0,0,0,.6)">
+    <div style="font-size:2.4rem;margin-bottom:12px">🔐</div>
+    <div style="font-family:'Playfair Display',serif;font-size:1.3rem;color:#e8e8f0;margin-bottom:6px">Acceso restringido</div>
+    <div style="color:#7a7d95;font-size:13px;margin-bottom:24px;line-height:1.5">Esta área es solo para personal de logística.<br>Ingresa tu clave para continuar.</div>
+    <input type="password" id="acceso-input" placeholder="••••••••"
+      onkeydown="if(event.key==='Enter')verificarAcceso()"
+      style="width:100%;background:#0b0d13;border:1px solid #22263a;color:#e8e8f0;font-family:'DM Sans',sans-serif;font-size:15px;padding:11px 16px;border-radius:12px;outline:none;text-align:center;letter-spacing:3px;margin-bottom:10px;transition:border-color .2s;box-sizing:border-box"
+      onfocus="this.style.borderColor='#e8a838'" onblur="this.style.borderColor='#22263a'">
+    <button onclick="verificarAcceso()" style="width:100%;padding:12px;border-radius:12px;border:none;background:#e8a838;color:#000;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:700;cursor:pointer">Ingresar</button>
+    <div id="acceso-error" style="color:#e86b8b;font-size:12px;margin-top:10px;min-height:16px"></div>
+    <div style="margin-top:22px;padding-top:18px;border-top:1px solid #22263a">
+      <div style="color:#7a7d95;font-size:12px;margin-bottom:10px">¿Eres participante del evento?</div>
+      <a href="https://logistica-crptg11.netlify.app/bienvenida.html" style="display:inline-block;padding:9px 22px;border-radius:10px;border:1px solid #22263a;color:#7a7d95;font-family:'DM Sans',sans-serif;font-size:13px;text-decoration:none">Ver información del evento →</a>
+    </div>
+  </div>
+</div>
+
+<div class="alert" id="alert"></div>
+
+<script>
+// ── CONSTANTES ────────────────────────────────────────────────
+const CLAVE   = "RestaurarServicio";
+const AUTH_KEY= "crptg11-uj-edit";
+
+// Días con sus secciones
+const DIAS_NOCHE  = [
+  { id:"mie", label:"Mié 1 Abr" },
+  { id:"jue", label:"Jue 2 Abr" },
+  { id:"vie", label:"Vie 3 Abr" },
+];
+const DIAS_SESION = [
+  { id:"mie", label:"Mié 1 Abr" },
+  { id:"jue", label:"Jue 2 Abr" },
+  { id:"vie", label:"Vie 3 Abr" },
+];
+
+// Turnos por sección
+const TURNOS_NOCHE = [
+  { id:"entrada",  label:"🚪 Entrada",    hora:"Antes del programa" },
+  { id:"puertas",  label:"🏛️ Puertas",    hora:"Durante programa" },
+  { id:"ofrendas", label:"🙏 Ofrendas",   hora:"Al llamado" },
+  { id:"salida",   label:"↩ Salida",      hora:"Al finalizar" },
+];
+const TURNOS_SESION = [
+  { id:"entrada",  label:"🚪 Entrada",    hora:"Antes de la sesión" },
+  { id:"puertas",  label:"🏛️ Puertas",    hora:"Durante sesión" },
+  { id:"salida",   label:"↩ Salida",      hora:"Al finalizar" },
+];
+const TURNOS_SABADO = [
+  { id:"manana_e", label:"🌅 Mañana — Entrada",  hora:"Antes del programa" },
+  { id:"manana_p", label:"🌅 Mañana — Puertas",  hora:"Durante programa" },
+  { id:"tarde_e",  label:"🌤️ Tarde — Entrada",    hora:"Antes del programa" },
+  { id:"tarde_p",  label:"🌤️ Tarde — Puertas",    hora:"Durante programa" },
+  { id:"ofrendas", label:"🙏 Ofrendas",            hora:"Al llamado" },
+];
+
+// ── ESTADO ────────────────────────────────────────────────────
+const BASE_PERSONAS = [
+  { nombre:"Ujier 1",  cong:"—" },
+  { nombre:"Ujier 2",  cong:"—" },
+  { nombre:"Ujier 3",  cong:"—" },
+  { nombre:"Ujier 4",  cong:"—" },
+  { nombre:"Ujier 5",  cong:"—" },
+  { nombre:"Ujier 6",  cong:"—" },
+  { nombre:"Ujier 7",  cong:"—" },
+  { nombre:"Ujier 8",  cong:"—" },
+  { nombre:"Ujier 9",  cong:"—" },
+  { nombre:"Ujier 10", cong:"—" },
+];
+
+let personasExtra = JSON.parse(localStorage.getItem("crptg11-uj-extra")  || "[]");
+let asignaciones  = JSON.parse(localStorage.getItem("crptg11-uj-asig")   || "{}");
+let cantidades    = JSON.parse(localStorage.getItem("crptg11-uj-cant")   || "{}");
+let notas         = JSON.parse(localStorage.getItem("crptg11-uj-notas")  || "[]");
+let eliminados    = JSON.parse(localStorage.getItem("crptg11-uj-elim")   || "[]");
+
+let diaNoche  = "mie";
+let diaSesion = "mie";
+
+const todasLasPersonas = () => [
+  ...BASE_PERSONAS.filter(p=>!eliminados.includes(p.nombre)),
+  ...personasExtra
+];
+
+const puedeEditar = () => localStorage.getItem(AUTH_KEY) === "ok";
+
+function guardar(){
+  localStorage.setItem("crptg11-uj-extra",  JSON.stringify(personasExtra));
+  localStorage.setItem("crptg11-uj-asig",   JSON.stringify(asignaciones));
+  localStorage.setItem("crptg11-uj-cant",   JSON.stringify(cantidades));
+  localStorage.setItem("crptg11-uj-notas",  JSON.stringify(notas));
+  localStorage.setItem("crptg11-uj-elim",   JSON.stringify(eliminados));
+}
+
+// ── AUTH ──────────────────────────────────────────────────────
+function toggleEdicion(){
+  if(puedeEditar()){
+    if(confirm("¿Bloquear edición?")){ localStorage.removeItem(AUTH_KEY); actualizarBtnEditar(); renderTodo(); }
+  } else {
+    document.getElementById("auth-overlay").style.display="flex";
+    setTimeout(()=>document.getElementById("auth-input").focus(),100);
+  }
+}
+window.toggleEdicion=toggleEdicion;
+
+function verificarClave(){
+  const v=document.getElementById("auth-input").value;
+  if(v===CLAVE){
+    localStorage.setItem(AUTH_KEY,"ok");
+    document.getElementById("auth-overlay").style.display="none";
+    document.getElementById("auth-input").value="";
+    actualizarBtnEditar(); renderTodo();
+    mostrarAlerta("✅ Edición desbloqueada");
+  } else {
+    document.getElementById("auth-error").textContent="Clave incorrecta";
+    document.getElementById("auth-input").value="";
+  }
+}
+window.verificarClave=verificarClave;
+
+function actualizarBtnEditar(){
+  const btn=document.getElementById("btn-editar");
+  const btnA=document.getElementById("btn-agregar");
+  const thDel=document.getElementById("th-del");
+  if(puedeEditar()){
+    btn.textContent="🔓 Bloquear edición";
+    btn.style.borderColor="#3ecfb8"; btn.style.color="#3ecfb8";
+    if(btnA) btnA.style.display="inline-block";
+    if(thDel) thDel.textContent="";
+  } else {
+    btn.textContent="🔒 Editar";
+    btn.style.borderColor="rgba(232,107,139,.4)"; btn.style.color="var(--rose)";
+    if(btnA) btnA.style.display="none";
+    document.getElementById("form-agregar").style.display="none";
+  }
+}
+
+// ── KEY HELPERS ───────────────────────────────────────────────
+// key asignacion: seccion_dia_turno_slot  ej: noche_mie_entrada_0
+// key cantidad:   seccion_dia_turno_cant  ej: noche_mie_entrada_cant
+const keyAsig = (sec,dia,turno,slot) => `${sec}_${dia}_${turno}_${slot}`;
+const keyCant = (sec,dia,turno)      => `${sec}_${dia}_${turno}_cant`;
+
+function getCantidad(sec,dia,turno){
+  return parseInt(cantidades[keyCant(sec,dia,turno)] || 2);
+}
+
+// ── RENDER TURNO CARD ─────────────────────────────────────────
+function renderTurnoCard(sec, dia, turno, editar){
+  const cant = getCantidad(sec,dia,turno);
+  const personas = todasLasPersonas();
+
+  const cantidadCtrl = editar
+    ? `<div class="cantidad-wrap">
+        <span class="cantidad-lbl">Personas requeridas</span>
+        <button class="btn-cnt" onclick="cambiarCantidad('${sec}','${dia}','${turno}',-1)" ${cant<=1?"disabled":""}>−</button>
+        <span class="cantidad-num">${cant}</span>
+        <button class="btn-cnt" onclick="cambiarCantidad('${sec}','${dia}','${turno}',1)" ${cant>=personas.length?"disabled":""}>+</button>
+      </div>`
+    : `<div class="cantidad-wrap">
+        <span class="cantidad-lbl">Personas asignadas</span>
+        <span class="cantidad-num">${cant}</span>
+      </div>`;
+
+  const slots = Array.from({length:cant},(_,i)=>{
+    const key = keyAsig(sec,dia,turno,i);
+    const asig = asignaciones[key]||"";
+    if(editar){
+      const opts = `<option value="">— Sin asignar —</option>`
+        + personas.map(p=>`<option${asig===p.nombre?" selected":""} value="${p.nombre}">${p.nombre}</option>`).join("");
+      return `<div class="ujier-row">
+        <span class="ujier-num">${i+1}</span>
+        <select class="sel-ujier" onchange="asignar('${key}',this.value)">${opts}</select>
+      </div>`;
+    } else {
+      return `<div class="ujier-row">
+        <span class="ujier-num">${i+1}</span>
+        <span style="font-size:13px;${asig?'font-weight:600':'color:var(--muted);font-style:italic'}">${asig||"Sin asignar"}</span>
+      </div>`;
+    }
+  }).join("");
+
+  return `<div class="turno-card">
+    <div class="turno-header">
+      <span class="turno-label">${turno.label}</span>
+      <span class="turno-tag">${turno.hora}</span>
+    </div>
+    ${cantidadCtrl}
+    ${slots}
+  </div>`;
+}
+
+// ── ASIGNAR ───────────────────────────────────────────────────
+function asignar(key, valor){
+  asignaciones[key]=valor; guardar(); renderEquipo();
+  mostrarAlerta(valor?`✅ ${valor} asignado`:"↩ Slot liberado");
+}
+window.asignar=asignar;
+
+function cambiarCantidad(sec,dia,turno,delta){
+  const k=keyCant(sec,dia,turno);
+  const actual=getCantidad(sec,dia,turno);
+  const nueva=Math.max(1,Math.min(todasLasPersonas().length,actual+delta));
+  cantidades[k]=nueva; guardar();
+  renderNoche(); renderSesion(); renderSabado();
+}
+window.cambiarCantidad=cambiarCantidad;
+
+// ── RENDER SECCIONES ──────────────────────────────────────────
+function renderTabs(containerId, dias, activo, onclickFn){
+  document.getElementById(containerId).innerHTML = dias.map(d=>
+    `<button class="dtab${d.id===activo?" on":""}" onclick="${onclickFn}('${d.id}')">${d.label}</button>`
+  ).join("");
+}
+
+function renderNoche(){
+  renderTabs("tabs-noche", DIAS_NOCHE, diaNoche, "selDiaNoche");
+  const editar=puedeEditar();
+  document.getElementById("grid-noche").innerHTML =
+    TURNOS_NOCHE.map(t=>renderTurnoCard("noche",diaNoche,t,editar)).join("");
+}
+
+function renderSesion(){
+  renderTabs("tabs-sesion", DIAS_SESION, diaSesion, "selDiaSesion");
+  const editar=puedeEditar();
+  document.getElementById("grid-sesion").innerHTML =
+    TURNOS_SESION.map(t=>renderTurnoCard("sesion",diaSesion,t,editar)).join("");
+}
+
+function renderSabado(){
+  const editar=puedeEditar();
+  document.getElementById("grid-sabado").innerHTML =
+    TURNOS_SABADO.map(t=>renderTurnoCard("sabado","sab",t,editar)).join("");
+}
+
+function selDiaNoche(id){ diaNoche=id; renderNoche(); }
+function selDiaSesion(id){ diaSesion=id; renderSesion(); }
+window.selDiaNoche=selDiaNoche;
+window.selDiaSesion=selDiaSesion;
+
+// ── EQUIPO ────────────────────────────────────────────────────
+function turnosDePersona(nombre){
+  const lista=[];
+  // Noche
+  DIAS_NOCHE.forEach(d=>TURNOS_NOCHE.forEach(t=>{
+    for(let i=0;i<getCantidad("noche",d.id,t.id);i++){
+      if(asignaciones[keyAsig("noche",d.id,t.id,i)]===nombre)
+        lista.push(`${d.label} ${t.label}`);
+    }
+  }));
+  // Sesión
+  DIAS_SESION.forEach(d=>TURNOS_SESION.forEach(t=>{
+    for(let i=0;i<getCantidad("sesion",d.id,t.id);i++){
+      if(asignaciones[keyAsig("sesion",d.id,t.id,i)]===nombre)
+        lista.push(`Ses. ${d.label} ${t.label}`);
+    }
+  }));
+  // Sábado
+  TURNOS_SABADO.forEach(t=>{
+    for(let i=0;i<getCantidad("sabado","sab",t.id);i++){
+      if(asignaciones[keyAsig("sabado","sab",t.id,i)]===nombre)
+        lista.push(`Sáb ${t.label}`);
+    }
+  });
+  return lista;
+}
+
+function renderEquipo(){
+  const todas=todasLasPersonas();
+  document.getElementById("contador").textContent=`${todas.length} ujieres`;
+  const editar=puedeEditar();
+  document.getElementById("tbody-equipo").innerHTML=todas.map((p,i)=>{
+    const tps=turnosDePersona(p.nombre);
+    return `<tr>
+      <td style="color:var(--muted)">${i+1}</td>
+      <td style="font-weight:600">${p.nombre}</td>
+      <td style="color:var(--muted);font-size:12px">${p.cong}</td>
+      <td style="font-size:11px;color:var(--muted);line-height:1.7">${tps.length?tps.join("<br>"):"<span style='font-style:italic'>Sin asignar</span>"}</td>
+      <td>${editar?`<button class="btn-del" onclick="eliminarPersona('${p.nombre}')">✕</button>`:""}</td>
+    </tr>`;
+  }).join("");
+}
+
+function eliminarPersona(nombre){
+  if(!confirm(`¿Eliminar a ${nombre} del equipo?`)) return;
+  const esExtra=personasExtra.some(p=>p.nombre===nombre);
+  if(esExtra){ personasExtra=personasExtra.filter(p=>p.nombre!==nombre); }
+  else { if(!eliminados.includes(nombre)) eliminados.push(nombre); }
+  guardar(); renderTodo();
+  mostrarAlerta(`↩ ${nombre} eliminado`);
+}
+window.eliminarPersona=eliminarPersona;
+
+function mostrarFormAgregar(){
+  document.getElementById("form-agregar").style.display="block";
+  document.getElementById("new-nombre").focus();
+}
+window.mostrarFormAgregar=mostrarFormAgregar;
+
+function agregarUjier(){
+  const nombre=document.getElementById("new-nombre").value.trim();
+  const cong  =document.getElementById("new-cong").value.trim();
+  if(!nombre){ mostrarAlerta("⚠️ Ingresa el nombre",true); return; }
+  if(todasLasPersonas().some(p=>p.nombre===nombre)){ mostrarAlerta("⚠️ Ya existe en la lista",true); return; }
+  personasExtra.push({nombre, cong:cong||"—"});
+  guardar();
+  document.getElementById("new-nombre").value="";
+  document.getElementById("new-cong").value="";
+  document.getElementById("form-agregar").style.display="none";
+  renderTodo(); mostrarAlerta(`✅ ${nombre} agregado`);
+}
+window.agregarUjier=agregarUjier;
+
+// ── NOTAS ─────────────────────────────────────────────────────
+function renderNotas(){
+  const el=document.getElementById("notas-lista");
+  if(!notas.length){el.innerHTML='<div class="empty">Sin notas aún.</div>';return;}
+  el.innerHTML=notas.map((n,i)=>`
+    <div class="nota-item">
+      <span>${n.texto}</span>
+      <div style="display:flex;align-items:center;gap:8px;flex-shrink:0">
+        <span class="nota-meta">${n.hora}</span>
+        <button class="nota-del" onclick="eliminarNota(${i})">✕</button>
+      </div>
+    </div>`).join("");
+}
+function agregarNota(){
+  const input=document.getElementById("nota-input");
+  const texto=input.value.trim(); if(!texto)return;
+  notas.unshift({texto,hora:new Date().toLocaleTimeString("es-CR",{hour:"2-digit",minute:"2-digit"})});
+  guardar(); renderNotas(); input.value="";
+  mostrarAlerta("📝 Nota guardada");
+}
+function eliminarNota(i){notas.splice(i,1);guardar();renderNotas();}
+window.agregarNota=agregarNota; window.eliminarNota=eliminarNota;
+
+// ── ALERTA ────────────────────────────────────────────────────
+function mostrarAlerta(msg,err=false){
+  const a=document.getElementById("alert");
+  a.textContent=msg;a.className="alert show"+(err?" error":"");
+  setTimeout(()=>a.className="alert",2800);
+}
+
+// ── RENDER TODO ───────────────────────────────────────────────
+function renderTodo(){ renderNoche(); renderSesion(); renderSabado(); renderEquipo(); renderNotas(); }
+
+// ── INIT ──────────────────────────────────────────────────────
+actualizarBtnEditar();
+renderTodo();
+</script>
+
+<script>
+(function(){
+  const ok=localStorage.getItem("crptg11-auth")==="ok"||localStorage.getItem("crptg11-ver")==="ok";
+  if(!ok) document.getElementById("acceso-overlay").style.display="flex";
+  document.documentElement.style.visibility="visible";
+  window.verificarAcceso=function(){
+    const v=document.getElementById("acceso-input").value.trim();
+    const e=document.getElementById("acceso-error");
+    if(v==="IglesiaRestaurada2026"){localStorage.setItem("crptg11-auth","ok");document.getElementById("acceso-overlay").style.display="none";}
+    else if(v==="LogisticaCRPTG11"){localStorage.setItem("crptg11-ver","ok");document.getElementById("acceso-overlay").style.display="none";}
+    else{e.textContent="Clave incorrecta";document.getElementById("acceso-input").value="";document.getElementById("acceso-input").focus();}
+  };
+})();
+</script>
+</body>
+</html>

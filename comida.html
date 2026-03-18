@@ -1,0 +1,1108 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CRPTG 11 — Control de Alimentación</title>
+
+<script>
+  // ── CONTROL DE ACCESO ─────────────────────────────────────
+  // Clave para ver la página (solo logística)
+  const CLAVE_VER    = "LogisticaCRPTG11";
+  // Clave para operar (ya existente, debe coincidir con CLAVE más abajo)
+  const CLAVE_OPERAR = "IglesiaRestaurada2026";
+  // URL pública del evento (cambiar cuando esté disponible)
+  const URL_PUBLICA  = "bienvenida.html"; // ← CAMBIAR por tu URL pública
+
+  const tieneAcceso =
+    localStorage.getItem("crptg11-auth")     === "ok" ||   // operador ya autenticado
+    localStorage.getItem("crptg11-ver")      === "ok";     // logística "solo ver"
+
+  if (!tieneAcceso) {
+    // Ocultar body inmediatamente para evitar flash de contenido
+    document.documentElement.style.visibility = "hidden";
+  }
+</script>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#0f1117;--surface:#181b24;--border:#2a2d40;--gold:#e8a838;--teal:#3ecfb8;--rose:#e86b8b;--lav:#8b7fe8;--orange:#d4773e;--text:#e8e8f0;--muted:#7a7d95}
+body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min-height:100vh}
+.header{background:var(--surface);border-bottom:1px solid var(--border);padding:14px 28px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px}
+.header-left{display:flex;align-items:center;gap:14px}
+.back{color:var(--muted);font-size:13px;text-decoration:none;transition:color .15s}.back:hover{color:var(--gold)}
+.header-title{font-family:'Playfair Display',serif;font-size:1.15rem;color:var(--gold)}
+.header-sub{font-size:11px;color:var(--muted);margin-top:3px;display:flex;align-items:center;gap:10px}
+.sync-dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--teal);animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+.stats-bar{display:flex;gap:18px;flex-wrap:wrap}
+.stat{text-align:center}
+.stat-num{font-family:'Playfair Display',serif;font-size:1.5rem;font-weight:900;line-height:1}
+.stat-lbl{font-size:10px;color:var(--muted);font-weight:600;letter-spacing:1px;text-transform:uppercase}
+.stat.total .stat-num{color:var(--gold)}.stat.ret .stat-num{color:var(--teal)}.stat.pen .stat-num{color:var(--rose)}
+
+/* tiempo selector */
+.tiempo-bar{background:var(--surface);border-bottom:1px solid var(--border);padding:10px 28px;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.tiempo-label{font-size:11px;color:var(--muted);font-weight:600;letter-spacing:1px;text-transform:uppercase;margin-right:4px}
+.tbtn{padding:7px 18px;border-radius:100px;border:1px solid var(--border);background:transparent;color:var(--muted);font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .15s;display:flex;align-items:center;gap:6px}
+.tbtn:hover{border-color:var(--gold);color:var(--gold)}
+.tbtn.on.desayuno{background:rgba(232,168,56,.15);border-color:var(--gold);color:var(--gold)}
+.tbtn.on.almuerzo{background:rgba(62,207,184,.15);border-color:var(--teal);color:var(--teal)}
+.tbtn.on.cena{background:rgba(139,127,232,.15);border-color:var(--lav);color:var(--lav)}
+.tbtn.auto-tag{font-size:10px;padding:3px 8px;border-radius:4px;background:rgba(62,207,184,.1);border-color:var(--teal);color:var(--teal);cursor:default}
+.dia-selector{display:flex;align-items:center;gap:6px;margin-left:auto}
+.dbtn{padding:6px 14px;border-radius:100px;border:1px solid var(--border);background:transparent;color:var(--muted);font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .15s}
+.dbtn:hover{border-color:var(--gold);color:var(--gold)}
+.dbtn.on{background:var(--gold);border-color:var(--gold);color:#000}
+
+.tabs{display:flex;gap:0;border-bottom:1px solid var(--border);padding:0 28px;background:var(--surface)}
+.tab{padding:11px 20px;border:none;background:none;color:var(--muted);font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;cursor:pointer;border-bottom:2px solid transparent;transition:all .2s}
+.tab:hover{color:var(--text)}.tab.on{color:var(--gold);border-bottom-color:var(--gold)}
+.panel{display:none;padding:22px 28px}.panel.on{display:block}
+.controls{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:14px}
+.search-wrap{position:relative}
+.search-wrap input{background:var(--surface);border:1px solid var(--border);color:var(--text);font-family:'DM Sans',sans-serif;font-size:13px;padding:8px 12px 8px 32px;border-radius:8px;width:250px;outline:none;transition:border-color .2s}
+.search-wrap input:focus{border-color:var(--gold)}
+.search-wrap::before{content:'🔍';position:absolute;left:9px;top:50%;transform:translateY(-50%);font-size:12px;opacity:.38}
+.filter-btns{display:flex;gap:6px}
+.fbtn{padding:5px 12px;border-radius:8px;border:1px solid var(--border);background:transparent;color:var(--muted);font-size:12px;cursor:pointer;transition:all .15s;font-family:'DM Sans',sans-serif}
+.fbtn:hover{border-color:var(--gold);color:var(--gold)}.fbtn.on{background:var(--gold);color:#000;border-color:var(--gold);font-weight:600}
+.table-wrap{background:var(--surface);border:1px solid var(--border);border-radius:13px;overflow:auto}
+table{width:100%;border-collapse:collapse}
+th{background:#1f2333;color:var(--muted);font-size:10px;font-weight:600;letter-spacing:1px;text-transform:uppercase;padding:9px 13px;text-align:left;border-bottom:1px solid var(--border);white-space:nowrap}
+td{padding:9px 13px;font-size:13px;border-bottom:1px solid rgba(42,45,64,.5);vertical-align:middle}
+tr:last-child td{border-bottom:none}tr:hover td{background:rgba(232,168,56,.03)}
+.badge{display:inline-block;padding:2px 9px;border-radius:100px;font-size:11px;font-weight:600}
+.b-ret{background:rgba(62,207,184,.15);color:var(--teal)}.b-pen{background:rgba(232,107,139,.15);color:var(--rose)}
+.b-m{background:rgba(62,207,184,.15);color:var(--teal)}.b-f{background:rgba(232,107,139,.15);color:var(--rose)}
+.b-ad{background:rgba(139,127,232,.15);color:var(--lav)}.b-jo{background:rgba(232,168,56,.15);color:var(--gold)}.b-me{background:rgba(212,119,62,.15);color:var(--orange)}
+.btn-ret{padding:4px 13px;border-radius:7px;border:1px solid rgba(62,207,184,.4);background:transparent;color:var(--teal);font-size:12px;cursor:pointer;transition:all .15s;font-family:'DM Sans',sans-serif;font-weight:600}
+.btn-ret:hover{background:rgba(62,207,184,.1)}
+.btn-undo{padding:4px 13px;border-radius:7px;border:1px solid rgba(232,107,139,.4);background:transparent;color:var(--rose);font-size:12px;cursor:pointer;transition:all .15s;font-family:'DM Sans',sans-serif}
+.fbtn-v{padding:5px 12px;border-radius:100px;border:1px solid var(--border);background:transparent;color:var(--muted);font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .15s}
+.fbtn-v:hover{border-color:var(--gold);color:var(--gold)}
+.fbtn-v.on{background:rgba(232,168,56,.15);border-color:var(--gold);color:var(--gold)}
+.btn-undo:hover{background:rgba(232,107,139,.1)}
+.alert{position:fixed;top:20px;right:20px;background:var(--teal);color:#000;padding:12px 20px;border-radius:10px;font-weight:600;font-size:13px;z-index:999;transform:translateX(200px);opacity:0;transition:all .3s}
+.alert.show{transform:translateX(0);opacity:1}.alert.error{background:var(--rose);color:#fff}
+.qr-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(195px,1fr));gap:13px}
+.qr-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:15px;text-align:center}
+.qr-name{font-size:12px;font-weight:600;color:var(--text);margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.qr-id{font-size:10px;color:var(--muted)}.qr-cong{font-size:10px;color:var(--gold);margin-top:2px}
+.btn-print{padding:7px 16px;border-radius:8px;border:1px solid var(--gold);background:transparent;color:var(--gold);font-size:13px;cursor:pointer;font-family:'DM Sans',sans-serif;font-weight:600;transition:all .15s}
+.btn-print:hover{background:rgba(232,168,56,.1)}
+.empty{text-align:center;padding:40px;color:var(--muted);font-size:14px}
+.scan-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.88);z-index:100;align-items:center;justify-content:center}
+.scan-overlay.show{display:flex}
+.scan-card{background:var(--surface);border:2px solid var(--teal);border-radius:20px;padding:30px 38px;text-align:center;max-width:360px;width:90%}
+.scan-icon{font-size:2.8rem;margin-bottom:8px}.scan-name{font-family:'Playfair Display',serif;font-size:1.35rem;margin-bottom:4px}
+.scan-tiempo{font-size:13px;font-weight:600;margin-bottom:4px}
+.scan-info{color:var(--muted);font-size:12px;margin-bottom:20px}
+.scan-btns{display:flex;gap:10px;justify-content:center}
+.scan-btn{padding:10px 22px;border-radius:10px;border:none;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:600;cursor:pointer}
+.scan-btn.confirm{background:var(--teal);color:#000}.scan-btn.cancel{background:transparent;border:1px solid var(--border);color:var(--muted)}
+.auth-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:200;align-items:center;justify-content:center}
+.auth-overlay.show{display:flex}
+.auth-box{background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:34px 38px;text-align:center;max-width:340px;width:90%}
+.auth-icon{font-size:2.2rem;margin-bottom:10px}.auth-title{font-family:'Playfair Display',serif;font-size:1.2rem;margin-bottom:5px}
+.auth-sub{color:var(--muted);font-size:12px;margin-bottom:20px}
+.auth-input{width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);font-family:'DM Sans',sans-serif;font-size:14px;padding:10px 14px;border-radius:10px;outline:none;text-align:center;letter-spacing:2px;margin-bottom:10px;transition:border-color .2s}
+.auth-input:focus{border-color:var(--gold)}
+.auth-btn{width:100%;padding:10px;border-radius:10px;border:none;background:var(--gold);color:#000;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:700;cursor:pointer}
+.auth-error{color:var(--rose);font-size:12px;margin-top:8px;min-height:16px}
+.auth-badge{display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:100px;font-size:11px;font-weight:600;cursor:pointer}
+.auth-badge.locked{background:rgba(232,107,139,.12);color:var(--rose);border:1px solid rgba(232,107,139,.3)}
+.auth-badge.unlocked{background:rgba(62,207,184,.12);color:var(--teal);border:1px solid rgba(62,207,184,.3)}
+@media print{.header,.tiempo-bar,.tabs,.controls,.btn-print,.alert,.scan-overlay,.auth-overlay{display:none!important}body{background:#fff}.qr-grid{grid-template-columns:repeat(4,1fr)}.qr-card{border:1px solid #ccc;break-inside:avoid}.qr-name,.qr-id,.qr-cong{color:#000}}
+@media(max-width:600px){.panel{padding:14px 12px}.header,.tiempo-bar{padding:10px 12px}.tabs{padding:0 10px}.search-wrap input{width:170px}}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-left">
+    <a href="index.html" class="back">← Inicio</a>
+    <div>
+      <div class="header-title">🍽️ Control de Alimentación — CRPTG 11</div>
+      <div class="header-sub">
+        <span class="sync-dot"></span> Sincronizado en tiempo real
+        <span class="auth-badge locked" id="auth-badge" onclick="mostrarAuth()">🔒 Bloqueado</span>
+      </div>
+    </div>
+  </div>
+  <div class="stats-bar">
+    <div class="stat total"><div class="stat-num" id="s-total">–</div><div class="stat-lbl">Total</div></div>
+    <div class="stat ret">  <div class="stat-num" id="s-ret">–</div>  <div class="stat-lbl">Retirados</div></div>
+    <div class="stat pen">  <div class="stat-num" id="s-pen">–</div>  <div class="stat-lbl">Pendientes</div></div>
+  </div>
+</div>
+
+<!-- Selector de Día y Tiempo -->
+<div class="tiempo-bar">
+  <span class="tiempo-label">Día:</span>
+  <button class="dbtn" onclick="selDia(1,this)">Día 1<small style="display:block;font-size:9px;font-weight:400">1 Abr</small></button>
+  <button class="dbtn" onclick="selDia(2,this)">Día 2<small style="display:block;font-size:9px;font-weight:400">2 Abr</small></button>
+  <button class="dbtn" onclick="selDia(3,this)">Día 3<small style="display:block;font-size:9px;font-weight:400">3 Abr</small></button>
+  <button class="dbtn" onclick="selDia(4,this)">Día 4<small style="display:block;font-size:9px;font-weight:400">4 Abr</small></button>
+  <span style="margin:0 6px;color:var(--border)">|</span>
+  <span class="tiempo-label">Tiempo:</span>
+  <button class="tbtn desayuno" onclick="selTiempo('desayuno',this)">☀️ Desayuno</button>
+  <button class="tbtn almuerzo" onclick="selTiempo('almuerzo',this)">🌤️ Almuerzo</button>
+  <button class="tbtn cena"     onclick="selTiempo('cena',this)">🌙 Cena</button>
+  <span class="tbtn auto-tag" id="auto-tag">⚡ Auto</span>
+</div>
+
+<div class="tabs" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
+  <div>
+    <button class="tab on" onclick="showTab('lista',this)">📋 Lista</button>
+    <button class="tab" onclick="showTab('qr',this)">📲 Códigos QR</button>
+  </div>
+  <button id="btn-camara" onclick="abrirCamara()" style="background:var(--teal);color:#000;border:none;border-radius:10px;padding:9px 18px;font-family:'DM Sans',sans-serif;font-weight:600;font-size:13px;cursor:pointer;display:flex;align-items:center;gap:6px">📷 Escanear</button>
+</div>
+
+<div class="panel on" id="tab-lista">
+  <div class="controls">
+    <div class="search-wrap"><input type="text" id="search" placeholder="Buscar participante..." oninput="renderLista()"></div>
+    <div class="filter-btns">
+      <button class="fbtn on" onclick="setFiltro('todos',this)">Todos</button>
+      <button class="fbtn" onclick="setFiltro('pendiente',this)">Pendientes</button>
+      <button class="fbtn" onclick="setFiltro('retirado',this)">Retirados</button>
+    </div>
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead><tr>
+        <th>ID</th><th>Nombre</th><th>Sexo</th><th>Cat.</th>
+        <th>Congregación</th><th>Estado</th><th>Acción</th>
+      </tr></thead>
+      <tbody id="tbody"></tbody>
+    </table>
+  </div>
+  <div style="margin-top:7px;color:var(--muted);font-size:12px" id="lista-info"></div>
+</div>
+
+<div class="panel" id="tab-qr">
+  <div class="controls">
+    <div class="search-wrap"><input type="text" id="search-qr" placeholder="Buscar..." oninput="renderQR()"></div>
+    <button class="btn-print" id="btn-imprimir" onclick="solicitarDescarga(()=>window.print())" style="display:none">🖨️ Imprimir QRs</button>
+    <button class="btn-print" id="btn-dl-todos" onclick="solicitarDescarga(descargarTodos)" style="border-color:var(--teal);color:var(--teal);margin-left:8px;display:none">⬇️ Descargar todos (PNG)</button>
+  </div>
+  <div class="qr-grid" id="qr-grid"></div>
+</div>
+
+<div class="panel" id="tab-vendidas">
+  <!-- Filtros día y tiempo -->
+  <div class="controls" style="margin-bottom:10px">
+    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+      <span style="font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--muted)">Día:</span>
+      <button class="fbtn-v on" id="vd-todos"  onclick="setFiltroV('dia','todos',this)">Todos</button>
+      <button class="fbtn-v" id="vd-mie"   onclick="setFiltroV('dia','mie',this)">Mié</button>
+      <button class="fbtn-v" id="vd-jue"   onclick="setFiltroV('dia','jue',this)">Jue</button>
+      <button class="fbtn-v" id="vd-vie"   onclick="setFiltroV('dia','vie',this)">Vie</button>
+      <button class="fbtn-v" id="vd-sab"   onclick="setFiltroV('dia','sab',this)">Sáb</button>
+      <span style="font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--muted);margin-left:8px">Comida:</span>
+      <button class="fbtn-v on" id="vc-todos" onclick="setFiltroV('com','todos',this)">Todos</button>
+      <button class="fbtn-v" id="vc-des"   onclick="setFiltroV('com','des',this)">Desayuno</button>
+      <button class="fbtn-v" id="vc-alm"   onclick="setFiltroV('com','alm',this)">Almuerzo</button>
+      <button class="fbtn-v" id="vc-cen"   onclick="setFiltroV('com','cen',this)">Cena</button>
+    </div>
+  </div>
+  <!-- Stats rápidos -->
+  <div style="display:flex;gap:12px;margin-bottom:14px;flex-wrap:wrap">
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:10px 18px;text-align:center;flex:1;min-width:100px">
+      <div style="font-family:'Playfair Display',serif;font-size:1.4rem;font-weight:900;color:var(--gold)" id="v-total-ped">–</div>
+      <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:1px">Pedidos</div>
+    </div>
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:10px 18px;text-align:center;flex:1;min-width:100px">
+      <div style="font-family:'Playfair Display',serif;font-size:1.4rem;font-weight:900;color:var(--teal)" id="v-total-platos">–</div>
+      <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:1px">Platos</div>
+    </div>
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:10px 18px;text-align:center;flex:1;min-width:100px">
+      <div style="font-family:'Playfair Display',serif;font-size:1.4rem;font-weight:900;color:var(--teal)" id="v-entregados">–</div>
+      <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:1px">Entregados</div>
+    </div>
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:10px 18px;text-align:center;flex:1;min-width:100px">
+      <div style="font-family:'Playfair Display',serif;font-size:1.4rem;font-weight:900;color:var(--gold)" id="v-monto">–</div>
+      <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:1px">Monto</div>
+    </div>
+  </div>
+  <!-- Tabla vendidas -->
+  <div class="table-wrap">
+    <table>
+      <thead><tr>
+        <th>#</th><th>Nombre</th><th>Congregación</th><th>Teléfono</th>
+        <th>Día</th><th>Comida</th><th>Platos</th><th>Estado</th>
+      </tr></thead>
+      <tbody id="tbody-vendidas"></tbody>
+    </table>
+  </div>
+  <div style="margin-top:7px;color:var(--muted);font-size:12px" id="v-info"></div>
+</div>
+
+<!-- Scan overlay -->
+<div id="cam-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.95);z-index:200;flex-direction:column;align-items:center;justify-content:center;gap:16px">
+  <div style="color:#e8e8f0;font-family:'Playfair Display',serif;font-size:1.1rem">Apunta al código QR del gafete</div>
+  <div style="position:relative;width:300px;height:300px;border-radius:16px;overflow:hidden;border:2px solid var(--teal)">
+    <video id="cam-video" style="width:100%;height:100%;object-fit:cover" autoplay playsinline muted></video>
+    <canvas id="cam-canvas" style="display:none"></canvas>
+    <div style="position:absolute;inset:0;border:3px solid rgba(62,207,184,.5);border-radius:16px;pointer-events:none"></div>
+  </div>
+  <div id="cam-status" style="color:var(--muted);font-size:13px">Buscando código...</div>
+  <button onclick="cerrarCamara()" style="background:transparent;border:1px solid var(--border);color:var(--muted);padding:9px 24px;border-radius:10px;font-family:'DM Sans',sans-serif;cursor:pointer">Cancelar</button>
+</div>
+
+<div class="scan-overlay" id="scan-overlay">
+  <div class="scan-card">
+    <div class="scan-icon" id="scan-icon">🍽️</div>
+    <div class="scan-name" id="scan-name"></div>
+    <div class="scan-tiempo" id="scan-tiempo"></div>
+    <div class="scan-info"  id="scan-info"></div>
+    <div id="scan-error-msg" style="display:none;margin:10px 0 4px;padding:10px 14px;background:rgba(232,107,139,.15);border:1px solid rgba(232,107,139,.4);border-radius:10px;color:var(--rose);font-size:13px;font-weight:600;text-align:center"></div>
+    <div class="scan-btns">
+      <button class="scan-btn confirm" id="scan-confirm">✅ Confirmar</button>
+      <button class="scan-btn cancel"  onclick="cerrarScan()">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Auth overlay -->
+<div class="auth-overlay" id="auth-overlay">
+  <div class="auth-box">
+    <div class="auth-icon">🔐</div>
+    <div class="auth-title">Acceso requerido</div>
+    <div class="auth-sub">Ingresa la clave para registrar retiros</div>
+    <input type="password" class="auth-input" id="auth-input" placeholder="••••••••" onkeydown="if(event.key==='Enter')verificarClave()">
+    <button class="auth-btn" onclick="verificarClave()">Desbloquear</button>
+    <div class="auth-error" id="auth-error"></div>
+  </div>
+</div>
+
+<div class="alert" id="alert"></div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getDatabase, ref, set, remove, onValue } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyAcW5Gr3CrBofcwp4ir_J9RRldEx4aNjNs",
+  authDomain: "crptg-11.firebaseapp.com",
+  databaseURL: "https://crptg-11-default-rtdb.firebaseio.com",
+  projectId: "crptg-11",
+  storageBucket: "crptg-11.firebasestorage.app",
+  messagingSenderId: "101435991351",
+  appId: "1:101435991351:web:f645559a5a68a235f2e6b2"
+};
+const app = initializeApp(firebaseConfig);
+const db  = getDatabase(app);
+
+const SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vS-FHGAAPJvj_dQEHyN09G1xVJWfblbjGrDgjCREmoi19ucjl1cuPLm5fR0ZHvcmZZ6PPdrEQ7g1pSV/pub?gid=1479802457&single=true&output=csv";
+const CLAVE   = "IglesiaRestaurada2026";
+const AUTH_KEY= "crptg11-auth";
+
+// Días del evento
+const DIAS = { 1:"2026-04-01", 2:"2026-04-02", 3:"2026-04-03", 4:"2026-04-04" };
+
+// Rangos horarios
+function tiempoPorHora(h) {
+  if (h >= 6  && h < 11) return "desayuno";
+  if (h >= 11 && h < 15) return "almuerzo";
+  if (h >= 16 && h < 22) return "cena";
+  return null;
+}
+
+function diaPorFecha(fecha) {
+  const d = fecha.toISOString().split("T")[0];
+  return Object.entries(DIAS).find(([,v]) => v === d)?.[0] || null;
+}
+
+// Estado actual
+let DATA_COMIDA = [];
+let retirados = {};
+let retiros     = {};   // { "1_desayuno_CR-11001": { hora:"07:32" }, ... }
+let diaActual   = null;
+let tiempoActual= null;
+let filtro      = "todos";
+let scanId      = null;
+
+// ── DETECCIÓN AUTOMÁTICA ──────────────────────────────────
+function detectarDiaTiempo() {
+  const now  = new Date();
+  const dia  = diaPorFecha(now);
+  const tiem = tiempoPorHora(now.getHours());
+
+  // Solo auto-seleccionar si estamos en el evento
+  if (dia && tiem) {
+    if (!diaActual)   setDia(parseInt(dia));
+    if (!tiempoActual) setTiempo(tiem);
+    document.getElementById("auto-tag").style.display = "inline-flex";
+  } else {
+    document.getElementById("auto-tag").style.display = "none";
+    // Fuera del evento: seleccionar Día 1 desayuno por defecto para pruebas
+    if (!diaActual)    setDia(1);
+    if (!tiempoActual) setTiempo("desayuno");
+  }
+}
+
+function setDia(n) {
+  diaActual = n;
+  document.querySelectorAll(".dbtn").forEach((b,i) => b.classList.toggle("on", i+1 === n));
+  actualizarStats(); renderLista();
+}
+function setTiempo(t) {
+  tiempoActual = t;
+  document.querySelectorAll(".tbtn:not(.auto-tag)").forEach(b => {
+    b.classList.remove("on");
+    if (b.classList.contains(t)) b.classList.add("on");
+  });
+  actualizarStats(); renderLista();
+}
+window.selDia    = (n,el) => setDia(n);
+window.selTiempo = (t,el) => setTiempo(t);
+
+// ── CLAVE DE RETIRO ──────────────────────────────────────────
+const firebaseKey = (dia, tiempo, id) => `d${dia}_${tiempo}_${id.replace(/-/g,"_")}`;
+
+// ── AUTH ─────────────────────────────────────────────────
+const estaAuth = () => localStorage.getItem(AUTH_KEY) === "ok";
+
+function mostrarAuth() {
+  document.getElementById("auth-overlay").classList.add("show");
+  setTimeout(() => document.getElementById("auth-input").focus(), 100);
+}
+window.mostrarAuth = mostrarAuth;
+
+function verificarClave() {
+  const v = document.getElementById("auth-input").value;
+  if (v === CLAVE) {
+    localStorage.setItem(AUTH_KEY,"ok");
+    document.getElementById("auth-overlay").classList.remove("show");
+    document.getElementById("auth-input").value = "";
+    actualizarBadge();
+    renderLista();
+    renderQR();
+    mostrarAlerta("✅ Acceso concedido");
+    if(window._pendingDownload){ const fn=window._pendingDownload; window._pendingDownload=null; setTimeout(fn,300); }
+  } else {
+    document.getElementById("auth-error").textContent = "Clave incorrecta";
+    document.getElementById("auth-input").value = "";
+  }
+}
+window.verificarClave = verificarClave;
+
+// Muestra auth si no está desbloqueado, si sí lo está ejecuta la acción directamente
+function solicitarDescarga(accion){
+  if(estaAuth()){ accion(); return; }
+  // Guardar acción pendiente y mostrar auth
+  window._pendingDownload = accion;
+  mostrarAuth();
+}
+window.solicitarDescarga = solicitarDescarga;
+
+function actualizarBadge() {
+  const b = document.getElementById("auth-badge");
+  const auth = estaAuth();
+  if (auth) {
+    b.className = "auth-badge unlocked"; b.innerHTML = "🔓 Autorizado";
+    b.onclick = () => { if(confirm("¿Cerrar sesión?")){ localStorage.removeItem(AUTH_KEY); actualizarBadge(); renderLista(); renderQR(); }};
+  } else {
+    b.className = "auth-badge locked"; b.innerHTML = "🔒 Bloqueado";
+    b.onclick = mostrarAuth;
+  }
+  // Mostrar u ocultar botones de descarga según autenticación
+  const btnImp = document.getElementById("btn-imprimir");
+  const btnDlT = document.getElementById("btn-dl-todos");
+  if(btnImp) btnImp.style.display = auth ? "inline-block" : "none";
+  if(btnDlT) btnDlT.style.display = auth ? "inline-block" : "none";
+}
+
+// ── FIREBASE ──────────────────────────────────────────────
+onValue(ref(db,"pedidos_compra"), snap => {
+  retirados = snap.val() || {};
+  if(typeof renderVendidas === 'function') renderVendidas();
+});
+
+onValue(ref(db,"retiros"), snap => {
+  retiros = snap.val() || {};
+  actualizarStats(); renderLista();
+});
+
+async function marcarPedidoComprado(pedId, dia, com, cant){
+  const hora = new Date().toLocaleTimeString("es-CR",{hour:"2-digit",minute:"2-digit"});
+  const comLabel = {des:"Desayuno",alm:"Almuerzo",cen:"Cena"}[com]||com;
+  const diaLabel = {mie:"Mié 1 Abr",jue:"Jue 2 Abr",vie:"Vie 3 Abr",sab:"Sáb 4 Abr"}[dia]||dia;
+  await set(ref(db,`pedidos_compra/pedido_${pedId}`),{
+    hora, retirado:true, dia, com, cant,
+    diaLabel, comLabel
+  });
+  mostrarAlerta("✅ Entregado — "+comLabel+" "+diaLabel+" — "+hora);
+}
+window.marcarPedidoComprado=marcarPedidoComprado;
+
+async function deshacerPedidoComprado(pedId){
+  await remove(ref(db,`pedidos_compra/pedido_${pedId}`));
+  mostrarAlerta("↩ Entrega deshecha");
+}
+window.deshacerPedidoComprado=deshacerPedidoComprado;
+
+async function marcarRetiro(id) {
+  if (!estaAuth()) { mostrarAuth(); return; }
+  if (!diaActual || !tiempoActual) { mostrarAlerta("⚠️ Selecciona día y tiempo primero", true); return; }
+  const hora = new Date().toLocaleTimeString("es-CR",{hour:"2-digit",minute:"2-digit"});
+  await set(ref(db, `retiros/${firebaseKey(diaActual,tiempoActual,id)}`), { hora, dia:diaActual, tiempo:tiempoActual, id });
+  mostrarAlerta(`✅ Retirado — ${tiempoLabel(tiempoActual)} Día ${diaActual} — ${hora}`);
+}
+window.marcarRetiro = marcarRetiro;
+
+async function deshacerRetiro(id) {
+  if (!estaAuth()) { mostrarAuth(); return; }
+  await remove(ref(db, `retiros/${firebaseKey(diaActual,tiempoActual,id)}`));
+  mostrarAlerta("↩ Retiro deshecho", true);
+}
+window.deshacerRetiro = deshacerRetiro;
+
+// ── CSV ───────────────────────────────────────────────────
+function parseCSV(text) {
+  const rows=[]; let cur="",inQ=false,row=[];
+  for(let i=0;i<text.length;i++){const ch=text[i];
+    if(ch==='"'){if(inQ&&text[i+1]==='"'){cur+='"';i++;}else inQ=!inQ;}
+    else if(ch===','&&!inQ){row.push(cur);cur="";}
+    else if((ch==='\n'||ch==='\r')&&!inQ){if(ch==='\r'&&text[i+1]==='\n')i++;row.push(cur);cur="";if(row.some(c=>c!==""))rows.push(row);row=[];}
+    else cur+=ch;
+  }
+  if(cur||row.length){row.push(cur);rows.push(row);}return rows;
+}
+
+async function cargarDatos() {
+  const proxies=[
+    "https://corsproxy.io/?url="+encodeURIComponent(SHEET_CSV_URL),
+    "https://api.allorigins.win/raw?url="+encodeURIComponent(SHEET_CSV_URL),
+    "https://thingproxy.freeboard.io/fetch/"+SHEET_CSV_URL,
+    "https://api.codetabs.com/v1/proxy?quest="+encodeURIComponent(SHEET_CSV_URL)
+  ];
+  let text;
+  for(const u of proxies){try{const r=await fetch(u,{cache:"no-store"});if(r.ok){const t=await r.text();if(t.includes(",")&&t.length>100){text=t;break;}}}catch(e){}}
+  if(!text){mostrarAlerta("⚠️ No se pudo cargar la hoja",true);return;}
+  const rows=parseCSV(text), h=rows[0].map(x=>x.replace(/^"|"$/g,"").trim());
+  const c=n=>h.findIndex(x=>x===n);
+  const iID=c("ID"),iNom=c("Nombre"),iSex=c("Sexo"),iEdad=c("Edad"),iTipo=c("Tipo de feligrés"),iCong=c("Congregación"),iAlim=c("Alimentación"),iCat=c("CategoriaE"),iPad=c("Padecimientos");
+  DATA_COMIDA=[];
+  for(let i=1;i<rows.length;i++){
+    const r=rows[i];
+    if(!/^s[ií]/i.test((r[iAlim]||"").trim()))continue;
+    const edad=parseInt(r[iEdad])||0;
+    let cat=(r[iCat]||"").trim();if(!cat)cat=edad<7?"Menor":edad<18?"Joven":"Adulto";
+    DATA_COMIDA.push({id:(r[iID]||"").replace(/^"|"$/g,"").trim(),nombre:(r[iNom]||"").replace(/^"|"$/g,"").trim(),sexo:(r[iSex]||"").replace(/^"|"$/g,"").trim(),edad,tipo:(r[iTipo]||"").replace(/^"|"$/g,"").trim(),congregacion:(r[iCong]||"").replace(/^"|"$/g,"").trim(),categoria:cat,padecimientos:(r[iPad]||"").trim()});
+  }
+  actualizarStats(); renderLista(); renderQR(); verificarScanURL();
+}
+
+// ── HELPERS ───────────────────────────────────────────────
+const tiempoLabel = t => ({desayuno:"☀️ Desayuno",almuerzo:"🌤️ Almuerzo",cena:"🌙 Cena"})[t]||t;
+const estaRetirado = id => retiros[firebaseKey(diaActual,tiempoActual,id)];
+
+// ── STATS ─────────────────────────────────────────────────
+function actualizarStats() {
+  const total=DATA_COMIDA.length;
+  const ret=DATA_COMIDA.filter(d=>estaRetirado(d.id)).length;
+  document.getElementById("s-total").textContent=total;
+  document.getElementById("s-ret").textContent=ret;
+  document.getElementById("s-pen").textContent=total-ret;
+}
+
+// ── LISTA ─────────────────────────────────────────────────
+function setFiltro(f,el){filtro=f;document.querySelectorAll(".fbtn").forEach(b=>b.classList.remove("on"));el.classList.add("on");renderLista();}
+window.setFiltro=setFiltro;
+
+function renderLista(){
+  const q=(document.getElementById("search")?.value||"").toLowerCase();
+  const data=DATA_COMIDA.filter(d=>{
+    const ret=estaRetirado(d.id);
+    if(filtro==="retirado"&&!ret)return false;
+    if(filtro==="pendiente"&&ret)return false;
+    if(q&&!d.nombre.toLowerCase().includes(q)&&!d.id.toLowerCase().includes(q)&&!d.congregacion.toLowerCase().includes(q))return false;
+    return true;
+  });
+  const sexB=s=>s==="Masculino"?`<span class="badge b-m">♂</span>`:`<span class="badge b-f">♀</span>`;
+  const catB=c=>c==="Adulto"?`<span class="badge b-ad">Adulto</span>`:c==="Joven"?`<span class="badge b-jo">Joven</span>`:`<span class="badge b-me">Menor</span>`;
+  document.getElementById("tbody").innerHTML=data.length?data.map(d=>{
+    const r=estaRetirado(d.id);
+    return`<tr>
+      <td style="color:var(--muted);font-size:11px">${d.id}</td>
+      <td><strong>${d.nombre}</strong>${d.padecimientos==="SI"?` <span style="color:var(--rose);font-size:10px">⚕</span>`:""}</td>
+      <td>${sexB(d.sexo)}</td><td>${catB(d.categoria)}</td>
+      <td style="color:var(--gold);font-size:12px">${d.congregacion}</td>
+      <td>${r?`<span class="badge b-ret">✅ ${r.hora}</span>`:`<span class="badge b-pen">⏳ Pendiente</span>`}</td>
+      <td>${r?`<button class="btn-undo" onclick="deshacerRetiro('${d.id}')">↩</button>`:`<button class="btn-ret" onclick="marcarRetiro('${d.id}')">✅ Marcar</button>`}</td>
+    </tr>`;
+  }).join(""):`<tr><td colspan="7" class="empty">Sin resultados</td></tr>`;
+  document.getElementById("lista-info").textContent=`${data.length} de ${DATA_COMIDA.length} · ${tiempoLabel(tiempoActual)||"–"} · Día ${diaActual||"–"}`;
+}
+
+// ── QR ────────────────────────────────────────────────────
+
+function descargarTodos() {
+  const cards = document.querySelectorAll("#qr-grid .qr-card");
+  if (!cards.length) { mostrarAlerta("No hay QRs cargados", true); return; }
+  const btn = document.getElementById("btn-dl-todos");
+  btn.disabled = true;
+  btn.textContent = "⏳ Descargando...";
+
+  let i = 0;
+  function siguiente() {
+    if (i >= cards.length) {
+      btn.disabled = false;
+      btn.textContent = "⬇️ Descargar todos (PNG)";
+      mostrarAlerta("✅ " + cards.length + " QRs descargados");
+      return;
+    }
+    const card = cards[i];
+    const id = card.getAttribute("data-qrid");
+    const nombre = card.querySelector(".qr-name")?.textContent || id;
+    const congregacion = card.querySelector(".qr-cong")?.textContent || "";
+    i++;
+    // Reusar la función individual con callback de siguiente
+    descargarQRPromise(nombre, id, congregacion).then(() => {
+      setTimeout(siguiente, 300); // pequeña pausa para no saturar
+    });
+  }
+  siguiente();
+}
+window.descargarTodos = descargarTodos;
+
+function descargarQRPromise(nombre, id, congregacion) {
+  return new Promise(resolve => {
+    const card = document.querySelector(`[data-qrid="${id}"]`);
+    if (!card) { resolve(); return; }
+    const canvas = card.querySelector("canvas");
+    const img = card.querySelector("img");
+    let qrDataURL;
+    if (canvas) qrDataURL = canvas.toDataURL("image/png");
+    else if (img) qrDataURL = img.src;
+    else { resolve(); return; }
+
+    const W = 300, H = 360;
+    const out = document.createElement("canvas");
+    out.width = W; out.height = H;
+    const ctx = out.getContext("2d");
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(0, 0, W, H);
+
+    const qrImg = new Image();
+    qrImg.onload = () => {
+      ctx.drawImage(qrImg, (W - 260) / 2, 20, 260, 260);
+      ctx.strokeStyle = "#e0e0e0";
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(16, 290); ctx.lineTo(W - 16, 290);
+      ctx.stroke();
+      ctx.textAlign = "center";
+      ctx.fillStyle = "#111111";
+      ctx.font = "bold 13px sans-serif";
+      ctx.fillText(nombre, W / 2, 308);
+      ctx.fillStyle = "#555555";
+      ctx.font = "11px sans-serif";
+      ctx.fillText(id, W / 2, 324);
+      ctx.fillStyle = "#c07000";
+      ctx.font = "bold 11px sans-serif";
+      ctx.fillText(congregacion, W / 2, 340);
+      const a = document.createElement("a");
+      a.href = out.toDataURL("image/png");
+      a.download = `QR_${nombre.replace(/\s+/g,"_")}_${id}.png`;
+      a.click();
+      resolve();
+    };
+    qrImg.src = qrDataURL;
+  });
+}
+window.descargarQRPromise = descargarQRPromise;
+
+function descargarQR(nombre, id, congregacion) {
+  const card = document.querySelector(`[data-qrid="${id}"]`);
+  if (!card) return;
+  const canvas = card.querySelector("canvas");
+  const img = card.querySelector("img");
+
+  // Obtener la imagen del QR como dataURL
+  let qrDataURL;
+  if (canvas) {
+    qrDataURL = canvas.toDataURL("image/png");
+  } else if (img) {
+    qrDataURL = img.src;
+  } else return;
+
+  // Crear canvas final con QR + texto debajo
+  const W = 300, padding = 16, lineH = 18, lines = 3;
+  const textH = padding + lines * lineH + padding;
+  const H = 300 + textH;
+
+  const out = document.createElement("canvas");
+  out.width = W; out.height = H;
+  const ctx = out.getContext("2d");
+
+  // Fondo blanco
+  ctx.fillStyle = "#ffffff";
+  ctx.fillRect(0, 0, W, H);
+
+  // QR centrado arriba
+  const qrImg = new Image();
+  qrImg.onload = () => {
+    ctx.drawImage(qrImg, (W - 260) / 2, 20, 260, 260);
+
+    // Línea separadora
+    ctx.strokeStyle = "#e0e0e0";
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(16, 290); ctx.lineTo(W - 16, 290);
+    ctx.stroke();
+
+    // Texto: nombre, ID, congregación
+    ctx.textAlign = "center";
+    ctx.fillStyle = "#111111";
+    ctx.font = "bold 13px sans-serif";
+    ctx.fillText(nombre, W / 2, 308);
+
+    ctx.fillStyle = "#555555";
+    ctx.font = "11px sans-serif";
+    ctx.fillText(id, W / 2, 324);
+
+    ctx.fillStyle = "#c07000";
+    ctx.font = "bold 11px sans-serif";
+    ctx.fillText(congregacion, W / 2, 340);
+
+    // Descargar
+    const a = document.createElement("a");
+    a.href = out.toDataURL("image/png");
+    a.download = `QR_${nombre.replace(/\s+/g,"_")}_${id}.png`;
+    a.click();
+  };
+  qrImg.src = qrDataURL;
+}
+window.descargarQR = descargarQR;
+
+function renderQR(){
+  const q=(document.getElementById("search-qr")?.value||"").toLowerCase();
+  const data=DATA_COMIDA.filter(d=>!q||d.nombre.toLowerCase().includes(q)||d.congregacion.toLowerCase().includes(q));
+  const grid=document.getElementById("qr-grid");grid.innerHTML="";
+  if(!data.length){grid.innerHTML=`<div class="empty" style="grid-column:1/-1">Sin resultados</div>`;return;}
+  const base="https://logistica-crptg11.netlify.app/comida";
+  data.forEach(d=>{
+    const card=document.createElement("div");card.className="qr-card";
+    card.setAttribute("data-qrid", d.id);
+    const qrDiv=document.createElement("div");
+    const nm=document.createElement("div");nm.className="qr-name";nm.textContent=d.nombre;
+    const id=document.createElement("div");id.className="qr-id";id.textContent=d.id;
+    const cg=document.createElement("div");cg.className="qr-cong";cg.textContent=d.congregacion;
+    // Botón de descarga
+    const btnDl=document.createElement("button");
+    btnDl.textContent="⬇️ Descargar PNG";
+    btnDl.style.cssText="margin-top:8px;width:100%;background:rgba(62,207,184,.12);border:1px solid rgba(62,207,184,.35);color:var(--teal);padding:5px 0;border-radius:7px;font-family:'DM Sans',sans-serif;font-size:11px;font-weight:600;cursor:pointer";
+    btnDl.onmouseover=()=>btnDl.style.background="rgba(62,207,184,.22)";
+    btnDl.onmouseout=()=>btnDl.style.background="rgba(62,207,184,.12)";
+    btnDl.onclick=()=>solicitarDescarga(()=>descargarQR(d.nombre, d.id, d.congregacion));
+    btnDl.style.display = estaAuth() ? "block" : "none";
+    card.append(qrDiv,nm,id,cg,btnDl);grid.appendChild(card);
+    new QRCode(qrDiv,{text:base+"?scan="+d.id,width:155,height:155,colorDark:"#000",colorLight:"#fff",correctLevel:QRCode.CorrectLevel.M});
+  });
+}
+window.renderQR=renderQR;
+
+// ── SCAN URL ──────────────────────────────────────────────
+function verificarScanURL(){
+  const id=new URLSearchParams(window.location.search).get("scan");
+  if(!id)return;
+  const p=DATA_COMIDA.find(d=>d.id===id);
+  if(!p){mostrarAlerta("ID no encontrado: "+id,true);return;}
+  scanId=id;
+  const r=estaRetirado(id);
+  document.getElementById("scan-name").textContent=p.nombre;
+  document.getElementById("scan-tiempo").textContent=tiempoLabel(tiempoActual)+" · Día "+diaActual;
+
+  if(r){
+    // Ya retiró — mostrar error, sin opción de confirmar
+    document.getElementById("scan-icon").textContent="🚫";
+    document.getElementById("scan-info").textContent=`${p.congregacion} · ${p.categoria}`;
+    const errEl=document.getElementById("scan-error-msg");
+    errEl.style.display="block";
+    errEl.textContent=`⚠️ Este participante ya retiró su ${tiempoLabel(tiempoActual)} a las ${r.hora}`;
+    const btn=document.getElementById("scan-confirm");
+    btn.textContent="Entendido";
+    btn.style.background="var(--rose)";
+    btn.style.color="#fff";
+    btn.onclick=cerrarScan;
+    // Cambiar borde de la card a rojo
+    document.querySelector(".scan-card").style.borderColor="var(--rose)";
+  } else {
+    document.getElementById("scan-icon").textContent="🍽️";
+    document.getElementById("scan-info").textContent=`${p.congregacion} · ${p.categoria} · Pendiente de retiro`;
+    document.getElementById("scan-error-msg").style.display="none";
+    const btn=document.getElementById("scan-confirm");
+    btn.textContent="✅ Confirmar retiro";
+    btn.style.background="var(--teal)";
+    btn.style.color="#000";
+    btn.onclick=()=>{marcarRetiro(id);cerrarScan();};
+    document.querySelector(".scan-card").style.borderColor="var(--teal)";
+  }
+  document.getElementById("scan-overlay").classList.add("show");
+  document.querySelectorAll(".panel").forEach(p=>p.classList.remove("on"));
+  document.querySelectorAll(".tab").forEach(t=>t.classList.remove("on"));
+  document.getElementById("tab-lista").classList.add("on");
+  document.querySelector(".tab").classList.add("on");
+}
+
+function cerrarScan(){document.getElementById("scan-overlay").classList.remove("show");history.replaceState(null,"",location.pathname);scanId=null;}
+window.cerrarScan=cerrarScan;
+
+// ── TABS ──────────────────────────────────────────────────
+function showTab(id,el){
+  document.querySelectorAll(".panel").forEach(p=>p.classList.remove("on"));
+  document.querySelectorAll(".tab").forEach(t=>t.classList.remove("on"));
+  document.getElementById("tab-"+id).classList.add("on");el.classList.add("on");
+  if(id==="qr")renderQR();
+  if(id==="vendidas"){ cargarPedidosVendidos(); }
+}
+window.showTab=showTab;
+
+// ── ALERTA ────────────────────────────────────────────────
+function mostrarAlerta(msg,err=false){
+  const a=document.getElementById("alert");
+  a.textContent=msg;a.className="alert show"+(err?" error":"");
+  setTimeout(()=>a.className="alert",3000);
+}
+
+// ── INIT ─────────────────────────────────────────────────
+actualizarBadge();
+detectarDiaTiempo();
+
+// ── PEDIDOS VENDIDOS ──────────────────────────────────────────
+const PEDIDOS_SHEET_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQfs7imRBVok1RUOAzu1SlAGwmt4dPoB9Wi1zEGgXeewdwSSc4ko4sGsNI0YYxAjjoynKmIP1K2kN8S/pub?gid=1178248067&single=true&output=csv";
+let PEDIDOS_DATA = [];
+let filtroVDia = "todos";
+let filtroVCom = "todos";
+
+const DIA_MAP_V  = {"miércoles 1 abr":"mie","miercoles 1 abr":"mie","jueves 2 abr":"jue","viernes 3 abr":"vie","sábado 4 abr":"sab","sabado 4 abr":"sab"};
+const COM_MAP_V  = {"desayuno":"des","almuerzo":"alm","cena":"cen"};
+const DIA_LBL_V  = {mie:"Mié 1 Abr",jue:"Jue 2 Abr",vie:"Vie 3 Abr",sab:"Sáb 4 Abr"};
+const COM_LBL_V  = {des:"Desayuno",alm:"Almuerzo",cen:"Cena"};
+const COM_CLR_V  = {des:"var(--gold)",alm:"var(--teal)",cen:"var(--lav)"};
+
+async function cargarPedidosVendidos(){
+  const proxies=[
+    "https://corsproxy.io/?url="+encodeURIComponent(PEDIDOS_SHEET_URL),
+    "https://api.allorigins.win/raw?url="+encodeURIComponent(PEDIDOS_SHEET_URL),
+    "https://api.codetabs.com/v1/proxy?quest="+encodeURIComponent(PEDIDOS_SHEET_URL),
+  ];
+  let text;
+  for(const u of proxies){try{const r=await fetch(u,{cache:"no-store"});if(r.ok){const t=await r.text();if(t&&t.length>20){text=t;break;}}}catch(e){}}
+  if(!text) return;
+
+  const rows = parseCSV(text);
+  if(rows.length < 2) return;
+  const h = rows[0].map(x=>x.replace(/^"|"$/g,"").trim().toLowerCase());
+  const col = (...names) => { for(const n of names){const i=h.findIndex(x=>x.includes(n));if(i!==-1)return i;} return -1; };
+  const iNom  = col("nombre");
+  const iCong = col("congregaci");
+  const iTel  = col("teléfono","telefono","whatsapp");
+  const iDia  = col("día","dia");
+  const iCom  = col("tiempo de comida","tiempo");
+  const iCant = col("cantidad de platos","cantidad","platos");
+
+  PEDIDOS_DATA = [];
+  for(let i=1;i<rows.length;i++){
+    const r=rows[i];
+    const nombre=(r[iNom]||"").replace(/^"|"$/g,"").trim();
+    if(!nombre) continue;
+    const diaRaw=(r[iDia]||"").replace(/^"|"$/g,"").trim().toLowerCase();
+    const comRaw=(r[iCom]||"").replace(/^"|"$/g,"").trim().toLowerCase();
+    const cant=parseInt((r[iCant]||"1").replace(/\D/g,""))||1;
+    let dia=DIA_MAP_V[diaRaw]||diaRaw.substring(0,3)||"?";
+    let com=COM_MAP_V[comRaw]||(comRaw.includes("des")?"des":comRaw.includes("alm")?"alm":comRaw.includes("cen")?"cen":"?");
+    PEDIDOS_DATA.push({
+      id:"fila_"+i, fila:i+1,
+      nombre, cong:(r[iCong]!==-1?r[iCong]||"—":"—").replace(/^"|"$/g,"").trim(),
+      tel:(r[iTel]!==-1?r[iTel]||"—":"—").replace(/^"|"$/g,"").trim(),
+      dia, com, cant
+    });
+  }
+  renderVendidas();
+}
+window.cargarPedidosVendidos = cargarPedidosVendidos;
+
+function setFiltroV(tipo, val, el){
+  if(tipo==="dia"){ filtroVDia=val; document.querySelectorAll("[id^='vd-']").forEach(b=>b.classList.remove("on")); }
+  else            { filtroVCom=val; document.querySelectorAll("[id^='vc-']").forEach(b=>b.classList.remove("on")); }
+  if(el) el.classList.add("on");
+  renderVendidas();
+}
+window.setFiltroV = setFiltroV;
+
+function renderVendidas(){
+  const lista = PEDIDOS_DATA.filter(p=>{
+    if(filtroVDia!=="todos" && p.dia!==filtroVDia) return false;
+    if(filtroVCom!=="todos" && p.com!==filtroVCom) return false;
+    return true;
+  });
+
+  // Stats
+  const totalPlatos = lista.reduce((s,p)=>s+p.cant,0);
+  // Contar entregados usando retirados de Firebase
+  let entregados = 0;
+  lista.forEach(p=>{ if(retirados && retirados["pedido_"+p.id]) entregados++; });
+  document.getElementById("v-total-ped").textContent    = lista.length;
+  document.getElementById("v-total-platos").textContent = totalPlatos;
+  document.getElementById("v-entregados").textContent   = entregados;
+  document.getElementById("v-monto").textContent        = "₡"+(totalPlatos*3000).toLocaleString("es-CR");
+  document.getElementById("v-info").textContent         = lista.length+" de "+PEDIDOS_DATA.length+" pedidos";
+
+  if(!lista.length){
+    document.getElementById("tbody-vendidas").innerHTML='<tr><td colspan="8" style="text-align:center;padding:30px;color:var(--muted)">Sin pedidos para este filtro</td></tr>';
+    return;
+  }
+
+  document.getElementById("tbody-vendidas").innerHTML = lista.map((p,i)=>{
+    const entregado = retirados && retirados["pedido_"+p.id];
+    const badgeDia  = `<span style="display:inline-block;padding:2px 8px;border-radius:100px;font-size:11px;font-weight:600;background:rgba(232,168,56,.15);color:var(--gold)">${DIA_LBL_V[p.dia]||p.dia}</span>`;
+    const badgeCom  = `<span style="display:inline-block;padding:2px 8px;border-radius:100px;font-size:11px;font-weight:600;background:rgba(62,207,184,.1);color:${COM_CLR_V[p.com]||"var(--muted)"}">${COM_LBL_V[p.com]||p.com}</span>`;
+    const badgeEst  = entregado
+      ? `<span style="display:inline-block;padding:2px 8px;border-radius:100px;font-size:11px;font-weight:600;background:rgba(62,207,184,.15);color:var(--teal)">✅ ${entregado.hora}</span>`
+      : `<span style="display:inline-block;padding:2px 8px;border-radius:100px;font-size:11px;font-weight:600;background:rgba(232,107,139,.12);color:var(--rose)">Pendiente</span>`;
+    return `<tr>
+      <td style="color:var(--muted)">${p.fila}</td>
+      <td style="font-weight:600">${p.nombre}</td>
+      <td style="color:var(--muted);font-size:12px">${p.cong}</td>
+      <td style="color:var(--muted);font-size:12px">${p.tel}</td>
+      <td>${badgeDia}</td>
+      <td>${badgeCom}</td>
+      <td style="font-weight:700;color:var(--teal)">${p.cant}</td>
+      <td>${badgeEst}</td>
+    </tr>`;
+  }).join("");
+}
+window.renderVendidas = renderVendidas;
+
+// ── CÁMARA / ESCÁNER INTEGRADO ────────────────────────────
+let camStream = null;
+let camAnimId = null;
+
+async function abrirCamara() {
+  const overlay = document.getElementById("cam-overlay");
+  overlay.style.display = "flex";
+  try {
+    camStream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: "environment", width: { ideal: 1280 }, height: { ideal: 720 } }
+    });
+    const video = document.getElementById("cam-video");
+    video.srcObject = camStream;
+    video.play();
+    video.addEventListener("loadedmetadata", () => { escanearFrame(); });
+  } catch(e) {
+    document.getElementById("cam-status").textContent = "⚠️ No se pudo acceder a la cámara";
+  }
+}
+window.abrirCamara = abrirCamara;
+
+function escanearFrame() {
+  const video = document.getElementById("cam-video");
+  const canvas = document.getElementById("cam-canvas");
+  if (!camStream) return;
+  if (video.readyState !== video.HAVE_ENOUGH_DATA) {
+    camAnimId = requestAnimationFrame(escanearFrame);
+    return;
+  }
+  canvas.width = video.videoWidth;
+  canvas.height = video.videoHeight;
+  const ctx = canvas.getContext("2d");
+  ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+  const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+  const code = jsQR(imageData.data, imageData.width, imageData.height, { inversionAttempts: "dontInvert" });
+  if (code) {
+    // Extraer el ID del URL escaneado
+    let id = code.data.trim();
+    try {
+      const u = new URL(code.data);
+      id = u.searchParams.get("scan") || id;
+    } catch(e) {}
+    cerrarCamara();
+    console.log("QR escaneado:", JSON.stringify(id));
+    procesarScanId(id);
+  } else {
+    camAnimId = requestAnimationFrame(escanearFrame);
+  }
+}
+
+function cerrarCamara() {
+  if (camStream) { camStream.getTracks().forEach(t => t.stop()); camStream = null; }
+  if (camAnimId) { cancelAnimationFrame(camAnimId); camAnimId = null; }
+  document.getElementById("cam-overlay").style.display = "none";
+}
+window.cerrarCamara = cerrarCamara;
+
+function procesarScanId(id) {
+  // Detectar si es un QR de pedido comprado
+  // ── QR de pedido comprado ──────────────────────────────────
+  // Formato: PEDIDO:id:cant:dia:com  — puede venir en cualquier case
+  const idUpper = id.toUpperCase();
+  if(idUpper.includes("PEDIDO:") || id.includes("PEDIDO:")) {
+    // Extraer partes — buscar desde donde empieza PEDIDO:
+    const raw    = id.includes("PEDIDO:") ? id : id;
+    const start  = raw.toUpperCase().indexOf("PEDIDO:");
+    const parte  = raw.substring(start); // "PEDIDO:ped_1_xxx:2:jue:alm"
+    const partes = parte.split(":");
+    // partes[0]="PEDIDO", partes[1]=id, partes[2]=cant, partes[3]=dia, partes[4]=com
+    const pedId    = partes[1] || "";
+    const cant     = parseInt(partes[2]) || 1;
+    const dia      = (partes[3] || "").toLowerCase();
+    const com      = (partes[4] || "").toLowerCase();
+    const diaLabel = {mie:"Mié 1 Abr",jue:"Jue 2 Abr",vie:"Vie 3 Abr",sab:"Sáb 4 Abr"}[dia] || dia;
+    const comLabel = {des:"Desayuno",alm:"Almuerzo",cen:"Cena"}[com] || com;
+    const yaUsado  = retirados ? retirados["pedido_"+pedId] : null;
+
+    document.getElementById("scan-icon").textContent = yaUsado ? "🚫" : "🧾";
+    document.getElementById("scan-name").textContent = "Pedido comprado";
+    document.getElementById("scan-tiempo").textContent = diaLabel + " · " + comLabel + " · " + cant + " plato" + (cant>1?"s":"");
+    document.getElementById("scan-info").textContent = "₡" + (cant*3000).toLocaleString("es-CR");
+    document.querySelector(".scan-card").style.borderColor = yaUsado ? "var(--rose)" : "var(--gold)";
+
+    const errEl = document.getElementById("scan-error-msg");
+    if(yaUsado){
+      errEl.style.display = "block";
+      errEl.textContent   = "⚠️ Este pedido ya fue entregado a las " + yaUsado.hora;
+    } else {
+      errEl.style.display = "none";
+    }
+
+    const btn = document.getElementById("scan-confirm");
+    if(yaUsado){
+      btn.textContent    = "↩ Deshacer entrega";
+      btn.style.background = "var(--rose)";
+      btn.style.color    = "#fff";
+      btn.onclick        = ()=>{ deshacerPedidoComprado(pedId); cerrarScan(); };
+    } else {
+      btn.textContent    = "✅ Confirmar entrega";
+      btn.style.background = "var(--gold)";
+      btn.style.color    = "#000";
+      btn.onclick        = ()=>{ marcarPedidoComprado(pedId, dia, com, cant); cerrarScan(); };
+    }
+    document.getElementById("scan-overlay").classList.add("show");
+    return;
+  }
+  const p = DATA_COMIDA.find(d => d.id === id);
+  if (!p) { mostrarAlerta("Leído: [" + id.substring(0,60) + "]", true); return; }
+  scanId = id;
+  const r = estaRetirado(id);
+  document.getElementById("scan-name").textContent = p.nombre;
+  document.getElementById("scan-tiempo").textContent = tiempoLabel(tiempoActual) + " · Día " + diaActual;
+  if (r) {
+    document.getElementById("scan-icon").textContent = "🚫";
+    document.getElementById("scan-info").textContent = p.congregacion + " · " + p.categoria;
+    const errEl = document.getElementById("scan-error-msg");
+    errEl.style.display = "block";
+    errEl.textContent = "⚠️ Ya retiró su " + tiempoLabel(tiempoActual) + " a las " + r.hora;
+    const btn = document.getElementById("scan-confirm");
+    btn.textContent = "Entendido"; btn.style.background = "var(--rose)"; btn.style.color = "#fff";
+    btn.onclick = cerrarScan;
+    document.querySelector(".scan-card").style.borderColor = "var(--rose)";
+  } else {
+    document.getElementById("scan-icon").textContent = "🍽️";
+    document.getElementById("scan-info").textContent = p.congregacion + " · " + p.categoria + " · Pendiente";
+    document.getElementById("scan-error-msg").style.display = "none";
+    const btn = document.getElementById("scan-confirm");
+    btn.textContent = "✅ Confirmar retiro"; btn.style.background = "var(--teal)"; btn.style.color = "#000";
+    btn.onclick = () => { marcarRetiro(id); cerrarScan(); };
+    document.querySelector(".scan-card").style.borderColor = "var(--teal)";
+  }
+  document.getElementById("scan-overlay").classList.add("show");
+}
+window.procesarScanId = procesarScanId;
+
+
+cargarDatos();
+
+// ── CONTROL DE ACCESO — LÓGICA PRINCIPAL ─────────────────
+(function() {
+  const CLAVE_VER    = "LogisticaCRPTG11";
+  const CLAVE_OPERAR = "IglesiaRestaurada2026";
+  const URL_PUBLICA  = "bienvenida.html"; // ← CAMBIAR por tu URL pública
+
+  const tieneAcceso =
+    localStorage.getItem("crptg11-auth") === "ok" ||
+    localStorage.getItem("crptg11-ver")  === "ok";
+
+  if (!tieneAcceso) {
+    // Mostrar overlay de acceso en lugar de redirigir directo,
+    // así logística puede ingresar su clave desde el mismo link del QR
+    document.getElementById("acceso-overlay").style.display = "flex";
+    document.documentElement.style.visibility = "visible";
+    return;
+  }
+
+  // Tiene acceso: mostrar todo normalmente
+  document.documentElement.style.visibility = "visible";
+
+  // Configurar botón de desbloqueo en el header según nivel de acceso
+  actualizarNivelAcceso();
+
+  function actualizarNivelAcceso() {
+    const badge = document.getElementById("auth-badge");
+    if (!badge) return;
+    const esSoloVer = localStorage.getItem("crptg11-ver") === "ok" &&
+                      localStorage.getItem("crptg11-auth") !== "ok";
+    if (esSoloVer) {
+      badge.className = "auth-badge locked";
+      badge.innerHTML = "👁️ Solo lectura";
+      badge.title = "Modo solo lectura — click para desbloquear operación";
+    }
+  }
+
+  // Verificar clave del overlay de acceso
+  window.verificarAccesoVer = function() {
+    const input = document.getElementById("acceso-input");
+    const error = document.getElementById("acceso-error");
+    const val   = input.value.trim();
+
+    if (val === CLAVE_OPERAR) {
+      localStorage.setItem("crptg11-auth", "ok");
+      document.getElementById("acceso-overlay").style.display = "none";
+      document.documentElement.style.visibility = "visible";
+      actualizarBadge && actualizarBadge();
+    } else if (val === CLAVE_VER) {
+      localStorage.setItem("crptg11-ver", "ok");
+      document.getElementById("acceso-overlay").style.display = "none";
+      document.documentElement.style.visibility = "visible";
+      actualizarNivelAcceso();
+    } else {
+      error.textContent = "Clave incorrecta";
+      input.value = "";
+      input.focus();
+    }
+  };
+
+  window.irAPaginaPublica = function() {
+    window.location.href = URL_PUBLICA;
+  };
+
+})();
+</script>
+
+<!-- ── OVERLAY DE ACCESO LOGÍSTICA ─────────────────────── -->
+<div id="acceso-overlay" style="display:none;position:fixed;inset:0;background:rgba(11,13,19,.97);z-index:9999;align-items:center;justify-content:center;flex-direction:column">
+  <div style="background:#13161f;border:1px solid #22263a;border-radius:24px;padding:40px 42px;text-align:center;max-width:360px;width:90%;box-shadow:0 24px 64px rgba(0,0,0,.6)">
+    <div style="font-size:2.4rem;margin-bottom:12px">🔐</div>
+    <div style="font-family:'Playfair Display',serif;font-size:1.3rem;color:#e8e8f0;margin-bottom:6px">Acceso restringido</div>
+    <div style="color:#7a7d95;font-size:13px;margin-bottom:24px;line-height:1.5">Esta área es solo para personal de logística.<br>Ingresa tu clave para continuar.</div>
+    <input type="password" id="acceso-input" placeholder="••••••••"
+      onkeydown="if(event.key==='Enter')verificarAcceso()"
+      style="width:100%;background:#0b0d13;border:1px solid #22263a;color:#e8e8f0;font-family:'DM Sans',sans-serif;font-size:15px;padding:11px 16px;border-radius:12px;outline:none;text-align:center;letter-spacing:3px;margin-bottom:10px;transition:border-color .2s;box-sizing:border-box"
+      onfocus="this.style.borderColor='#e8a838'" onblur="this.style.borderColor='#22263a'">
+    <button onclick="verificarAcceso()" style="width:100%;padding:12px;border-radius:12px;border:none;background:#e8a838;color:#000;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:700;cursor:pointer">Ingresar</button>
+    <div id="acceso-error" style="color:#e86b8b;font-size:12px;margin-top:10px;min-height:16px"></div>
+    <div style="margin-top:22px;padding-top:18px;border-top:1px solid #22263a">
+      <div style="color:#7a7d95;font-size:12px;margin-bottom:10px">¿Eres participante del evento?</div>
+      <a href="https://logistica-crptg11.netlify.app/bienvenida.html" style="display:inline-block;padding:9px 22px;border-radius:10px;border:1px solid #22263a;color:#7a7d95;font-family:'DM Sans',sans-serif;font-size:13px;text-decoration:none">Ver información del evento →</a>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

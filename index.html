@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CRPTG 11 — Panel Central</title>
+<script>
+  // ── CONTROL DE ACCESO ─────────────────────────────────────
+  const CLAVE_VER    = "LogisticaCRPTG11";
+  const CLAVE_OPERAR = "IglesiaRestaurada2026";
+  const URL_PUBLICA  = "bienvenida.html"; // ← CAMBIAR por tu URL pública
+
+  const tieneAcceso =
+    localStorage.getItem("crptg11-auth") === "ok" ||
+    localStorage.getItem("crptg11-ver")  === "ok";
+
+  if (!tieneAcceso) {
+    document.documentElement.style.visibility = "hidden";
+  }
+</script>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#0b0d13;--surface:#13161f;--surface2:#181b24;
+  --border:#22263a;--gold:#e8a838;--teal:#3ecfb8;
+  --rose:#e86b8b;--lav:#8b7fe8;--text:#e8e8f0;--muted:#7a7d95;
+}
+body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:32px 20px 60px;position:relative}
+
+/* fondo decorativo */
+.bg-orb{position:fixed;border-radius:50%;filter:blur(80px);opacity:.12;pointer-events:none}
+.bg-orb.o1{width:300px;height:300px;background:var(--gold);top:-60px;right:-60px}
+.bg-orb.o2{width:250px;height:250px;background:var(--teal);bottom:-40px;left:-40px}
+.bg-orb.o3{width:300px;height:300px;background:var(--lav);top:50%;left:50%;transform:translate(-50%,-50%)}
+
+.wrapper{position:relative;z-index:1;width:100%;max-width:1100px;text-align:center}
+
+/* logo / título */
+.event-tag{display:inline-block;padding:4px 16px;border:1px solid rgba(232,168,56,.35);border-radius:100px;font-size:11px;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:var(--gold);margin-bottom:20px}
+h1{font-family:'Playfair Display',serif;font-size:clamp(2rem,5vw,3.4rem);font-weight:900;line-height:1.1;margin-bottom:8px}
+h1 span{color:var(--gold)}
+.subtitle{color:var(--muted);font-size:14px;margin-bottom:48px;letter-spacing:.5px}
+
+/* grid de tarjetas */
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px;margin-bottom:24px}
+
+.card{position:relative;background:var(--surface);border:1px solid var(--border);border-radius:18px;padding:28px 24px;text-align:left;cursor:pointer;text-decoration:none;color:var(--text);transition:transform .2s,border-color .2s,box-shadow .2s;overflow:hidden;display:block}
+.card::before{content:'';position:absolute;inset:0;opacity:0;transition:opacity .2s;border-radius:18px}
+.card:hover{transform:translateY(-4px)}
+
+.card.gold{border-color:rgba(232,168,56,.25)}.card.gold:hover{border-color:var(--gold);box-shadow:0 8px 40px rgba(232,168,56,.15)}.card.gold::before{background:radial-gradient(circle at top right,rgba(232,168,56,.08),transparent 60%);opacity:1}
+.card.teal{border-color:rgba(62,207,184,.25)}.card.teal:hover{border-color:var(--teal);box-shadow:0 8px 40px rgba(62,207,184,.15)}.card.teal::before{background:radial-gradient(circle at top right,rgba(62,207,184,.08),transparent 60%);opacity:1}
+.card.lav{border-color:rgba(139,127,232,.25)}.card.lav:hover{border-color:var(--lav);box-shadow:0 8px 40px rgba(139,127,232,.15)}.card.lav::before{background:radial-gradient(circle at top right,rgba(139,127,232,.08),transparent 60%);opacity:1}
+.card.rose{border-color:rgba(232,107,139,.25)}.card.rose:hover{border-color:var(--rose);box-shadow:0 8px 40px rgba(232,107,139,.15)}.card.rose::before{background:radial-gradient(circle at top right,rgba(232,107,139,.08),transparent 60%);opacity:1}
+.card.rose .card-title{color:var(--rose)}
+
+.card-icon{font-size:2rem;margin-bottom:14px;display:block}
+.card-title{font-family:'Playfair Display',serif;font-size:1.2rem;font-weight:700;margin-bottom:6px}
+.card.gold .card-title{color:var(--gold)}.card.teal .card-title{color:var(--teal)}.card.lav .card-title{color:var(--lav)}
+.card-desc{font-size:12px;color:var(--muted);line-height:1.6}
+.card-arrow{position:absolute;bottom:20px;right:20px;font-size:18px;opacity:.3;transition:opacity .2s,transform .2s}
+.card:hover .card-arrow{opacity:.8;transform:translateX(3px)}
+
+.footer{color:var(--muted);font-size:11px;letter-spacing:.5px;margin-top:8px}
+@media(max-width:600px){
+  h1{font-size:1.8rem}
+  .subtitle{margin-bottom:28px}
+  .cards{grid-template-columns:1fr;gap:12px}
+  .card{padding:20px 18px}
+  .card-icon{font-size:1.6rem;margin-bottom:10px}
+  .card-title{font-size:1.05rem}
+  .event-tag{margin-bottom:14px}
+}
+</style>
+</head>
+<body>
+<div class="bg-orb o1"></div>
+<div class="bg-orb o2"></div>
+<div class="bg-orb o3"></div>
+
+<div class="wrapper">
+  <div class="event-tag">CRPTG · Edición 11</div>
+  <h1>Panel <span>Central</span></h1>
+  <p class="subtitle">Selecciona una sección para continuar</p>
+
+  <div class="cards">
+    <a href="participantes.html" class="card gold">
+      <span class="card-icon">👥</span>
+      <div class="card-title">Participantes</div>
+      <div class="card-desc">Lista completa de inscritos, filtros por congregación, categoría, hospedaje y más.</div>
+      <span class="card-arrow">→</span>
+    </a>
+    <a href="comida.html" class="card teal">
+      <span class="card-icon">🍽️</span>
+      <div class="card-title">Control de Comida</div>
+      <div class="card-desc">Registro de retiro de alimentación en tiempo real. Escanea QR o marca manualmente.</div>
+      <span class="card-arrow">→</span>
+    </a>
+    <a href="dashboard.html" class="card lav">
+      <span class="card-icon">📊</span>
+      <div class="card-title">Dashboard</div>
+      <div class="card-desc">Estado general de entregas: totales, pendientes y retirados por categoría de edad.</div>
+      <span class="card-arrow">→</span>
+    </a>
+    <a href="aseo.html" class="card gold">
+      <span class="card-icon">🧹</span>
+      <div class="card-title">Aseo</div>
+      <div class="card-desc">Turnos, personas asignadas, responsabilidades y asistencia del equipo de aseo.</div>
+      <span class="card-arrow">→</span>
+    </a>
+    <a href="cocina.html" class="card teal">
+      <span class="card-icon">👨‍🍳</span>
+      <div class="card-title">Cocina</div>
+      <div class="card-desc">Turnos, personas asignadas, responsabilidades y asistencia del equipo de cocina.</div>
+      <span class="card-arrow">→</span>
+    </a>
+    <a href="seguridad.html" class="card rose">
+      <span class="card-icon">🛡️</span>
+      <div class="card-title">Seguridad</div>
+      <div class="card-desc">Turnos nocturnos 11 PM – 5 AM, personas asignadas por día y asistencia.</div>
+      <span class="card-arrow">→</span>
+    </a>
+    <a href="hospedaje.html" class="card lav">
+      <span class="card-icon">🏨</span>
+      <div class="card-title">Hospedaje</div>
+      <div class="card-desc">Asignación de habitaciones en Cedros y Gosén. Edificio, planta alta o baja.</div>
+      <span class="card-arrow">→</span>
+    </a>
+    <a href="ujieres.html" class="card gold">
+      <span class="card-icon">🎟️</span>
+      <div class="card-title">Ujieres</div>
+      <div class="card-desc">Turnos para programas nocturnos, sesiones y sábado. Asignación por turno y cantidad.</div>
+      <span class="card-arrow">→</span>
+    </a>
+    <a href="pedidos-qr.html" class="card teal">
+      <span class="card-icon">🧾</span>
+      <div class="card-title">Pedidos de Comida</div>
+      <div class="card-desc">Control de platos comprados por separado. Genera QR por pedido y registra entregas en tiempo real.</div>
+      <span class="card-arrow">→</span>
+    </a>
+  </div>
+
+  <div class="footer">CRPTG 11 · Sistema de gestión de participantes</div>
+</div>
+
+<!-- ── OVERLAY DE ACCESO ───────────────────────────────── -->
+<div id="acceso-overlay" style="display:none;position:fixed;inset:0;background:rgba(11,13,19,.97);z-index:9999;align-items:center;justify-content:center;flex-direction:column">
+  <div style="background:#13161f;border:1px solid #22263a;border-radius:24px;padding:40px 42px;text-align:center;max-width:360px;width:90%;box-shadow:0 24px 64px rgba(0,0,0,.6)">
+    <div style="font-size:2.4rem;margin-bottom:12px">🔐</div>
+    <div style="font-family:'Playfair Display',serif;font-size:1.3rem;color:#e8e8f0;margin-bottom:6px">Acceso restringido</div>
+    <div style="color:#7a7d95;font-size:13px;margin-bottom:24px;line-height:1.5">Esta área es solo para personal de logística.<br>Ingresa tu clave para continuar.</div>
+    <input type="password" id="acceso-input" placeholder="••••••••"
+      onkeydown="if(event.key==='Enter')verificarAcceso()"
+      style="width:100%;background:#0b0d13;border:1px solid #22263a;color:#e8e8f0;font-family:'DM Sans',sans-serif;font-size:15px;padding:11px 16px;border-radius:12px;outline:none;text-align:center;letter-spacing:3px;margin-bottom:10px;transition:border-color .2s;box-sizing:border-box"
+      onfocus="this.style.borderColor='#e8a838'" onblur="this.style.borderColor='#22263a'">
+    <button onclick="verificarAcceso()" style="width:100%;padding:12px;border-radius:12px;border:none;background:#e8a838;color:#000;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:700;cursor:pointer">Ingresar</button>
+    <div id="acceso-error" style="color:#e86b8b;font-size:12px;margin-top:10px;min-height:16px"></div>
+    <div style="margin-top:22px;padding-top:18px;border-top:1px solid #22263a">
+      <div style="color:#7a7d95;font-size:12px;margin-bottom:10px">¿Eres participante del evento?</div>
+      <a href="https://logistica-crptg11.netlify.app/bienvenida.html" style="display:inline-block;padding:9px 22px;border-radius:10px;border:1px solid #22263a;color:#7a7d95;font-family:'DM Sans',sans-serif;font-size:13px;text-decoration:none">Ver información del evento →</a>
+    </div>
+  </div>
+</div>
+
+<script>
+  (function() {
+    const CLAVE_VER    = "LogisticaCRPTG11";
+    const CLAVE_OPERAR = "IglesiaRestaurada2026";
+
+    const tieneAcceso =
+      localStorage.getItem("crptg11-auth") === "ok" ||
+      localStorage.getItem("crptg11-ver")  === "ok";
+
+    if (!tieneAcceso) {
+      document.getElementById("acceso-overlay").style.display = "flex";
+    }
+    document.documentElement.style.visibility = "visible";
+
+    window.verificarAcceso = function() {
+      const val   = document.getElementById("acceso-input").value.trim();
+      const error = document.getElementById("acceso-error");
+      if (val === CLAVE_OPERAR) {
+        localStorage.setItem("crptg11-auth", "ok");
+        document.getElementById("acceso-overlay").style.display = "none";
+      } else if (val === CLAVE_VER) {
+        localStorage.setItem("crptg11-ver", "ok");
+        document.getElementById("acceso-overlay").style.display = "none";
+      } else {
+        error.textContent = "Clave incorrecta";
+        document.getElementById("acceso-input").value = "";
+        document.getElementById("acceso-input").focus();
+      }
+    };
+  })();
+</script>
+</body>
+</html>

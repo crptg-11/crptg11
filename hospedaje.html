@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CRPTG 11 — Hospedaje</title>
+<script>
+  const tieneAcceso = localStorage.getItem("crptg11-auth")==="ok"||localStorage.getItem("crptg11-ver")==="ok";
+  if(!tieneAcceso){ document.documentElement.style.visibility="hidden"; }
+</script>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#0f1117;--surface:#181b24;--border:#2a2d40;--gold:#e8a838;--teal:#3ecfb8;--rose:#e86b8b;--lav:#8b7fe8;--text:#e8e8f0;--muted:#7a7d95}
+body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min-height:100vh}
+.header{background:var(--surface);border-bottom:1px solid var(--border);padding:14px 28px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px}
+.header-left{display:flex;align-items:center;gap:14px}
+.back{color:var(--muted);font-size:13px;text-decoration:none;transition:color .15s}.back:hover{color:var(--gold)}
+.header-title{font-family:'Playfair Display',serif;font-size:1.15rem;color:var(--gold)}
+.header-sub{font-size:11px;color:var(--muted);margin-top:3px;display:flex;align-items:center;gap:10px}
+.sync-dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--teal);animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+.auth-badge{display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:100px;font-size:11px;font-weight:600;cursor:pointer}
+.auth-badge.locked{background:rgba(232,107,139,.12);color:var(--rose);border:1px solid rgba(232,107,139,.3)}
+.auth-badge.unlocked{background:rgba(62,207,184,.12);color:var(--teal);border:1px solid rgba(62,207,184,.3)}
+.stats-bar{display:flex;gap:18px;flex-wrap:wrap}
+.stat{text-align:center}
+.stat-num{font-family:'Playfair Display',serif;font-size:1.5rem;font-weight:900;line-height:1}
+.stat-lbl{font-size:10px;color:var(--muted);font-weight:600;letter-spacing:1px;text-transform:uppercase}
+.stat.total .stat-num{color:var(--gold)}.stat.cedros .stat-num{color:var(--teal)}.stat.gosen .stat-num{color:var(--lav)}.stat.pen .stat-num{color:var(--rose)}
+/* Filtros en niveles */
+.filters-wrap{background:var(--surface);border-bottom:1px solid var(--border)}
+.filter-row{padding:8px 28px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.filter-row+.filter-row{border-top:1px solid rgba(42,45,64,.5)}
+.filter-label{font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--muted);white-space:nowrap;margin-right:4px}
+.fbtn{padding:5px 14px;border-radius:100px;border:1px solid var(--border);background:transparent;color:var(--muted);font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .15s}
+.fbtn:hover{border-color:var(--gold);color:var(--gold)}
+.fbtn.on{background:rgba(232,168,56,.15);border-color:var(--gold);color:var(--gold)}
+.fbtn.c-teal.on{background:rgba(62,207,184,.15);border-color:var(--teal);color:var(--teal)}
+.fbtn.c-lav.on{background:rgba(139,127,232,.15);border-color:var(--lav);color:var(--lav)}
+.fbtn.c-rose.on{background:rgba(232,107,139,.15);border-color:var(--rose);color:var(--rose)}
+.search-wrap{position:relative;margin-left:auto}
+.search-wrap input{background:var(--surface);border:1px solid var(--border);color:var(--text);font-family:'DM Sans',sans-serif;font-size:13px;padding:8px 12px 8px 32px;border-radius:8px;width:220px;outline:none;transition:border-color .2s}
+.search-wrap input:focus{border-color:var(--gold)}
+.search-wrap::before{content:'🔍';position:absolute;left:9px;top:50%;transform:translateY(-50%);font-size:12px;opacity:.38}
+.main{padding:22px 28px}
+.table-wrap{background:var(--surface);border:1px solid var(--border);border-radius:13px;overflow:auto}
+table{width:100%;border-collapse:collapse}
+th{background:#1f2333;color:var(--muted);font-size:10px;font-weight:600;letter-spacing:1px;text-transform:uppercase;padding:9px 13px;text-align:left;border-bottom:1px solid var(--border);white-space:nowrap}
+td{padding:9px 13px;font-size:13px;border-bottom:1px solid rgba(42,45,64,.5);vertical-align:middle}
+tr:last-child td{border-bottom:none}tr:hover td{background:rgba(232,168,56,.03)}
+.badge{display:inline-block;padding:2px 9px;border-radius:100px;font-size:11px;font-weight:600}
+.b-cedros{background:rgba(62,207,184,.15);color:var(--teal)}
+.b-gosen{background:rgba(139,127,232,.15);color:var(--lav)}
+.b-alta{background:rgba(232,168,56,.15);color:var(--gold)}
+.b-baja{background:rgba(232,107,139,.15);color:var(--rose)}
+.b-edif{background:rgba(139,127,232,.1);color:var(--lav);font-size:10px}
+.b-pen{background:rgba(232,107,139,.12);color:var(--rose)}
+.num-hab{font-family:'Playfair Display',serif;font-size:1.1rem;font-weight:700;color:var(--gold)}
+.sel-inline{padding:4px 8px;border-radius:7px;border:1px solid var(--border);background:#1f2333;color:var(--text);font-family:'DM Sans',sans-serif;font-size:12px;outline:none;cursor:pointer;transition:border-color .2s;max-width:160px}
+.sel-inline:focus{border-color:var(--gold)}.sel-inline:disabled{opacity:.35;cursor:not-allowed}
+.sel-inline option{background:var(--bg)}
+.inp-hab{width:72px;padding:4px 8px;border-radius:7px;border:1px solid var(--border);background:#1f2333;color:var(--text);font-family:'DM Sans',sans-serif;font-size:12px;outline:none;text-align:center;transition:border-color .2s}
+.inp-hab:focus{border-color:var(--gold)}
+.auth-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:200;align-items:center;justify-content:center}
+.auth-overlay.show{display:flex}
+.auth-box{background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:34px 38px;text-align:center;max-width:340px;width:90%}
+.auth-icon{font-size:2.2rem;margin-bottom:10px}
+.auth-title{font-family:'Playfair Display',serif;font-size:1.2rem;margin-bottom:5px}
+.auth-sub{color:var(--muted);font-size:12px;margin-bottom:20px}
+.auth-input{width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);font-family:'DM Sans',sans-serif;font-size:14px;padding:10px 14px;border-radius:10px;outline:none;text-align:center;letter-spacing:2px;margin-bottom:10px;transition:border-color .2s}
+.auth-input:focus{border-color:var(--gold)}
+.auth-btn{width:100%;padding:10px;border-radius:10px;border:none;background:var(--gold);color:#000;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:700;cursor:pointer}
+.auth-error{color:var(--rose);font-size:12px;margin-top:8px;min-height:16px}
+.alert{position:fixed;top:20px;right:20px;background:var(--teal);color:#000;padding:12px 20px;border-radius:10px;font-weight:600;font-size:13px;z-index:999;transform:translateX(200px);opacity:0;transition:all .3s}
+.alert.show{transform:translateX(0);opacity:1}.alert.error{background:var(--rose);color:#fff}
+.empty{text-align:center;padding:40px;color:var(--muted);font-size:14px}
+.info-lbl{margin-top:7px;color:var(--muted);font-size:12px}
+@media(max-width:600px){.main{padding:14px 12px}.header,.filter-row{padding:10px 12px}.search-wrap{margin-left:0;width:100%}.search-wrap input{width:100%}}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-left">
+    <a href="index.html" class="back">← Panel Central</a>
+    <div>
+      <div class="header-title">🏨 Hospedaje — CRPTG 11</div>
+      <div class="header-sub">
+        <span class="sync-dot"></span> Sincronizado en tiempo real
+        <span class="auth-badge locked" id="auth-badge" onclick="mostrarAuth()">🔒 Solo lectura</span>
+      </div>
+    </div>
+  </div>
+  <div class="stats-bar">
+    <div class="stat total"><div class="stat-num" id="s-total">–</div><div class="stat-lbl">Total</div></div>
+    <div class="stat cedros"><div class="stat-num" id="s-cedros">–</div><div class="stat-lbl">Cedros</div></div>
+    <div class="stat gosen"><div class="stat-num" id="s-gosen">–</div><div class="stat-lbl">Gosén</div></div>
+    <div class="stat pen"><div class="stat-num" id="s-pen">–</div><div class="stat-lbl">Sin asignar</div></div>
+  </div>
+</div>
+
+<div class="filters-wrap">
+  <!-- Nivel 1: Lugar -->
+  <div class="filter-row">
+    <span class="filter-label">Lugar:</span>
+    <button class="fbtn on"     onclick="setLugar('todos',this)">Todos</button>
+    <button class="fbtn c-teal" onclick="setLugar('Cedros',this)">🌿 Cedros</button>
+    <button class="fbtn c-lav"  onclick="setLugar('Gosén',this)">🏛️ Gosén</button>
+    <button class="fbtn c-rose" onclick="setLugar('sin',this)">Sin asignar</button>
+    <div class="search-wrap"><input type="text" id="search" placeholder="Buscar participante..." oninput="renderTabla()"></div>
+  </div>
+  <!-- Nivel 2: Edificio (dinámico) -->
+  <div class="filter-row" id="row-edif" style="display:none">
+    <span class="filter-label" id="lbl-edif">Edificio:</span>
+    <div id="btns-edif" style="display:flex;gap:8px;flex-wrap:wrap"></div>
+  </div>
+  <!-- Nivel 3: Habitación (dinámico) -->
+  <div class="filter-row" id="row-hab" style="display:none">
+    <span class="filter-label">Habitación:</span>
+    <div id="btns-hab" style="display:flex;gap:8px;flex-wrap:wrap"></div>
+  </div>
+</div>
+
+<div class="main">
+  <div class="table-wrap">
+    <table>
+      <thead><tr>
+        <th>ID</th><th>Nombre</th><th>Congregación</th>
+        <th>Habitación</th><th>Lugar</th><th>Edificio</th><th>Planta</th>
+      </tr></thead>
+      <tbody id="tbody"></tbody>
+    </table>
+  </div>
+  <div class="info-lbl" id="info-lbl"></div>
+</div>
+
+<!-- Auth overlay edición -->
+<div class="auth-overlay" id="auth-overlay">
+  <div class="auth-box">
+    <div class="auth-icon">🔐</div>
+    <div class="auth-title">Desbloquear edición</div>
+    <div class="auth-sub">Ingresa la clave para asignar habitaciones</div>
+    <input type="password" class="auth-input" id="auth-input" placeholder="••••••••"
+      onkeydown="if(event.key==='Enter')verificarClaveEdicion()">
+    <button class="auth-btn" onclick="verificarClaveEdicion()">Desbloquear</button>
+    <div class="auth-error" id="auth-error"></div>
+  </div>
+</div>
+
+<div id="acceso-overlay" style="display:none;position:fixed;inset:0;background:rgba(11,13,19,.97);z-index:9999;align-items:center;justify-content:center;flex-direction:column">
+  <div style="background:#13161f;border:1px solid #22263a;border-radius:24px;padding:40px 42px;text-align:center;max-width:360px;width:90%;box-shadow:0 24px 64px rgba(0,0,0,.6)">
+    <div style="font-size:2.4rem;margin-bottom:12px">🔐</div>
+    <div style="font-family:'Playfair Display',serif;font-size:1.3rem;color:#e8e8f0;margin-bottom:6px">Acceso restringido</div>
+    <div style="color:#7a7d95;font-size:13px;margin-bottom:24px;line-height:1.5">Esta área es solo para personal de logística.<br>Ingresa tu clave para continuar.</div>
+    <input type="password" id="acceso-input" placeholder="••••••••"
+      onkeydown="if(event.key==='Enter')verificarAcceso()"
+      style="width:100%;background:#0b0d13;border:1px solid #22263a;color:#e8e8f0;font-family:'DM Sans',sans-serif;font-size:15px;padding:11px 16px;border-radius:12px;outline:none;text-align:center;letter-spacing:3px;margin-bottom:10px;transition:border-color .2s;box-sizing:border-box"
+      onfocus="this.style.borderColor='#e8a838'" onblur="this.style.borderColor='#22263a'">
+    <button onclick="verificarAcceso()" style="width:100%;padding:12px;border-radius:12px;border:none;background:#e8a838;color:#000;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:700;cursor:pointer">Ingresar</button>
+    <div id="acceso-error" style="color:#e86b8b;font-size:12px;margin-top:10px;min-height:16px"></div>
+    <div style="margin-top:22px;padding-top:18px;border-top:1px solid #22263a">
+      <div style="color:#7a7d95;font-size:12px;margin-bottom:10px">¿Eres participante del evento?</div>
+      <a href="https://logistica-crptg11.netlify.app/bienvenida.html" style="display:inline-block;padding:9px 22px;border-radius:10px;border:1px solid #22263a;color:#7a7d95;font-family:'DM Sans',sans-serif;font-size:13px;text-decoration:none">Ver información del evento →</a>
+    </div>
+  </div>
+</div>
+
+<div class="alert" id="alert"></div>
+
+<script type="module">
+import { initializeApp }  from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+
+const firebaseConfig = {
+  apiKey:"AIzaSyAcW5Gr3CrBofcwp4ir_J9RRldEx4aNjNs",
+  authDomain:"crptg-11.firebaseapp.com",
+  databaseURL:"https://crptg-11-default-rtdb.firebaseio.com",
+  projectId:"crptg-11",
+  storageBucket:"crptg-11.firebasestorage.app",
+  messagingSenderId:"101435991351",
+  appId:"1:101435991351:web:f645559a5a68a235f2e6b2"
+};
+const app = initializeApp(firebaseConfig);
+const db  = getDatabase(app);
+
+const SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vS-FHGAAPJvj_dQEHyN09G1xVJWfblbjGrDgjCREmoi19ucjl1cuPLm5fR0ZHvcmZZ6PPdrEQ7g1pSV/pub?gid=1479802457&single=true&output=csv";
+const CLAVE_EDICION = "IglesiaRestaurada2026";
+const AUTH_EDICION  = "crptg11-hosp-edit";
+
+// Opciones de edificio según lugar
+const EDIFICIOS_GOSEN  = ["Galilea","Galaad","Canaan","Casa Pastoral"];
+const MODULOS_CEDROS   = ["Módulo 1 — Damas","Módulo 2 — Damas","Módulo 3 — Caballeros","Módulo 4 — Caballeros","Módulo 5","Módulo 6","Habitación 1","Habitación 2"];
+// Habitaciones por edificio (para el filtro de nivel 3)
+const HABS_POR_EDIF = {
+  "Galilea":["1","2","3","4","5","6","7","8"],
+  "Galaad": ["1","2","3","4","5"],
+  "Canaan": ["1","2","3"],
+  "Casa Pastoral":["1","2","3"],
+  "Módulo 1 — Damas":["1","2","3","4","5"],
+  "Módulo 2 — Damas":["1","2","3","4","5","6"],
+  "Módulo 3 — Caballeros":["1","2","3","4","5","6","7"],
+  "Módulo 4 — Caballeros":["1","2","3","4","5","6","7"],
+  "Módulo 5":["1","2","3"],
+  "Módulo 6":["1"],
+  "Habitación 1":["1"],
+  "Habitación 2":["1"],
+};
+
+let participantes = [];
+let asignaciones  = {};
+let filtroLugar   = "todos";
+let filtroEdif    = "todos";
+let filtroHab     = "todos";
+
+// ── AUTH ──────────────────────────────────────────────────────
+const puedeEditar = () => localStorage.getItem(AUTH_EDICION) === "ok";
+
+function mostrarAuth(){
+  if(puedeEditar()){
+    if(confirm("¿Cerrar sesión de edición?")){ localStorage.removeItem(AUTH_EDICION); actualizarBadge(); renderTabla(); }
+    return;
+  }
+  document.getElementById("auth-overlay").classList.add("show");
+  setTimeout(()=>document.getElementById("auth-input").focus(),100);
+}
+window.mostrarAuth = mostrarAuth;
+
+function verificarClaveEdicion(){
+  const v = document.getElementById("auth-input").value;
+  if(v===CLAVE_EDICION){
+    localStorage.setItem(AUTH_EDICION,"ok");
+    document.getElementById("auth-overlay").classList.remove("show");
+    document.getElementById("auth-input").value="";
+    actualizarBadge(); renderTabla(); mostrarAlerta("✅ Edición desbloqueada");
+  } else {
+    document.getElementById("auth-error").textContent="Clave incorrecta";
+    document.getElementById("auth-input").value="";
+  }
+}
+window.verificarClaveEdicion = verificarClaveEdicion;
+
+function actualizarBadge(){
+  const b=document.getElementById("auth-badge");
+  if(puedeEditar()){ b.className="auth-badge unlocked"; b.innerHTML="🔓 Edición activa"; }
+  else              { b.className="auth-badge locked";   b.innerHTML="🔒 Solo lectura"; }
+}
+
+// ── FIREBASE ──────────────────────────────────────────────────
+onValue(ref(db,"hospedaje"), snap=>{
+  asignaciones = snap.val() || {};
+  actualizarFiltrosEdif();
+  actualizarStats(); renderTabla();
+});
+
+async function guardarAsignacion(id, campo, valor){
+  if(!puedeEditar()){ mostrarAuth(); return; }
+  const actual = {...(asignaciones[id]||{})};
+  actual[campo] = valor;
+  if(campo==="lugar" && valor==="Cedros"){ actual.edificio=""; actual.planta="Baja"; }
+  if(campo==="lugar" && valor==="Gosén") { actual.planta=""; }
+  await set(ref(db,`hospedaje/${id}`), actual);
+}
+window.guardarAsignacion = guardarAsignacion;
+
+// ── FILTROS ───────────────────────────────────────────────────
+function setLugar(v, el){
+  filtroLugar=v; filtroEdif="todos"; filtroHab="todos";
+  document.querySelectorAll(".filter-row .fbtn").forEach(b=>b.classList.remove("on"));
+  if(el) el.classList.add("on");
+  actualizarFiltrosEdif(); renderTabla();
+}
+window.setLugar=setLugar;
+
+function setEdif(v, el){
+  filtroEdif=v; filtroHab="todos";
+  document.querySelectorAll("#btns-edif .fbtn").forEach(b=>b.classList.remove("on"));
+  document.querySelectorAll("#btns-hab  .fbtn").forEach(b=>b.classList.remove("on"));
+  if(el) el.classList.add("on");
+  actualizarFiltrosHab(); renderTabla();
+}
+window.setEdif=setEdif;
+
+function setHab(v, el){
+  filtroHab=v;
+  document.querySelectorAll("#btns-hab .fbtn").forEach(b=>b.classList.remove("on"));
+  if(el) el.classList.add("on");
+  renderTabla();
+}
+window.setHab=setHab;
+
+function actualizarFiltrosEdif(){
+  const rowEdif = document.getElementById("row-edif");
+  const lblEdif = document.getElementById("lbl-edif");
+  const btnsEdif= document.getElementById("btns-edif");
+
+  if(filtroLugar==="todos"||filtroLugar==="sin"){ rowEdif.style.display="none"; return; }
+
+  const opciones = filtroLugar==="Cedros" ? MODULOS_CEDROS : EDIFICIOS_GOSEN;
+  lblEdif.textContent = filtroLugar==="Cedros" ? "Módulo / Hab.:" : "Edificio:";
+  btnsEdif.innerHTML  = `<button class="fbtn on" onclick="setEdif('todos',this)">Todos</button>`
+    + opciones.map(e=>`<button class="fbtn" onclick="setEdif('${e}',this)">${e}</button>`).join("");
+  rowEdif.style.display="flex";
+  document.getElementById("row-hab").style.display="none";
+}
+
+function actualizarFiltrosHab(){
+  const rowHab = document.getElementById("row-hab");
+  const btnsHab= document.getElementById("btns-hab");
+  if(filtroEdif==="todos"){ rowHab.style.display="none"; return; }
+  const habs = HABS_POR_EDIF[filtroEdif] || [];
+  if(habs.length<=1){ rowHab.style.display="none"; return; }
+  btnsHab.innerHTML = `<button class="fbtn on" onclick="setHab('todos',this)">Todas</button>`
+    + habs.map(h=>`<button class="fbtn" onclick="setHab('${h}',this)">#${h}</button>`).join("");
+  rowHab.style.display="flex";
+}
+
+// ── CSV ────────────────────────────────────────────────────────
+function parseCSV(text){
+  const rows=[]; let cur="",inQ=false,row=[];
+  for(let i=0;i<text.length;i++){const ch=text[i];
+    if(ch==='"'){if(inQ&&text[i+1]==='"'){cur+='"';i++;}else inQ=!inQ;}
+    else if(ch===','&&!inQ){row.push(cur);cur="";}
+    else if((ch==='\n'||ch==='\r')&&!inQ){if(ch==='\r'&&text[i+1]==='\n')i++;row.push(cur);cur="";if(row.some(c=>c!==""))rows.push(row);row=[];}
+    else cur+=ch;
+  }
+  if(cur||row.length){row.push(cur);rows.push(row);}return rows;
+}
+
+async function cargarDatos(){
+  const proxies=[
+    "https://corsproxy.io/?url="+encodeURIComponent(SHEET_CSV_URL),
+    "https://api.allorigins.win/raw?url="+encodeURIComponent(SHEET_CSV_URL),
+    "https://thingproxy.freeboard.io/fetch/"+SHEET_CSV_URL,
+    "https://api.codetabs.com/v1/proxy?quest="+encodeURIComponent(SHEET_CSV_URL),
+  ];
+  let text;
+  for(const u of proxies){try{const r=await fetch(u,{cache:"no-store"});if(r.ok){const t=await r.text();if(t.includes(",")&&t.length>100){text=t;break;}}}catch(e){}}
+  if(!text){mostrarAlerta("⚠️ No se pudo cargar la hoja",true);return;}
+  const rows=parseCSV(text);
+  const headers=rows[0].map(x=>x.replace(/^"|"$/g,"").trim());
+  const col=(...names)=>{for(const n of names){const i=headers.findIndex(h=>h===n);if(i!==-1)return i;}return -1;};
+  const iID=col("ID","id"), iNom=col("Nombre completo","Nombre","nombre"),
+        iCong=col("Congregación","congregacion","Congregacion"),
+        iHosp=col("¿Necesita hospedaje?","Hospedaje","hospedaje","Cama");
+  participantes=[];
+  for(let i=1;i<rows.length;i++){
+    const r=rows[i];
+    if(!/^s[ií]/i.test((r[iHosp]||"").trim())) continue;
+    const id=(r[iID]||"").replace(/^"|"$/g,"").trim();
+    if(!id) continue;
+    participantes.push({id, nombre:(r[iNom]||"").replace(/^"|"$/g,"").trim(), cong:(r[iCong]||"").replace(/^"|"$/g,"").trim()});
+  }
+  actualizarStats(); renderTabla();
+}
+
+// ── STATS ──────────────────────────────────────────────────────
+function actualizarStats(){
+  const total  = participantes.length;
+  const cedros = participantes.filter(p=>asignaciones[p.id]?.lugar==="Cedros").length;
+  const gosen  = participantes.filter(p=>asignaciones[p.id]?.lugar==="Gosén").length;
+  const sin    = participantes.filter(p=>!asignaciones[p.id]?.lugar).length;
+  document.getElementById("s-total").textContent  = total;
+  document.getElementById("s-cedros").textContent = cedros;
+  document.getElementById("s-gosen").textContent  = gosen;
+  document.getElementById("s-pen").textContent    = sin;
+}
+
+// ── RENDER ────────────────────────────────────────────────────
+function renderTabla(){
+  const q=document.getElementById("search").value.toLowerCase();
+  const editar=puedeEditar();
+
+  const lista=participantes.filter(p=>{
+    const a=asignaciones[p.id]||{};
+    if(filtroLugar==="Cedros" && a.lugar!=="Cedros") return false;
+    if(filtroLugar==="Gosén"  && a.lugar!=="Gosén")  return false;
+    if(filtroLugar==="sin"    && a.lugar)             return false;
+    if(filtroEdif!=="todos"   && a.edificio!==filtroEdif) return false;
+    if(filtroHab!=="todos"    && a.hab!==filtroHab)       return false;
+    if(q && !p.nombre.toLowerCase().includes(q) && !p.id.toLowerCase().includes(q)) return false;
+    return true;
+  });
+
+  document.getElementById("info-lbl").textContent=`${lista.length} de ${participantes.length} personas con hospedaje`;
+
+  if(!lista.length){
+    document.getElementById("tbody").innerHTML='<tr><td colspan="7" class="empty">Sin resultados</td></tr>';
+    return;
+  }
+
+  document.getElementById("tbody").innerHTML=lista.map(p=>{
+    const a=asignaciones[p.id]||{};
+    const lugar=a.lugar||"", edif=a.edificio||"", planta=a.planta||"", hab=a.hab||"";
+    const isCed=lugar==="Cedros";
+    const opcEdif=isCed?MODULOS_CEDROS:EDIFICIOS_GOSEN;
+
+    if(editar){
+      const optsLugar=`<option value="">— Lugar —</option>
+        <option${lugar==="Cedros"?" selected":""} value="Cedros">Cedros</option>
+        <option${lugar==="Gosén"?" selected":""} value="Gosén">Gosén</option>`;
+      const optsEdif=lugar
+        ? `<option value="">— Edificio —</option>${opcEdif.map(e=>`<option${edif===e?" selected":""}>${e}</option>`).join("")}`
+        : `<option value="">Elige lugar primero</option>`;
+      const optsPlanta=isCed
+        ? `<option value="Baja" selected>Baja</option>`
+        : `<option value="">— Planta —</option><option${planta==="Baja"?" selected":""} value="Baja">Baja</option><option${planta==="Alta"?" selected":""} value="Alta">Alta</option>`;
+
+      return `<tr>
+        <td style="color:var(--muted);font-size:12px">${p.id}</td>
+        <td style="font-weight:600">${p.nombre}</td>
+        <td style="color:var(--muted)">${p.cong}</td>
+        <td><input class="inp-hab" value="${hab}" placeholder="Hab." onchange="guardarAsignacion('${p.id}','hab',this.value)"></td>
+        <td><select class="sel-inline" onchange="guardarAsignacion('${p.id}','lugar',this.value).then(()=>renderTabla())">${optsLugar}</select></td>
+        <td><select class="sel-inline" onchange="guardarAsignacion('${p.id}','edificio',this.value)" ${!lugar?"disabled":""}>${optsEdif}</select></td>
+        <td><select class="sel-inline" onchange="guardarAsignacion('${p.id}','planta',this.value)" ${isCed?"disabled":""}>${optsPlanta}</select></td>
+      </tr>`;
+    } else {
+      const bLugar =lugar?`<span class="badge ${lugar==="Cedros"?"b-cedros":"b-gosen"}">${lugar}</span>`:`<span class="badge b-pen">Sin asignar</span>`;
+      const bEdif  =edif?`<span class="badge b-edif">${edif}</span>`:`<span style="color:var(--muted)">—</span>`;
+      const bPlanta=planta?`<span class="badge ${planta==="Alta"?"b-alta":"b-baja"}">P. ${planta}</span>`:`<span style="color:var(--muted)">—</span>`;
+      const nHab   =hab?`<span class="num-hab">${hab}</span>`:`<span style="color:var(--muted)">—</span>`;
+      return `<tr>
+        <td style="color:var(--muted);font-size:12px">${p.id}</td>
+        <td style="font-weight:600">${p.nombre}</td>
+        <td style="color:var(--muted)">${p.cong}</td>
+        <td>${nHab}</td><td>${bLugar}</td><td>${bEdif}</td><td>${bPlanta}</td>
+      </tr>`;
+    }
+  }).join("");
+}
+
+function mostrarAlerta(msg,err=false){
+  const a=document.getElementById("alert");
+  a.textContent=msg;a.className="alert show"+(err?" error":"");
+  setTimeout(()=>a.className="alert",3000);
+}
+
+actualizarBadge();
+cargarDatos();
+</script>
+
+<script>
+(function(){
+  const ok=localStorage.getItem("crptg11-auth")==="ok"||localStorage.getItem("crptg11-ver")==="ok";
+  if(!ok) document.getElementById("acceso-overlay").style.display="flex";
+  document.documentElement.style.visibility="visible";
+  window.verificarAcceso=function(){
+    const v=document.getElementById("acceso-input").value.trim();
+    const e=document.getElementById("acceso-error");
+    if(v==="IglesiaRestaurada2026"){localStorage.setItem("crptg11-auth","ok");document.getElementById("acceso-overlay").style.display="none";}
+    else if(v==="LogisticaCRPTG11"){localStorage.setItem("crptg11-ver","ok");document.getElementById("acceso-overlay").style.display="none";}
+    else{e.textContent="Clave incorrecta";document.getElementById("acceso-input").value="";document.getElementById("acceso-input").focus();}
+  };
+})();
+</script>
+</body>
+</html>

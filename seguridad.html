@@ -1,0 +1,506 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CRPTG 11 — Seguridad</title>
+<script>
+  const tieneAcceso = localStorage.getItem("crptg11-auth")==="ok"||localStorage.getItem("crptg11-ver")==="ok";
+  if(!tieneAcceso){document.documentElement.style.visibility="hidden";}
+</script>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#0f1117;--surface:#181b24;--border:#2a2d40;--accent:#e86b8b;--text:#e8e8f0;--muted:#7a7d95}
+body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min-height:100vh}
+.header{background:var(--surface);border-bottom:1px solid var(--border);padding:14px 28px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px}
+.header-left{display:flex;align-items:center;gap:14px}
+.back{color:var(--muted);font-size:13px;text-decoration:none;transition:color .15s}.back:hover{color:var(--accent)}
+.header-title{font-family:'Playfair Display',serif;font-size:1.15rem;color:var(--accent)}
+.header-sub{font-size:11px;color:var(--muted);margin-top:3px}
+.main{max-width:1100px;margin:0 auto;padding:28px}
+.section-title{font-family:'Playfair Display',serif;font-size:1.1rem;color:var(--accent);margin-bottom:14px;display:flex;align-items:center;gap:8px}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:20px;margin-bottom:20px}
+.dia-tabs{display:flex;gap:8px;margin-bottom:18px;flex-wrap:wrap}
+.dtab{padding:7px 18px;border-radius:100px;border:1px solid var(--border);background:transparent;color:var(--muted);font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .15s}
+.dtab:hover{border-color:var(--accent);color:var(--accent)}
+.dtab.on{background:rgba(232,107,139,.15);border-color:var(--accent);color:var(--accent)}
+.turno-card{background:#1f2333;border:1px solid var(--border);border-radius:10px;padding:16px;margin-bottom:12px}
+.turno-hora{font-size:12px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--accent);margin-bottom:10px;display:flex;align-items:center;gap:8px}
+.turno-hora span{background:rgba(232,107,139,.12);padding:3px 10px;border-radius:100px}
+table{width:100%;border-collapse:collapse}
+th{background:#1f2333;color:var(--muted);font-size:10px;font-weight:600;letter-spacing:1px;text-transform:uppercase;padding:9px 13px;text-align:left;border-bottom:1px solid var(--border)}
+td{padding:9px 13px;font-size:13px;border-bottom:1px solid rgba(42,45,64,.5);vertical-align:middle}
+tr:last-child td{border-bottom:none}tr:hover td{background:rgba(232,107,139,.03)}
+.badge{display:inline-block;padding:2px 9px;border-radius:100px;font-size:11px;font-weight:600;background:rgba(232,107,139,.15);color:var(--accent)}
+.check-btn{padding:5px 14px;border-radius:7px;border:1px solid rgba(232,107,139,.4);background:transparent;color:var(--accent);font-size:12px;cursor:pointer;font-family:'DM Sans',sans-serif;font-weight:600;transition:all .15s}
+.check-btn:hover{background:rgba(232,107,139,.1)}
+.check-btn.checked{background:rgba(232,107,139,.15);opacity:.6;cursor:default}
+.nota-add{display:flex;gap:8px;margin-bottom:12px}
+.nota-input{flex:1;background:#1f2333;border:1px solid var(--border);color:var(--text);font-family:'DM Sans',sans-serif;font-size:13px;padding:9px 12px;border-radius:8px;outline:none;transition:border-color .2s}
+.nota-input:focus{border-color:var(--accent)}
+.nota-btn{padding:9px 16px;border-radius:8px;border:none;background:var(--accent);color:#fff;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:700;cursor:pointer}
+.nota-item{background:#1f2333;border-left:3px solid var(--accent);border-radius:0 8px 8px 0;padding:10px 14px;margin-bottom:8px;font-size:13px;display:flex;justify-content:space-between;align-items:start;gap:10px}
+.nota-meta{font-size:11px;color:var(--muted);white-space:nowrap}
+.nota-del{background:none;border:none;color:var(--muted);cursor:pointer;font-size:14px;padding:0}.nota-del:hover{color:#e86b8b}
+.empty{color:var(--muted);font-size:13px;text-align:center;padding:20px}
+.alert{position:fixed;top:20px;right:20px;background:var(--accent);color:#fff;padding:12px 20px;border-radius:10px;font-weight:600;font-size:13px;z-index:999;transform:translateX(200px);opacity:0;transition:all .3s}
+.alert.show{transform:translateX(0);opacity:1}
+.sel-turno{padding:5px 8px;border-radius:7px;border:1px solid var(--border);background:#0f1117;color:var(--text);font-family:'DM Sans',sans-serif;font-size:12px;outline:none;cursor:pointer;width:100%;transition:border-color .2s}
+.sel-turno:focus{border-color:var(--accent)}
+.sel-turno option{background:#0f1117}
+@media(max-width:600px){.main{padding:14px 12px}.header{padding:10px 12px}}
+</style>
+</head>
+<body>
+<div class="header">
+  <div class="header-left">
+    <a href="index.html" class="back">← Panel Central</a>
+    <div>
+      <div class="header-title">🛡️ Equipo de Seguridad — CRPTG 11</div>
+      <div class="header-sub">Turno nocturno · 11:00 PM – 5:00 AM</div>
+    </div>
+  </div>
+</div>
+<div class="main">
+
+  <!-- TURNOS POR DÍA -->
+  <div class="card">
+    <div class="section-title" style="justify-content:space-between;flex-wrap:wrap;gap:8px">
+      <span>⏰ Turnos Nocturnos</span>
+      <button id="btn-editar-turnos" onclick="toggleEdicionTurnos()"
+        style="padding:5px 16px;border-radius:100px;border:1px solid rgba(232,107,139,.4);background:transparent;color:var(--accent);font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .15s">
+        🔒 Editar turnos
+      </button>
+    </div>
+    <div class="dia-tabs" id="dia-tabs"></div>
+    <div id="turno-dia"></div>
+  </div>
+
+  <!-- TODAS LAS PERSONAS -->
+  <div class="card">
+    <div class="section-title" style="justify-content:space-between;flex-wrap:wrap;gap:10px">
+      <span>👤 Equipo Completo</span>
+      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+        <span id="contador" style="font-size:12px;color:var(--muted);font-family:'DM Sans',sans-serif;font-weight:400"></span>
+        <button onclick="mostrarFormAgregar()" id="btn-agregar"
+          style="padding:5px 14px;border-radius:8px;border:1px solid rgba(232,107,139,.4);background:transparent;color:var(--accent);font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;display:none">
+          + Agregar persona</button>
+      </div>
+    </div>
+    <!-- Formulario agregar persona (visible solo en modo edición) -->
+    <div id="form-agregar" style="display:none;background:#1f2333;border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:14px">
+      <div style="font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;margin-bottom:10px">Nueva persona al equipo</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end">
+        <div>
+          <div style="font-size:11px;color:var(--muted);margin-bottom:4px">Nombre</div>
+          <input type="text" id="new-nombre" placeholder="Nombre completo"
+            style="background:#0f1117;border:1px solid var(--border);color:var(--text);font-family:'DM Sans',sans-serif;font-size:13px;padding:7px 10px;border-radius:7px;outline:none;width:200px"
+            onfocus="this.style.borderColor='#e86b8b'" onblur="this.style.borderColor='#2a2d40'">
+        </div>
+        <div>
+          <div style="font-size:11px;color:var(--muted);margin-bottom:4px">Congregación</div>
+          <input type="text" id="new-cong" placeholder="Congregación"
+            style="background:#0f1117;border:1px solid var(--border);color:var(--text);font-family:'DM Sans',sans-serif;font-size:13px;padding:7px 10px;border-radius:7px;outline:none;width:160px"
+            onfocus="this.style.borderColor='#e86b8b'" onblur="this.style.borderColor='#2a2d40'">
+        </div>
+        <div>
+          <div style="font-size:11px;color:var(--muted);margin-bottom:4px">Detalle (opcional)</div>
+          <input type="text" id="new-detalle" placeholder="Ej: Solo viernes"
+            style="background:#0f1117;border:1px solid var(--border);color:var(--text);font-family:'DM Sans',sans-serif;font-size:13px;padding:7px 10px;border-radius:7px;outline:none;width:160px"
+            onfocus="this.style.borderColor='#e86b8b'" onblur="this.style.borderColor='#2a2d40'">
+        </div>
+        <button onclick="agregarPersona()"
+          style="padding:8px 18px;border-radius:7px;border:none;background:var(--accent);color:#fff;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:700;cursor:pointer">
+          Agregar</button>
+        <button onclick="document.getElementById('form-agregar').style.display='none'"
+          style="padding:8px 14px;border-radius:7px;border:1px solid var(--border);background:transparent;color:var(--muted);font-family:'DM Sans',sans-serif;font-size:13px;cursor:pointer">
+          Cancelar</button>
+      </div>
+    </div>
+    <div style="overflow:auto">
+      <table>
+        <thead><tr><th>#</th><th>Nombre</th><th>Congregación</th><th>Turno(s)</th><th>Asistencia</th><th></th></tr></thead>
+        <tbody id="tbody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- NOTAS -->
+  <div class="card">
+    <div class="section-title">📝 Notas y Observaciones</div>
+    <div class="nota-add">
+      <input type="text" class="nota-input" id="nota-input" placeholder="Agregar nota..." onkeydown="if(event.key==='Enter')agregarNota()">
+      <button class="nota-btn" onclick="agregarNota()">+ Agregar</button>
+    </div>
+    <div id="notas-lista"><div class="empty">Sin notas aún.</div></div>
+  </div>
+</div>
+<div class="alert" id="alert"></div>
+<script>
+// ── DATOS ────────────────────────────────────────────────────
+const DIAS = [
+  { id:"mie", label:"Mié 1 Abr", siguiente:"Jue" },
+  { id:"jue", label:"Jue 2 Abr", siguiente:"Vie" },
+  { id:"vie", label:"Vie 3 Abr", siguiente:"Sáb" },
+];
+
+// Lista completa del equipo — 18 personas
+const PERSONAS = [
+  { nombre:"Roberto Mejía",       cong:"Santa Marta"       },
+  { nombre:"Carlos Campos",       cong:"Limoncito",         detalle:"⚠️ Solo viernes" },
+  { nombre:"Mauricio Villachica", cong:"La Angelina"        },
+  { nombre:"Kevin Mata",          cong:"La Angelina"        },
+  { nombre:"Adriel Salazar",      cong:"Valle La Estrella"  },
+  { nombre:"Alexander Salazar",   cong:"Valle La Estrella"  },
+  { nombre:"Leonel Esteban Soto", cong:"Valle La Estrella"  },
+  { nombre:"Eyber Vargas",        cong:"Ipís"               },
+  { nombre:"Yoislan Martínez",    cong:"Bataan"             },
+  { nombre:"Eliseo Mata",         cong:"Bribrí"             },
+  { nombre:"Hugo González",       cong:"Río Banano"         },
+  { nombre:"Arnold Sandoval",     cong:"Río Banano"         },
+  { nombre:"Guillermo Jiménez",   cong:"Río Banano"         },
+  { nombre:"Abiezer Vargas",      cong:"Tucurrique"         },
+  { nombre:"José Luis Mata",      cong:"Tucurrique"         },
+  { nombre:"Rodolfo Rojas",       cong:"Bribrí"             },
+  { nombre:"Joel Blanco",         cong:"Bribrí"             },
+  { nombre:"Juan Andrés",         cong:"Bribrí"             },
+];
+
+// Personas extra agregadas por el encargado
+const PERSONAS_EXTRA_KEY = "crptg11-seg-personas-extra";
+let personasExtra = JSON.parse(localStorage.getItem(PERSONAS_EXTRA_KEY) || "[]");
+// Lista completa = base + extra
+const todasLasPersonas = () => {
+  const eliminados = JSON.parse(localStorage.getItem("crptg11-seg-eliminados")||"[]");
+  return [...PERSONAS.filter(p=>!eliminados.includes(p.nombre)), ...personasExtra];
+};
+function guardarPersonasExtra(){ localStorage.setItem(PERSONAS_EXTRA_KEY, JSON.stringify(personasExtra)); }
+
+const CLAVE_TURNOS = "SeguridadRestaurada";
+const AUTH_TURNOS  = "crptg11-seg-edit";
+const puedeEditarTurnos = () => localStorage.getItem(AUTH_TURNOS) === "ok";
+
+// turnos guardados: { mie_t1_0:"Roberto Mejía", mie_t1_1:"...", mie_t1_2:"...",
+//                    mie_t2_0:"...", ... }
+let turnos = JSON.parse(localStorage.getItem("crptg11-seg-turnos") || "{}");
+function guardarTurnos(){ localStorage.setItem("crptg11-seg-turnos", JSON.stringify(turnos)); }
+// ─────────────────────────────────────────────────────────────
+
+let diaActivo = "mie";
+let asistencia = JSON.parse(localStorage.getItem("crptg11-check-seguridad") || "{}");
+let notas      = JSON.parse(localStorage.getItem("crptg11-notas-seguridad")  || "[]");
+
+function guardarCheck(){ localStorage.setItem("crptg11-check-seguridad", JSON.stringify(asistencia)); }
+function guardarNotas(){ localStorage.setItem("crptg11-notas-seguridad",  JSON.stringify(notas)); }
+
+function renderTabs(){
+  document.getElementById("dia-tabs").innerHTML = DIAS.map(d =>
+    `<button class="dtab${d.id===diaActivo?' on':''}" onclick="selDia('${d.id}')">${d.label}</button>`
+  ).join("");
+}
+
+function opcionesSelect(dia, turnoId, slot){
+  const key = `${dia}_${turnoId}_${slot}`;
+  const seleccionado = turnos[key] || "";
+  const opts = `<option value="">— Sin asignar —</option>`
+    + todasLasPersonas().map(p=>`<option${seleccionado===p.nombre?' selected':''} value="${p.nombre}">${p.nombre}${p.detalle?' ('+p.detalle+')':''}</option>`).join("");
+  return `<select class="sel-turno" data-key="${key}" onchange="asignarTurno('${key}',this.value)">${opts}</select>`;
+}
+
+function renderTurnoDia(){
+  const dia = DIAS.find(d=>d.id===diaActivo);
+  const editar = puedeEditarTurnos();
+
+  const renderTurno = (turnoId, hora) => {
+    const filas = [0,1,2].map(slot => {
+      const key = `${diaActivo}_${turnoId}_${slot}`;
+      const asig = turnos[key] || "";
+      const chekin = asistencia[`${diaActivo}_${asig}`];
+      return `<tr>
+        <td style="color:var(--muted)">${slot+1}</td>
+        <td style="min-width:180px">${editar
+          ? opcionesSelect(diaActivo, turnoId, slot)
+          : (asig ? `<span style="font-weight:600">${asig}</span>` : `<span style="color:var(--muted)">Sin asignar</span>`)
+        }</td>
+        <td>${asig
+          ? `<button class="check-btn ${chekin?'checked':''}" onclick="toggleCheck('${diaActivo}','${asig}')">
+              ${chekin?'✅ '+chekin:'Marcar'}</button>`
+          : '—'
+        }</td>
+      </tr>`;
+    }).join("");
+    return `<div class="turno-card">
+      <div class="turno-hora">🌙 <span>${hora}</span></div>
+      <table><thead><tr><th>#</th><th>Persona</th><th>Check-in</th></tr></thead>
+      <tbody>${filas}</tbody></table>
+    </div>`;
+  };
+
+  document.getElementById("turno-dia").innerHTML =
+    `<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:14px">
+      ${renderTurno("t1","11:00 PM – 2:00 AM")}
+      ${renderTurno("t2","2:00 AM – 5:00 AM (→ "+dia.siguiente+")")}
+    </div>`;
+  // Actualizar estado botón edición
+  actualizarBtnEdicion();
+}
+
+function asignarTurno(key, valor){
+  if(!puedeEditarTurnos()){ mostrarAuthTurnos(); return; }
+  turnos[key] = valor;
+  guardarTurnos();
+  // No re-render completo para no perder foco — solo actualizar tabla equipo
+  renderTabla();
+  mostrarAlerta(valor ? `✅ ${valor} asignado` : "↩ Turno liberado");
+}
+window.asignarTurno = asignarTurno;
+
+function actualizarBtnEdicion(){
+  const btn = document.getElementById("btn-editar-turnos");
+  const btnAgregar = document.getElementById("btn-agregar");
+  if(!btn) return;
+  if(puedeEditarTurnos()){
+    btn.innerHTML = "🔓 Bloquear edición";
+    btn.style.borderColor = "#3ecfb8";
+    btn.style.color = "#3ecfb8";
+    if(btnAgregar) btnAgregar.style.display = "inline-block";
+  } else {
+    btn.innerHTML = "🔒 Editar turnos";
+    btn.style.borderColor = "rgba(232,107,139,.4)";
+    btn.style.color = "var(--accent)";
+    if(btnAgregar) btnAgregar.style.display = "none";
+  }
+}
+
+function toggleEdicionTurnos(){
+  if(puedeEditarTurnos()){
+    if(confirm("¿Bloquear edición de turnos?")){
+      localStorage.removeItem(AUTH_TURNOS);
+      actualizarBtnEdicion(); renderTurnoDia(); renderTabla();
+    }
+  } else {
+    mostrarAuthTurnos();
+  }
+}
+window.toggleEdicionTurnos = toggleEdicionTurnos;
+
+function mostrarAuthTurnos(){
+  document.getElementById("auth-turnos-overlay").style.display="flex";
+  setTimeout(()=>document.getElementById("auth-turnos-input").focus(),100);
+}
+window.mostrarAuthTurnos = mostrarAuthTurnos;
+
+function cerrarAuthTurnos(){
+  if(confirm("¿Bloquear edición de turnos?")){
+    localStorage.removeItem(AUTH_TURNOS); actualizarBtnEdicion(); renderTurnoDia(); renderTabla();
+  }
+}
+window.cerrarAuthTurnos = cerrarAuthTurnos;
+
+function verificarClaveTurnos(){
+  const v = document.getElementById("auth-turnos-input").value;
+  if(v === CLAVE_TURNOS){
+    localStorage.setItem(AUTH_TURNOS,"ok");
+    document.getElementById("auth-turnos-overlay").style.display="none";
+    document.getElementById("auth-turnos-input").value="";
+    actualizarBtnEdicion(); renderTurnoDia(); renderTabla();
+    mostrarAlerta("✅ Edición de turnos desbloqueada");
+  } else {
+    document.getElementById("auth-turnos-error").textContent="Clave incorrecta";
+    document.getElementById("auth-turnos-input").value="";
+  }
+}
+window.verificarClaveTurnos = verificarClaveTurnos;
+
+function selDia(id){ diaActivo=id; renderTabs(); renderTurnoDia(); }
+
+function getTurnosDePersona(nombre){
+  // Retorna lista de {dia, diaLabel, turno, turnoLabel, slot, key}
+  const resultado = [];
+  DIAS.forEach(d => {
+    ["t1","t2"].forEach(t => {
+      [0,1,2].forEach(s => {
+        if(turnos[`${d.id}_${t}_${s}`]===nombre)
+          resultado.push({
+            dia: d.id,
+            diaLabel: d.label,
+            turno: t,
+            turnoLabel: t==="t1" ? "11PM–2AM" : "2AM–5AM",
+            key: `${d.id}_${nombre}`
+          });
+      });
+    });
+  });
+  return resultado;
+}
+
+function renderTabla(){
+  const todas = todasLasPersonas();
+  // Contar personas con al menos un turno asignado
+  const conTurno = todas.filter(p=>getTurnosDePersona(p.nombre).length>0).length;
+  document.getElementById("contador").textContent =
+    `${todas.length} en equipo · ${conTurno} con turno asignado`;
+
+  document.getElementById("tbody").innerHTML = todas.map((p,i)=>{
+    const turnos_p = getTurnosDePersona(p.nombre);
+    // Columna de turnos con check por cada uno
+    const turnosCols = turnos_p.length === 0
+      ? `<td colspan="2" style="color:var(--muted);font-size:12px;font-style:italic">Sin turno asignado</td>`
+      : `<td>
+          ${turnos_p.map(t=>`
+            <div style="margin-bottom:4px;font-size:11px;color:var(--muted)">
+              <span style="color:var(--accent);font-weight:600">${t.diaLabel}</span>
+              <span style="margin:0 4px">·</span>${t.turnoLabel}
+            </div>`).join("")}
+        </td>
+        <td>
+          ${turnos_p.map(t=>{
+            const ok = asistencia[t.key];
+            return `<div style="margin-bottom:4px">
+              <button class="check-btn ${ok?'checked':''}" onclick="toggleCheck('${t.dia}','${p.nombre}')">
+                ${ok?'✅ '+ok:'Marcar'}
+              </button>
+            </div>`;
+          }).join("")}
+        </td>`;
+
+    return `<tr>
+      <td style="color:var(--muted)">${i+1}</td>
+      <td style="font-weight:600">${p.nombre}${p.detalle?`<div style="font-size:11px;color:#e86b8b;margin-top:2px">${p.detalle}</div>`:''}</td>
+      <td style="color:var(--muted);font-size:12px">${p.cong}</td>
+      ${turnosCols}
+      <td>${puedeEditarTurnos()?`<button onclick="eliminarPersona('${p.nombre}')" style="padding:3px 9px;border-radius:6px;border:1px solid rgba(232,107,139,.4);background:transparent;color:#e86b8b;font-size:11px;cursor:pointer">✕</button>`:''}</td>
+    </tr>`;
+  }).join("");
+}
+
+function toggleCheck(dia, nombre){
+  const key = dia+'_'+nombre;
+  if(asistencia[key]){ delete asistencia[key]; }
+  else { asistencia[key] = new Date().toLocaleTimeString("es-CR",{hour:"2-digit",minute:"2-digit"}); }
+  guardarCheck(); renderTurnoDia(); renderTabla();
+  mostrarAlerta(asistencia[key]?`✅ ${nombre} marcado`:`↩ ${nombre} desmarcado`);
+}
+
+function mostrarFormAgregar(){
+  if(!puedeEditarTurnos()){ mostrarAuthTurnos(); return; }
+  document.getElementById("form-agregar").style.display="block";
+  document.getElementById("new-nombre").focus();
+}
+window.mostrarFormAgregar = mostrarFormAgregar;
+
+function agregarPersona(){
+  const nombre  = document.getElementById("new-nombre").value.trim();
+  const cong    = document.getElementById("new-cong").value.trim();
+  const detalle = document.getElementById("new-detalle").value.trim();
+  if(!nombre){ mostrarAlerta("⚠️ Ingresa el nombre",true); return; }
+  if(todasLasPersonas().some(p=>p.nombre===nombre)){ mostrarAlerta("⚠️ Ya existe en la lista",true); return; }
+  personasExtra.push({nombre, cong:cong||"—", detalle:detalle||""});
+  guardarPersonasExtra();
+  document.getElementById("new-nombre").value="";
+  document.getElementById("new-cong").value="";
+  document.getElementById("new-detalle").value="";
+  document.getElementById("form-agregar").style.display="none";
+  renderTurnoDia(); renderTabla();
+  mostrarAlerta(`✅ ${nombre} agregado al equipo`);
+}
+window.agregarPersona = agregarPersona;
+
+function eliminarPersona(nombre){
+  if(!confirm(`¿Eliminar a ${nombre} del equipo de seguridad?`)) return;
+  // Intentar eliminar de extras primero
+  const eraExtra = personasExtra.some(p=>p.nombre===nombre);
+  personasExtra = personasExtra.filter(p=>p.nombre!==nombre);
+  guardarPersonasExtra();
+  // Si era de la lista base, guardarlo en una lista de "eliminados base"
+  if(!eraExtra){
+    const eliminadosKey = "crptg11-seg-eliminados";
+    const eliminados = JSON.parse(localStorage.getItem(eliminadosKey)||"[]");
+    if(!eliminados.includes(nombre)) eliminados.push(nombre);
+    localStorage.setItem(eliminadosKey, JSON.stringify(eliminados));
+  }
+  renderTurnoDia(); renderTabla();
+  mostrarAlerta(`↩ ${nombre} eliminado`);
+}
+window.eliminarPersona = eliminarPersona;
+
+function renderNotas(){
+  const lista = document.getElementById("notas-lista");
+  if(!notas.length){lista.innerHTML='<div class="empty">Sin notas aún.</div>';return;}
+  lista.innerHTML = notas.map((n,i)=>`
+    <div class="nota-item">
+      <span>${n.texto}</span>
+      <div style="display:flex;align-items:center;gap:8px;flex-shrink:0">
+        <span class="nota-meta">${n.hora}</span>
+        <button class="nota-del" onclick="eliminarNota(${i})">✕</button>
+      </div>
+    </div>`).join("");
+}
+
+function agregarNota(){
+  const input=document.getElementById("nota-input");
+  const texto=input.value.trim(); if(!texto)return;
+  notas.unshift({texto, hora:new Date().toLocaleTimeString("es-CR",{hour:"2-digit",minute:"2-digit"})});
+  guardarNotas(); renderNotas(); input.value="";
+  mostrarAlerta("📝 Nota guardada");
+}
+function eliminarNota(i){ notas.splice(i,1); guardarNotas(); renderNotas(); }
+function mostrarAlerta(msg){ const a=document.getElementById("alert"); a.textContent=msg; a.className="alert show"; setTimeout(()=>a.className="alert",2800); }
+
+actualizarBtnEdicion();
+renderTabs(); renderTurnoDia(); renderTabla(); renderNotas();
+</script>
+<!-- OVERLAY DE ACCESO -->
+<div id="acceso-overlay" style="display:none;position:fixed;inset:0;background:rgba(11,13,19,.97);z-index:9999;align-items:center;justify-content:center;flex-direction:column">
+  <div style="background:#13161f;border:1px solid #22263a;border-radius:24px;padding:40px 42px;text-align:center;max-width:360px;width:90%;box-shadow:0 24px 64px rgba(0,0,0,.6)">
+    <div style="font-size:2.4rem;margin-bottom:12px">🔐</div>
+    <div style="font-family:'Playfair Display',serif;font-size:1.3rem;color:#e8e8f0;margin-bottom:6px">Acceso restringido</div>
+    <div style="color:#7a7d95;font-size:13px;margin-bottom:24px;line-height:1.5">Esta área es solo para personal de logística.<br>Ingresa tu clave para continuar.</div>
+    <input type="password" id="acceso-input" placeholder="••••••••"
+      onkeydown="if(event.key==='Enter')verificarAcceso()"
+      style="width:100%;background:#0b0d13;border:1px solid #22263a;color:#e8e8f0;font-family:'DM Sans',sans-serif;font-size:15px;padding:11px 16px;border-radius:12px;outline:none;text-align:center;letter-spacing:3px;margin-bottom:10px;transition:border-color .2s;box-sizing:border-box"
+      onfocus="this.style.borderColor='#e8a838'" onblur="this.style.borderColor='#22263a'">
+    <button onclick="verificarAcceso()" style="width:100%;padding:12px;border-radius:12px;border:none;background:#e8a838;color:#000;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:700;cursor:pointer">Ingresar</button>
+    <div id="acceso-error" style="color:#e86b8b;font-size:12px;margin-top:10px;min-height:16px"></div>
+    <div style="margin-top:22px;padding-top:18px;border-top:1px solid #22263a">
+      <div style="color:#7a7d95;font-size:12px;margin-bottom:10px">¿Eres participante del evento?</div>
+      <a href="https://logistica-crptg11.netlify.app/bienvenida.html" style="display:inline-block;padding:9px 22px;border-radius:10px;border:1px solid #22263a;color:#7a7d95;font-family:'DM Sans',sans-serif;font-size:13px;text-decoration:none">Ver información del evento →</a>
+    </div>
+  </div>
+</div>
+<script>
+(function(){
+  const ok=localStorage.getItem("crptg11-auth")==="ok"||localStorage.getItem("crptg11-ver")==="ok";
+  if(!ok) document.getElementById("acceso-overlay").style.display="flex";
+  document.documentElement.style.visibility="visible";
+  window.verificarAcceso=function(){
+    const v=document.getElementById("acceso-input").value.trim();
+    const e=document.getElementById("acceso-error");
+    if(v==="IglesiaRestaurada2026"){localStorage.setItem("crptg11-auth","ok");document.getElementById("acceso-overlay").style.display="none";}
+    else if(v==="LogisticaCRPTG11"){localStorage.setItem("crptg11-ver","ok");document.getElementById("acceso-overlay").style.display="none";}
+    else{e.textContent="Clave incorrecta";document.getElementById("acceso-input").value="";document.getElementById("acceso-input").focus();}
+  };
+})();
+</script>
+
+<!-- Auth overlay turnos -->
+<div id="auth-turnos-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:200;align-items:center;justify-content:center">
+  <div style="background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:34px 38px;text-align:center;max-width:340px;width:90%">
+    <div style="font-size:2.2rem;margin-bottom:10px">🛡️</div>
+    <div style="font-family:'Playfair Display',serif;font-size:1.2rem;margin-bottom:5px">Editar turnos</div>
+    <div style="color:var(--muted);font-size:12px;margin-bottom:20px">Ingresa la clave para asignar o modificar turnos</div>
+    <input type="password" id="auth-turnos-input" placeholder="••••••••"
+      onkeydown="if(event.key==='Enter')verificarClaveTurnos()"
+      style="width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);font-family:'DM Sans',sans-serif;font-size:14px;padding:10px 14px;border-radius:10px;outline:none;text-align:center;letter-spacing:2px;margin-bottom:10px;transition:border-color .2s"
+      onfocus="this.style.borderColor='#e86b8b'" onblur="this.style.borderColor='#2a2d40'">
+    <button onclick="verificarClaveTurnos()"
+      style="width:100%;padding:10px;border-radius:10px;border:none;background:var(--accent);color:#fff;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:700;cursor:pointer">
+      Desbloquear</button>
+    <div id="auth-turnos-error" style="color:#e86b8b;font-size:12px;margin-top:8px;min-height:16px"></div>
+    <button onclick="document.getElementById('auth-turnos-overlay').style.display='none'"
+      style="margin-top:12px;background:transparent;border:none;color:var(--muted);font-size:13px;cursor:pointer">Cancelar</button>
+  </div>
+</div>
+</body>
+</html>
