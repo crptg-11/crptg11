@@ -19,38 +19,33 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min
 .header-title{font-family:'Playfair Display',serif;font-size:1.15rem;color:var(--accent)}
 .header-sub{font-size:11px;color:var(--muted);margin-top:3px}
 .main{max-width:1200px;margin:0 auto;padding:24px 28px 60px}
-/* Cards sección */
 .card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:20px;margin-bottom:20px}
 .section-title{font-family:'Playfair Display',serif;font-size:1.05rem;color:var(--accent);margin-bottom:14px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:space-between}
-/* Tabs días */
 .dia-tabs{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap}
 .dtab{padding:6px 16px;border-radius:100px;border:1px solid var(--border);background:transparent;color:var(--muted);font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .15s}
 .dtab:hover{border-color:var(--accent);color:var(--accent)}
 .dtab.on{background:rgba(232,168,56,.15);border-color:var(--accent);color:var(--accent)}
-/* Grid turnos */
 .turnos-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px}
 .turno-card{background:#1f2333;border:1px solid var(--border);border-radius:10px;padding:14px}
 .turno-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;flex-wrap:wrap;gap:4px}
 .turno-label{font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--accent)}
 .turno-tag{font-size:10px;padding:2px 8px;border-radius:100px;background:rgba(232,168,56,.1);color:var(--accent);border:1px solid rgba(232,168,56,.25)}
-/* Sexo badges */
 .tag-h{font-size:10px;padding:2px 7px;border-radius:100px;background:rgba(62,207,184,.12);color:var(--teal);border:1px solid rgba(62,207,184,.3)}
 .tag-m{font-size:10px;padding:2px 7px;border-radius:100px;background:rgba(232,107,139,.12);color:var(--rose);border:1px solid rgba(232,107,139,.3)}
-/* Slots */
 .slot-row{display:flex;align-items:center;gap:8px;margin-bottom:6px}
 .slot-num{font-size:11px;color:var(--muted);width:16px;flex-shrink:0;text-align:right}
-.sel-aseo{flex:1;padding:5px 8px;border-radius:7px;border:1px solid var(--border);background:#0f1117;color:var(--text);font-family:'DM Sans',sans-serif;font-size:12px;outline:none;cursor:pointer;transition:border-color .2s}
+/* Select con búsqueda */
+.sel-wrap{flex:1;position:relative}
+.sel-aseo{width:100%;padding:5px 8px;border-radius:7px;border:1px solid var(--border);background:#0f1117;color:var(--text);font-family:'DM Sans',sans-serif;font-size:12px;outline:none;cursor:pointer;transition:border-color .2s}
 .sel-aseo:focus{border-color:var(--accent)}
 .sel-aseo:disabled{opacity:.4;cursor:not-allowed;background:#181b24}
 .sel-aseo option{background:#0f1117}
-/* Tabla equipo */
 table{width:100%;border-collapse:collapse}
 th{background:#1f2333;color:var(--muted);font-size:10px;font-weight:600;letter-spacing:1px;text-transform:uppercase;padding:9px 13px;text-align:left;border-bottom:1px solid var(--border)}
 td{padding:9px 13px;font-size:13px;border-bottom:1px solid rgba(42,45,64,.5);vertical-align:middle}
 tr:last-child td{border-bottom:none}tr:hover td{background:rgba(232,168,56,.03)}
 .badge{display:inline-block;padding:2px 9px;border-radius:100px;font-size:11px;font-weight:600}
 .b-h{background:rgba(62,207,184,.15);color:var(--teal)}.b-m{background:rgba(232,107,139,.15);color:var(--rose)}
-/* Botones */
 .btn-edit{padding:6px 18px;border-radius:100px;font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .15s;border:1px solid rgba(232,107,139,.4);background:transparent;color:var(--rose)}
 .btn-edit.on{border-color:#3ecfb8;color:#3ecfb8}
 .btn-outline{padding:5px 14px;border-radius:100px;border:1px solid rgba(232,168,56,.4);background:transparent;color:var(--accent);font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .15s}
@@ -59,14 +54,23 @@ tr:last-child td{border-bottom:none}tr:hover td{background:rgba(232,168,56,.03)}
 .btn-del:hover{background:rgba(232,107,139,.1)}
 .btn-gold{padding:8px 18px;border-radius:7px;border:none;background:var(--accent);color:#000;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:700;cursor:pointer}
 .btn-cancel{padding:8px 14px;border-radius:7px;border:1px solid var(--border);background:transparent;color:var(--muted);font-family:'DM Sans',sans-serif;font-size:13px;cursor:pointer}
-/* Form agregar */
+.btn-propuesta{padding:6px 16px;border-radius:100px;border:1px solid rgba(139,127,232,.4);background:rgba(139,127,232,.08);color:var(--lav);font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .15s}
+.btn-propuesta:hover{background:rgba(139,127,232,.15)}
 .form-box{background:#1f2333;border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:14px}
 .form-row{display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end}
 .form-group label{display:block;font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;margin-bottom:4px;font-weight:600}
 .form-group input,.form-group select{background:#0f1117;border:1px solid var(--border);color:var(--text);font-family:'DM Sans',sans-serif;font-size:13px;padding:7px 10px;border-radius:7px;outline:none;transition:border-color .2s}
 .form-group input:focus,.form-group select:focus{border-color:var(--accent)}
 .form-group select option{background:#0f1117}
-/* Notas */
+/* Searchable select */
+.search-select-wrap{position:relative;flex:1;min-width:160px}
+.search-select-input{width:100%;background:#0f1117;border:1px solid var(--border);color:var(--text);font-family:'DM Sans',sans-serif;font-size:13px;padding:7px 10px;border-radius:7px;outline:none;transition:border-color .2s}
+.search-select-input:focus{border-color:var(--accent)}
+.search-select-dropdown{position:absolute;top:calc(100% + 3px);left:0;right:0;background:#1a1d2a;border:1px solid var(--border);border-radius:8px;max-height:220px;overflow-y:auto;z-index:100;display:none;box-shadow:0 8px 24px rgba(0,0,0,.4)}
+.search-select-dropdown.open{display:block}
+.search-select-option{padding:8px 12px;font-size:12px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;gap:8px;transition:background .1s}
+.search-select-option:hover,.search-select-option.sel{background:rgba(232,168,56,.1);color:var(--accent)}
+.search-select-option .opt-cong{font-size:10px;color:var(--muted)}
 .nota-add{display:flex;gap:8px;margin-bottom:12px}
 .nota-input{flex:1;background:#1f2333;border:1px solid var(--border);color:var(--text);font-family:'DM Sans',sans-serif;font-size:13px;padding:9px 12px;border-radius:8px;outline:none;transition:border-color .2s}
 .nota-input:focus{border-color:var(--accent)}
@@ -77,6 +81,8 @@ tr:last-child td{border-bottom:none}tr:hover td{background:rgba(232,168,56,.03)}
 .empty{color:var(--muted);font-size:13px;text-align:center;padding:20px}
 .alert{position:fixed;top:20px;right:20px;background:var(--accent);color:#000;padding:12px 20px;border-radius:10px;font-weight:600;font-size:13px;z-index:999;transform:translateX(200px);opacity:0;transition:all .3s}
 .alert.show{transform:translateX(0);opacity:1}.alert.error{background:var(--rose);color:#fff}
+.propuesta-banner{background:rgba(139,127,232,.08);border:1px solid rgba(139,127,232,.25);border-radius:10px;padding:12px 16px;margin-bottom:14px;font-size:12px;color:var(--lav);display:flex;align-items:center;gap:8px}
+.equipo-extra-tag{font-size:10px;padding:1px 6px;border-radius:100px;background:rgba(232,168,56,.1);color:var(--accent);border:1px solid rgba(232,168,56,.3);margin-left:6px}
 @media(max-width:600px){.main{padding:14px 12px}.header{padding:10px 12px}.turnos-grid{grid-template-columns:1fr}}
 </style>
 </head>
@@ -90,10 +96,13 @@ tr:last-child td{border-bottom:none}tr:hover td{background:rgba(232,168,56,.03)}
       <div class="header-sub">Cocina · Baños · Salón · Basura</div>
     </div>
   </div>
-  <button id="btn-editar" onclick="toggleEdicion()"
-    style="padding:6px 18px;border-radius:100px;border:1px solid rgba(232,107,139,.4);background:transparent;color:var(--rose);font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .15s">
-    🔒 Editar
-  </button>
+  <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+    <button id="btn-propuesta-global" onclick="generarPropuesta()" class="btn-propuesta" style="display:none">✨ Generar propuesta</button>
+    <button id="btn-editar" onclick="toggleEdicion()"
+      style="padding:6px 18px;border-radius:100px;border:1px solid rgba(232,107,139,.4);background:transparent;color:var(--rose);font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .15s">
+      🔒 Editar
+    </button>
+  </div>
 </div>
 
 <div class="main">
@@ -160,9 +169,9 @@ tr:last-child td{border-bottom:none}tr:hover td{background:rgba(232,168,56,.03)}
     </div>
     <div id="form-agregar" style="display:none">
       <div class="form-box">
-        <div style="font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;margin-bottom:10px">Nueva persona</div>
+        <div style="font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;margin-bottom:10px">Agregar colaborador externo</div>
         <div class="form-row">
-          <div class="form-group"><label>Nombre</label><input type="text" id="new-nombre" placeholder="Nombre completo" style="width:190px"></div>
+          <div class="form-group"><label>Nombre</label><input type="text" id="new-nombre" placeholder="Nombre completo" style="width:200px"></div>
           <div class="form-group"><label>Congregación</label><input type="text" id="new-cong" placeholder="Congregación" style="width:150px"></div>
           <div class="form-group">
             <label>Sexo</label>
@@ -176,6 +185,22 @@ tr:last-child td{border-bottom:none}tr:hover td{background:rgba(232,168,56,.03)}
             <button class="btn-cancel" onclick="document.getElementById('form-agregar').style.display='none'">Cancelar</button>
           </div>
         </div>
+        <div style="font-size:11px;color:var(--muted);margin-top:8px">💡 Usa esto para personas que colaboran pero no están en el registro del evento.</div>
+      </div>
+
+      <!-- Buscar del registro -->
+      <div class="form-box">
+        <div style="font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;margin-bottom:10px">Agregar desde el registro</div>
+        <div class="form-row">
+          <div class="search-select-wrap" id="registro-wrap">
+            <input type="text" class="search-select-input" id="registro-search" placeholder="Buscar por nombre..." autocomplete="off" oninput="filtrarRegistro()" onfocus="abrirRegistro()" onblur="cerrarRegistroDelay()">
+            <div class="search-select-dropdown" id="registro-dropdown"></div>
+          </div>
+          <div style="display:flex;gap:6px;align-items:flex-end">
+            <button class="btn-gold" onclick="agregarDesdeRegistro()">Agregar</button>
+          </div>
+        </div>
+        <div id="registro-seleccionado" style="font-size:12px;color:var(--teal);margin-top:6px;min-height:16px"></div>
       </div>
     </div>
     <div style="overflow:auto">
@@ -238,52 +263,60 @@ tr:last-child td{border-bottom:none}tr:hover td{background:rgba(232,168,56,.03)}
 const CLAVE    = "IglesiaRestaurada2026";
 const AUTH_KEY = "crptg11-aseo-edit";
 
+// Miércoles SOLO tiene cena (el evento inicia en la tarde)
 const DIAS = [
-  { id:"mie", label:"Mié 1 Abr" },
-  { id:"jue", label:"Jue 2 Abr" },
-  { id:"vie", label:"Vie 3 Abr" },
-  { id:"sab", label:"Sáb 4 Abr" },
+  { id:"mie", label:"Mié 1 Abr", comidas:["cen"] },
+  { id:"jue", label:"Jue 2 Abr", comidas:["des","alm","cen"] },
+  { id:"vie", label:"Vie 3 Abr", comidas:["des","alm","cen"] },
+  { id:"sab", label:"Sáb 4 Abr", comidas:["des","alm","cen"] },
 ];
-const COMIDAS = [
+const TODAS_COMIDAS = [
   { id:"des", label:"☀️ Desayuno" },
   { id:"alm", label:"🌤️ Almuerzo" },
   { id:"cen", label:"🌙 Cena" },
 ];
+const COMIDAS_MAP = Object.fromEntries(TODAS_COMIDAS.map(c=>[c.id,c]));
+
 const TURNOS_BANOS = [
   { id:"t1", label:"Turno 1", hora:"Mañana" },
   { id:"t2", label:"Turno 2", hora:"Tarde" },
   { id:"t3", label:"Turno 3", hora:"Noche" },
 ];
 
-// ── PERSONAS BASE (placeholder — se editan con contraseña) ────
-const BASE_PERSONAS = Array.from({length:20},(_,i)=>({
-  nombre:`Persona ${i+1}`, cong:"—", sexo: i<10?"H":"M"
-}));
+// ── PERSONAS DEL REGISTRO (190 del Excel) ────────────────────
+const PERSONAS_REGISTRO = [{"nombre":"Alison Arias Ugalde","cong":"Angelina","cat":"J","sexo":"M"},{"nombre":"April Yuliana","cong":"Angelina","cat":"N","sexo":"M"},{"nombre":"Ashley Arias Ugalde","cong":"Angelina","cat":"J","sexo":"M"},{"nombre":"Carlos Eduardo Espinoza Calderón","cong":"Angelina","cat":"A","sexo":"H"},{"nombre":"Carlos José García Quiroz","cong":"Angelina","cat":"A","sexo":"H"},{"nombre":"Carlos Sebastián Ríos Bonilla","cong":"Angelina","cat":"A","sexo":"H"},{"nombre":"Hilda Cecelia Casasola","cong":"Angelina","cat":"A","sexo":"M"},{"nombre":"Ivonne Noelia Ríos Bonilla","cong":"Angelina","cat":"A","sexo":"M"},{"nombre":"Jackeline Monge Graham","cong":"Angelina","cat":"A","sexo":"M"},{"nombre":"Jeffry David López Hernández","cong":"Angelina","cat":"J","sexo":"H"},{"nombre":"Josué Gómez Barrientos","cong":"Angelina","cat":"A","sexo":"H"},{"nombre":"Mildred Esther Vargas Coronado","cong":"Angelina","cat":"A","sexo":"M"},{"nombre":"Mirna Graham McHayle","cong":"Angelina","cat":"A","sexo":"M"},{"nombre":"Vera Carranza Graham","cong":"Angelina","cat":"A","sexo":"M"},{"nombre":"Adita mata","cong":"Angelina","cat":"","sexo":"M"},{"nombre":"Betsabé Naari García Villalobos","cong":"Angelina","cat":"","sexo":"M"},{"nombre":"Cristian León Aguero","cong":"Angelina","cat":"","sexo":"H"},{"nombre":"Douglas Alvarez Graham","cong":"Angelina","cat":"","sexo":"H"},{"nombre":"Ebony Alondra Zamora Monge","cong":"Angelina","cat":"","sexo":"M"},{"nombre":"Elizabeth Gómez Barrientos","cong":"Angelina","cat":"","sexo":"M"},{"nombre":"Eser Jeriel García Villalobos","cong":"Angelina","cat":"","sexo":"H"},{"nombre":"Esteban Rodríguez Gómez","cong":"Angelina","cat":"","sexo":"H"},{"nombre":"Gerlly Hadassa García Villalobos","cong":"Angelina","cat":"","sexo":"M"},{"nombre":"Gerlly Vanessa Villalobos Rodríguez","cong":"Angelina","cat":"","sexo":"M"},{"nombre":"Ismael Santiago Leon Ureña","cong":"Angelina","cat":"","sexo":"H"},{"nombre":"Javier Joel Rodriguez","cong":"Angelina","cat":"","sexo":"H"},{"nombre":"JOAQUINA QUIROS ORDOÑEZ","cong":"Angelina","cat":"","sexo":"M"},{"nombre":"Jonathan Zabdiel García Villalobos","cong":"Angelina","cat":"","sexo":"H"},{"nombre":"Josabeth Naara García Villalobos","cong":"Angelina","cat":"","sexo":"M"},{"nombre":"Juan Luis mata Solano","cong":"Angelina","cat":"","sexo":"H"},{"nombre":"Judith Reyes Soto","cong":"Angelina","cat":"","sexo":"M"},{"nombre":"Keitlyn Mata Pérez","cong":"Angelina","cat":"","sexo":"M"},{"nombre":"Margot Rodriguez Acuña","cong":"Angelina","cat":"","sexo":"M"},{"nombre":"Mauricio Villachica bravo","cong":"Angelina","cat":"","sexo":"H"},{"nombre":"Michael Gómez Vargas","cong":"Angelina","cat":"","sexo":"H"},{"nombre":"Orlando Jiménez","cong":"Angelina","cat":"","sexo":"H"},{"nombre":"Rebeca García Vasquez","cong":"Angelina","cat":"","sexo":"M"},{"nombre":"Sandra Graham McHayle","cong":"Angelina","cat":"","sexo":"M"},{"nombre":"Mamá de Gerlly","cong":"Angelina","cat":"","sexo":"M"},{"nombre":"Irislay Menocal","cong":"Bataan","cat":"A","sexo":"M"},{"nombre":"Lucas Samuel Martínez Menocal","cong":"Bataan","cat":"N","sexo":"H"},{"nombre":"Mateo Samuel Martínez Menocal","cong":"Bataan","cat":"N","sexo":"H"},{"nombre":"Yoislán Martínez Aranda","cong":"Bataan","cat":"A","sexo":"H"},{"nombre":"Andrew Bustos García","cong":"Bataan","cat":"J","sexo":"H"},{"nombre":"Catalina Mayorga Arias","cong":"Bataan","cat":"A","sexo":"M"},{"nombre":"Eunice García Muñoz","cong":"Bataan","cat":"A","sexo":"M"},{"nombre":"Jacqueline Mariel trejos gaitan","cong":"Bataan","cat":"A","sexo":"M"},{"nombre":"Johel Jiménez Mata","cong":"Bataan","cat":"A","sexo":"H"},{"nombre":"Marcos Mata Solano","cong":"Bataan","cat":"A","sexo":"H"},{"nombre":"Sofi Samara Bustos García","cong":"Bataan","cat":"A","sexo":"M"},{"nombre":"Angela Zapata Zúñiga","cong":"Bribrí","cat":"A","sexo":"M"},{"nombre":"Barbara Fonseca Méndez","cong":"Bribrí","cat":"J","sexo":"M"},{"nombre":"Brígida Miranda Blanco","cong":"Bribrí","cat":"A","sexo":"M"},{"nombre":"Carla Blanco Blanco","cong":"Bribrí","cat":"A","sexo":"M"},{"nombre":"Damaris Arias Zapata","cong":"Bribrí","cat":"A","sexo":"M"},{"nombre":"Eliseo Mata Miranda","cong":"Bribrí","cat":"A","sexo":"H"},{"nombre":"Jennifer Viviana Zúñiga Tapia","cong":"Bribrí","cat":"A","sexo":"M"},{"nombre":"Jeyrel Arturo Méndez Zúñiga","cong":"Bribrí","cat":"N","sexo":"H"},{"nombre":"Jeyrelin Jearí Méndez Zúñiga","cong":"Bribrí","cat":"N","sexo":"M"},{"nombre":"Joel Blanco Pereira","cong":"Bribrí","cat":"A","sexo":"H"},{"nombre":"Karla Blanco Blanco","cong":"Bribrí","cat":"A","sexo":"M"},{"nombre":"Karla Sulay Montiel Blanco","cong":"Bribrí","cat":"J","sexo":"M"},{"nombre":"Lidia Price Blanco","cong":"Bribrí","cat":"A","sexo":"M"},{"nombre":"Luis Madriz Abarca","cong":"Bribrí","cat":"A","sexo":"H"},{"nombre":"Mariangel Pereira Arias","cong":"Bribrí","cat":"J","sexo":"M"},{"nombre":"Marianni Pereira Arias","cong":"Bribrí","cat":"N","sexo":"M"},{"nombre":"Martina Miranda Blanco","cong":"Bribrí","cat":"A","sexo":"M"},{"nombre":"Mercedes Blanco Blanco","cong":"Bribrí","cat":"A","sexo":"M"},{"nombre":"Nícole Fonseca Méndez","cong":"Bribrí","cat":"J","sexo":"M"},{"nombre":"Rodolfo Rojas Brenes","cong":"Bribrí","cat":"A","sexo":"H"},{"nombre":"Sandra Mancía Mancía","cong":"Bribrí","cat":"A","sexo":"M"},{"nombre":"Sulay Montiel Blanco","cong":"Bribrí","cat":"J","sexo":"M"},{"nombre":"Dayana Cruz Chavarría","cong":"Bribrí","cat":"A","sexo":"M"},{"nombre":"Dina Mata Miranda","cong":"Bribrí","cat":"A","sexo":"M"},{"nombre":"Eliam Rodríguez Mata","cong":"Bribrí","cat":"J","sexo":"H"},{"nombre":"Elisua Rodríguez Mata","cong":"Bribrí","cat":"A","sexo":"H"},{"nombre":"Heidan Rodríguez Mata","cong":"Bribrí","cat":"J","sexo":"H"},{"nombre":"Moisés Rodríguez Rojas","cong":"Bribrí","cat":"A","sexo":"H"},{"nombre":"Arturo M. Garriga López","cong":"Extranjero","cat":"A","sexo":"H"},{"nombre":"Elka Barroso","cong":"Extranjero","cat":"A","sexo":"M"},{"nombre":"Enith Barroso","cong":"Extranjero","cat":"A","sexo":"M"},{"nombre":"Erik Israel Áreas Lopez","cong":"Extranjero","cat":"A","sexo":"H"},{"nombre":"Eyver Alexis Cisne Gutierrez","cong":"Extranjero","cat":"J","sexo":"H"},{"nombre":"Manuel Aragón Lacayo","cong":"Extranjero","cat":"A","sexo":"H"},{"nombre":"Oriana Aguado","cong":"Extranjero","cat":"A","sexo":"M"},{"nombre":"Raquel López","cong":"Extranjero","cat":"A","sexo":"M"},{"nombre":"Rosa Iris Gutierrez Sotelo","cong":"Extranjero","cat":"A","sexo":"M"},{"nombre":"Shirley Anahí Ibarra Torres","cong":"Extranjero","cat":"A","sexo":"M"},{"nombre":"Santiago Mata","cong":"Extranjero","cat":"","sexo":"H"},{"nombre":"Nuris Barroso","cong":"Extranjero","cat":"","sexo":"M"},{"nombre":"Omar Garcia","cong":"Extranjero","cat":"","sexo":"H"},{"nombre":"Job Castañeda","cong":"Extranjero","cat":"","sexo":"H"},{"nombre":"Isabel Cruz","cong":"Extranjero","cat":"","sexo":"M"},{"nombre":"Jeslynne Vargas Gomez","cong":"Extranjero","cat":"","sexo":"M"},{"nombre":"Kim García","cong":"Extranjero","cat":"","sexo":"M"},{"nombre":"Lino Gualberto mata","cong":"Extranjero","cat":"","sexo":"H"},{"nombre":"Marcos Mata Ortiz","cong":"Extranjero","cat":"","sexo":"H"},{"nombre":"Susany Gomez Vargas","cong":"Extranjero","cat":"","sexo":"M"},{"nombre":"Thiago Villalta Gomez","cong":"Extranjero","cat":"","sexo":"H"},{"nombre":"Aurora Soto","cong":"Extranjero","cat":"","sexo":"M"},{"nombre":"Trudis Castañeda","cong":"Extranjero","cat":"","sexo":"M"},{"nombre":"Audrey Tatiana Jaubert Vargas","cong":"Ipís","cat":"A","sexo":"M"},{"nombre":"Carmen Villarreal Torres","cong":"Ipís","cat":"A","sexo":"M"},{"nombre":"Damaris Elizabeth Vargas Coronado","cong":"Ipís","cat":"A","sexo":"M"},{"nombre":"Emilly Alahana Aguilar Araya","cong":"Ipís","cat":"N","sexo":"M"},{"nombre":"Eyber Degracia Mata","cong":"Ipís","cat":"A","sexo":"H"},{"nombre":"Gerardo Vargas","cong":"Ipís","cat":"A","sexo":"H"},{"nombre":"Horacio Aragón Lacayo","cong":"Ipís","cat":"A","sexo":"H"},{"nombre":"Juan Rafael Sánchez Aguilar","cong":"Ipís","cat":"A","sexo":"H"},{"nombre":"Luis Mauricio Mora Jara","cong":"Ipís","cat":"A","sexo":"H"},{"nombre":"Maritza Vargas Coronado","cong":"Ipís","cat":"A","sexo":"M"},{"nombre":"Nadia De Gracia Núñez","cong":"Ipís","cat":"A","sexo":"M"},{"nombre":"Raquel Gómez Vargas","cong":"Ipís","cat":"A","sexo":"M"},{"nombre":"Rayham Degracia De Gracia","cong":"Ipís","cat":"N","sexo":"H"},{"nombre":"Rouss Degracia De Gracia","cong":"Ipís","cat":"N","sexo":"M"},{"nombre":"Samuel Sánchez Gomez","cong":"Ipís","cat":"N","sexo":"H"},{"nombre":"Sandra Vargas Coronado","cong":"Ipís","cat":"A","sexo":"M"},{"nombre":"Sebastiana Del Carmen López Chevez","cong":"Ipís","cat":"A","sexo":"M"},{"nombre":"Yazid Degracia De Gracia","cong":"Ipís","cat":"N","sexo":"H"},{"nombre":"Zeidy Valverde Valverde","cong":"Ipís","cat":"A","sexo":"M"},{"nombre":"Bradley Terrence Campos Johnson","cong":"Limoncito","cat":"N","sexo":"H"},{"nombre":"Juan Carlos Campos Muñoz","cong":"Limoncito","cat":"A","sexo":"H"},{"nombre":"Lois Annette Johnson West","cong":"Limoncito","cat":"A","sexo":"M"},{"nombre":"Annette Campos","cong":"Limoncito","cat":"","sexo":"M"},{"nombre":"Alicia","cong":"Limoncito","cat":"","sexo":"M"},{"nombre":"Airys Sandoval Jiménez","cong":"Río Banano","cat":"N","sexo":"M"},{"nombre":"Arnold Sandoval Monge","cong":"Río Banano","cat":"A","sexo":"H"},{"nombre":"Axa Milipsa Jiménez Rodríguez","cong":"Río Banano","cat":"A","sexo":"M"},{"nombre":"Axel Sandoval Jiménez","cong":"Río Banano","cat":"N","sexo":"H"},{"nombre":"Fonseca Jiménez Cintia","cong":"Río Banano","cat":"A","sexo":"M"},{"nombre":"Hugo González","cong":"Río Banano","cat":"A","sexo":"H"},{"nombre":"Jahbiel Ordoñez Briones","cong":"Río Banano","cat":"N","sexo":"H"},{"nombre":"Luis Guillermo Jiménez Mata","cong":"Río Banano","cat":"A","sexo":"H"},{"nombre":"Ordoñez Chevez José Joaquín","cong":"Río Banano","cat":"A","sexo":"H"},{"nombre":"Yisbell Ordoñez Briones","cong":"Río Banano","cat":"N","sexo":"M"},{"nombre":"Amira Richards mayorga","cong":"Río Banano","cat":"","sexo":"M"},{"nombre":"Derek villafuerte mayorga","cong":"Río Banano","cat":"","sexo":"H"},{"nombre":"Eduardo villafuerte mongarez","cong":"Río Banano","cat":"","sexo":"H"},{"nombre":"Judith jimenez Mata","cong":"Río Banano","cat":"","sexo":"M"},{"nombre":"Lisseth Mayorga Jiménez","cong":"Río Banano","cat":"","sexo":"M"},{"nombre":"AURORA RÍO BANANO","cong":"Río Banano","cat":"","sexo":"M"},{"nombre":"Lilliam Jiménez Mata","cong":"Río Banano","cat":"","sexo":"M"},{"nombre":"Abimael Stevens García Montes De Oca","cong":"Santa Marta","cat":"N","sexo":"H"},{"nombre":"Ana Marys Montes De Oca Díaz","cong":"Santa Marta","cat":"A","sexo":"M"},{"nombre":"Kaytlyn Gutiérrez Picado","cong":"Santa Marta","cat":"A","sexo":"M"},{"nombre":"Laira Ismary García Montes De Oca","cong":"Santa Marta","cat":"N","sexo":"M"},{"nombre":"Abiezer D'Gracia Mata","cong":"Tucurrique","cat":"A","sexo":"H"},{"nombre":"Emma D'Gracia Macloud","cong":"Tucurrique","cat":"N","sexo":"M"},{"nombre":"Eneida Vargas Mata","cong":"Tucurrique","cat":"A","sexo":"M"},{"nombre":"José Luis Mata Ortiz","cong":"Tucurrique","cat":"A","sexo":"H"},{"nombre":"Kathya Vanesa Mora Burgos","cong":"Tucurrique","cat":"A","sexo":"M"},{"nombre":"Kimberly Macloud Manzanares","cong":"Tucurrique","cat":"A","sexo":"M"},{"nombre":"María Eugenia Mata Nuñez","cong":"Tucurrique","cat":"A","sexo":"M"},{"nombre":"Oziel D'Gracia Macloud","cong":"Tucurrique","cat":"N","sexo":"H"},{"nombre":"Sara Sofía Sánchez Cordero","cong":"Tucurrique","cat":"N","sexo":"M"},{"nombre":"Sebastián Murillo Macloud","cong":"Tucurrique","cat":"J","sexo":"H"},{"nombre":"Meri Mata","cong":"Tucurrique","cat":"","sexo":"M"},{"nombre":"Jose Lino Mata Núñez","cong":"Tucurrique","cat":"","sexo":"H"},{"nombre":"Maritza Ortiz","cong":"Tucurrique","cat":"","sexo":"M"},{"nombre":"Adriel Salazar","cong":"Valle la estrella","cat":"J","sexo":"H"},{"nombre":"Axel Salazar","cong":"Valle la estrella","cat":"N","sexo":"H"},{"nombre":"Azeneth Chaves Cárdenas","cong":"Valle la estrella","cat":"N","sexo":"M"},{"nombre":"Hilary Salazar","cong":"Valle la estrella","cat":"J","sexo":"M"},{"nombre":"Irene Chavarría Salgado","cong":"Valle la estrella","cat":"A","sexo":"M"},{"nombre":"Joel Isaac Chaves Chavarría","cong":"Valle la estrella","cat":"A","sexo":"H"},{"nombre":"Johalis Pinzón Ayala","cong":"Valle la estrella","cat":"A","sexo":"M"},{"nombre":"Josiel Soto Pinzon","cong":"Valle la estrella","cat":"N","sexo":"H"},{"nombre":"Leonel Soto Gomez","cong":"Valle la estrella","cat":"A","sexo":"H"},{"nombre":"Marcia Golding Narathan","cong":"Valle la estrella","cat":"A","sexo":"M"},{"nombre":"María Elisabeth Reyes Castillo","cong":"Valle la estrella","cat":"A","sexo":"M"},{"nombre":"Minor Rodríguez Acuña","cong":"Valle la estrella","cat":"A","sexo":"H"},{"nombre":"Naily Chaves Cárdenas","cong":"Valle la estrella","cat":"N","sexo":"M"},{"nombre":"Naiya Cuff Golding","cong":"Valle la estrella","cat":"N","sexo":"M"},{"nombre":"Neigel Cuff Golding","cong":"Valle la estrella","cat":"J","sexo":"H"},{"nombre":"Neimark Cuff Golding","cong":"Valle la estrella","cat":"N","sexo":"H"},{"nombre":"Oriel Salazar","cong":"Valle la estrella","cat":"J","sexo":"H"},{"nombre":"Ruby Golding Narathan","cong":"Valle la estrella","cat":"A","sexo":"M"},{"nombre":"Samir Soto Pinzón","cong":"Valle la estrella","cat":"J","sexo":"H"},{"nombre":"Steven Soto Pinzon","cong":"Valle la estrella","cat":"J","sexo":"H"},{"nombre":"Yarisel Cardenas Martinez","cong":"Valle la estrella","cat":"A","sexo":"M"},{"nombre":"Zoe Chaves Cárdenas","cong":"Valle la estrella","cat":"N","sexo":"M"},{"nombre":"Agnes Molano Rodríguez","cong":"Valle la estrella","cat":"","sexo":"M"},{"nombre":"Alexis Guerrero olmos","cong":"Valle la estrella","cat":"","sexo":"H"},{"nombre":"Bienvenido chaves","cong":"Valle la estrella","cat":"","sexo":"H"},{"nombre":"Leah Molano Rodríguez","cong":"Valle la estrella","cat":"","sexo":"M"},{"nombre":"Marisela Rodríguez Chavarría","cong":"Valle la estrella","cat":"","sexo":"M"},{"nombre":"Marisol  Chavarria Salgado","cong":"Valle la estrella","cat":"","sexo":"M"},{"nombre":"Reynel Molano Ruíz","cong":"Valle la estrella","cat":"","sexo":"H"},{"nombre":"Yamileth chavarria salgado","cong":"Valle la estrella","cat":"","sexo":"M"}];
 
 // ── ESTADO ────────────────────────────────────────────────────
-let personasExtra = JSON.parse(localStorage.getItem("crptg11-aseo-extra") || "[]");
+let equipoAseo    = JSON.parse(localStorage.getItem("crptg11-aseo-equipo") || "[]");
 let asignaciones  = JSON.parse(localStorage.getItem("crptg11-aseo-asig")  || "{}");
 let notas         = JSON.parse(localStorage.getItem("crptg11-aseo-notas") || "[]");
-let eliminados    = JSON.parse(localStorage.getItem("crptg11-aseo-elim")  || "[]");
 let diaActivo     = "mie";
+let registroSeleccionado = null;
 
-const todasLasPersonas = () => [
-  ...BASE_PERSONAS.filter(p=>!eliminados.includes(p.nombre)),
-  ...personasExtra
-];
-const hombres = () => todasLasPersonas().filter(p=>p.sexo==="H");
-const mujeres = () => todasLasPersonas().filter(p=>p.sexo==="M");
+const equipoNombres = () => new Set(equipoAseo.map(p=>p.nombre));
+const hombres = () => equipoAseo.filter(p=>p.sexo==="H");
+const mujeres = () => equipoAseo.filter(p=>p.sexo==="M");
 
 const puedeEditar = () => localStorage.getItem(AUTH_KEY) === "ok";
 
 function guardar(){
-  localStorage.setItem("crptg11-aseo-extra", JSON.stringify(personasExtra));
+  localStorage.setItem("crptg11-aseo-equipo", JSON.stringify(equipoAseo));
   localStorage.setItem("crptg11-aseo-asig",  JSON.stringify(asignaciones));
   localStorage.setItem("crptg11-aseo-notas", JSON.stringify(notas));
-  localStorage.setItem("crptg11-aseo-elim",  JSON.stringify(eliminados));
 }
 
 // ── AUTH ──────────────────────────────────────────────────────
+function actualizarBtn(){
+  const e=puedeEditar();
+  const btn=document.getElementById("btn-editar");
+  btn.textContent=e?"🔓 Editar":"🔒 Editar";
+  btn.style.borderColor=e?"rgba(62,207,184,.4)":"rgba(232,107,139,.4)";
+  btn.style.color=e?"#3ecfb8":"#e86b8b";
+  document.getElementById("btn-agregar").style.display=e?"inline-block":"none";
+  document.getElementById("btn-propuesta-global").style.display=e?"inline-block":"none";
+  document.getElementById("th-del").textContent=e?"Quitar":"";
+}
+
 function toggleEdicion(){
   if(puedeEditar()){
     if(confirm("¿Bloquear edición?")){
@@ -298,60 +331,159 @@ window.toggleEdicion=toggleEdicion;
 
 function verificarClave(){
   const v=document.getElementById("auth-input").value;
-  if(v===CLAVE){
-    localStorage.setItem(AUTH_KEY,"ok");
-    document.getElementById("auth-overlay").style.display="none";
-    document.getElementById("auth-input").value="";
-    actualizarBtn(); renderTodo();
-    mostrarAlerta("✅ Edición desbloqueada");
-  } else {
-    document.getElementById("auth-error").textContent="Clave incorrecta";
-    document.getElementById("auth-input").value="";
-  }
+  if(v===CLAVE){ localStorage.setItem(AUTH_KEY,"ok"); document.getElementById("auth-overlay").style.display="none"; actualizarBtn(); renderTodo(); }
+  else{ document.getElementById("auth-error").textContent="Clave incorrecta"; document.getElementById("auth-input").value=""; document.getElementById("auth-input").focus(); }
 }
 window.verificarClave=verificarClave;
 
-function actualizarBtn(){
-  const btn=document.getElementById("btn-editar");
-  const btnA=document.getElementById("btn-agregar");
-  if(puedeEditar()){
-    btn.textContent="🔓 Bloquear edición";
-    btn.style.borderColor="#3ecfb8"; btn.style.color="#3ecfb8";
-    if(btnA) btnA.style.display="inline-block";
-    document.getElementById("th-del").textContent="";
-  } else {
-    btn.textContent="🔒 Editar";
-    btn.style.borderColor="rgba(232,107,139,.4)"; btn.style.color="var(--rose)";
-    if(btnA) btnA.style.display="none";
-    document.getElementById("form-agregar").style.display="none";
-  }
+// ── BÚSQUEDA DEL REGISTRO ─────────────────────────────────────
+function filtrarRegistro(){
+  const q = document.getElementById("registro-search").value.toLowerCase().trim();
+  const dd = document.getElementById("registro-dropdown");
+  const yaEnEquipo = equipoNombres();
+  const filtradas = PERSONAS_REGISTRO.filter(p=>
+    !yaEnEquipo.has(p.nombre) &&
+    (p.nombre.toLowerCase().includes(q) || p.cong.toLowerCase().includes(q))
+  ).slice(0,20);
+
+  if(!filtradas.length){ dd.innerHTML=`<div class="search-select-option" style="color:var(--muted)">Sin resultados</div>`; dd.classList.add("open"); return; }
+  dd.innerHTML = filtradas.map(p=>`
+    <div class="search-select-option" onclick="seleccionarDelRegistro(${JSON.stringify(p).replace(/"/g,'&quot;')})">
+      <span>${p.nombre}</span>
+      <span class="opt-cong">${p.cong}</span>
+    </div>`).join("");
+  dd.classList.add("open");
 }
 
-// ── RENDER SLOT ───────────────────────────────────────────────
-function renderSlots(key, count, pool, sexoBadge, editar){
-  return Array.from({length:count},(_,i)=>{
-    const k=`${key}_${i}`;
-    const asig=asignaciones[k]||"";
+function abrirRegistro(){
+  filtrarRegistro();
+}
+
+function cerrarRegistroDelay(){
+  setTimeout(()=>document.getElementById("registro-dropdown").classList.remove("open"),200);
+}
+
+function seleccionarDelRegistro(p){
+  registroSeleccionado = p;
+  document.getElementById("registro-search").value = p.nombre;
+  document.getElementById("registro-dropdown").classList.remove("open");
+  document.getElementById("registro-seleccionado").textContent = `✔ ${p.nombre} · ${p.cong} · ${p.sexo==="H"?"Hombre":"Mujer"}`;
+}
+
+function agregarDesdeRegistro(){
+  if(!registroSeleccionado){ mostrarAlerta("⚠️ Selecciona a alguien primero",true); return; }
+  if(equipoNombres().has(registroSeleccionado.nombre)){ mostrarAlerta("⚠️ Ya está en el equipo",true); return; }
+  equipoAseo.push({...registroSeleccionado, esExtra:false});
+  guardar();
+  registroSeleccionado=null;
+  document.getElementById("registro-search").value="";
+  document.getElementById("registro-seleccionado").textContent="";
+  renderTodo(); mostrarAlerta(`✅ ${registroSeleccionado ? registroSeleccionado.nombre : ""} agregado al equipo`);
+}
+window.agregarDesdeRegistro=agregarDesdeRegistro;
+window.seleccionarDelRegistro=seleccionarDelRegistro;
+window.filtrarRegistro=filtrarRegistro;
+window.abrirRegistro=abrirRegistro;
+window.cerrarRegistroDelay=cerrarRegistroDelay;
+
+// ── AGREGAR PERSONA EXTERNA ────────────────────────────────────
+function mostrarFormAgregar(){ document.getElementById("form-agregar").style.display="block"; }
+window.mostrarFormAgregar=mostrarFormAgregar;
+
+function agregarPersona(){
+  const nombre=document.getElementById("new-nombre").value.trim();
+  const cong  =document.getElementById("new-cong").value.trim();
+  const sexo  =document.getElementById("new-sexo").value;
+  if(!nombre){ mostrarAlerta("⚠️ Ingresa el nombre",true); return; }
+  if(equipoNombres().has(nombre)){ mostrarAlerta("⚠️ Ya existe en el equipo",true); return; }
+  equipoAseo.push({nombre, cong:cong||"—", sexo, cat:"", esExtra:true});
+  guardar();
+  document.getElementById("new-nombre").value="";
+  document.getElementById("new-cong").value="";
+  document.getElementById("form-agregar").style.display="none";
+  renderTodo(); mostrarAlerta(`✅ ${nombre} agregado como colaborador externo`);
+}
+window.agregarPersona=agregarPersona;
+
+function eliminarDelEquipo(nombre){
+  if(!confirm(`¿Quitar a ${nombre} del equipo de aseo?`)) return;
+  equipoAseo=equipoAseo.filter(p=>p.nombre!==nombre);
+  // limpiar asignaciones
+  for(const k in asignaciones){ if(asignaciones[k]===nombre) delete asignaciones[k]; }
+  guardar(); renderTodo(); mostrarAlerta(`↩ ${nombre} removido del equipo`);
+}
+window.eliminarDelEquipo=eliminarDelEquipo;
+
+// ── PROPUESTA AUTOMÁTICA ──────────────────────────────────────
+function generarPropuesta(){
+  if(!equipoAseo.length){ mostrarAlerta("⚠️ Agrega personas al equipo primero",true); return; }
+  if(!confirm("¿Generar una propuesta de asignaciones? Esto reemplazará las asignaciones actuales.")) return;
+
+  asignaciones={};
+  const h=[...hombres()];
+  const m=[...mujeres()];
+  let hi=0, mi=0;
+  const nextH=()=>{ if(!h.length) return null; const p=h[hi%h.length]; hi++; return p.nombre; };
+  const nextM=()=>{ if(!m.length) return null; const p=m[mi%m.length]; mi++; return p.nombre; };
+  const nextAny=()=>{ const all=[...equipoAseo]; return all.length? all[(hi+mi)%all.length].nombre: null; };
+
+  DIAS.forEach(d=>{
+    const comidas = d.comidas.map(id=>COMIDAS_MAP[id]);
+    // Cocina: 4 personas mixtas por comida
+    comidas.forEach(c=>{
+      for(let i=0;i<4;i++){
+        const p = i%2===0? nextH()||nextM() : nextM()||nextH();
+        if(p) asignaciones[`cocina_${d.id}_${c.id}_mix_${i}`]=p;
+      }
+    });
+    // Baños H: 3 turnos × 1 hombre
+    TURNOS_BANOS.forEach(t=>{ const p=nextH(); if(p) asignaciones[`banosh_${d.id}_${t.id}_h_0`]=p; });
+    // Baños M: 3 turnos × 1 mujer
+    TURNOS_BANOS.forEach(t=>{ const p=nextM(); if(p) asignaciones[`banoosm_${d.id}_${t.id}_m_0`]=p; });
+    // Salón: antes y después × (3M + 2H)
+    comidas.forEach(c=>{
+      ["antes","desp"].forEach(mo=>{
+        for(let i=0;i<3;i++){ const p=nextM()||nextH(); if(p) asignaciones[`salon_${d.id}_${c.id}_${mo}_m_${i}`]=p; }
+        for(let i=0;i<2;i++){ const p=nextH()||nextM(); if(p) asignaciones[`salon_${d.id}_${c.id}_${mo}_h_${i}`]=p; }
+      });
+    });
+    // Basura: 2 hombres por comida
+    comidas.forEach(c=>{
+      for(let i=0;i<2;i++){ const p=nextH()||nextM(); if(p) asignaciones[`basura_${d.id}_${c.id}_h_${i}`]=p; }
+    });
+  });
+
+  guardar(); renderTodo(); mostrarAlerta("✨ Propuesta generada — puedes ajustarla libremente");
+}
+window.generarPropuesta=generarPropuesta;
+
+// ── RENDER SLOTS ──────────────────────────────────────────────
+function renderSlots(baseKey, count, pool, badge, editar){
+  let html="";
+  for(let i=0;i<count;i++){
+    const k=`${baseKey}_${i}`;
+    const val=asignaciones[k]||"";
     if(editar){
-      const opts=`<option value="">— Sin asignar —</option>`
-        +pool.map(p=>`<option${asig===p.nombre?" selected":""} value="${p.nombre}">${p.nombre}</option>`).join("");
-      return `<div class="slot-row">
+      const opts=["<option value=''>— sin asignar —</option>",
+        ...pool.map(p=>`<option value="${p.nombre}"${p.nombre===val?' selected':''}>${p.nombre}</option>`)
+      ].join("");
+      html+=`<div class="slot-row">
         <span class="slot-num">${i+1}</span>
-        ${sexoBadge}
+        ${badge}
         <select class="sel-aseo" onchange="asignar('${k}',this.value)">${opts}</select>
       </div>`;
     } else {
-      return `<div class="slot-row">
+      html+=`<div class="slot-row">
         <span class="slot-num">${i+1}</span>
-        ${sexoBadge}
-        <span style="font-size:13px;${asig?'font-weight:600':'color:var(--muted);font-style:italic'}">${asig||"Sin asignar"}</span>
+        ${badge}
+        <span style="font-size:12px;color:${val?'var(--text)':'var(--muted)'};flex:1">${val||'— sin asignar —'}</span>
       </div>`;
     }
-  }).join("");
+  }
+  return html;
 }
 
 function turnoCard(titulo, hora, key, slots_spec, editar){
-  // slots_spec: [{count, pool, badge}]
   const contenido = slots_spec.map(s=>renderSlots(key+'_'+s.id, s.count, s.pool(), s.badge, editar)).join("");
   return `<div class="turno-card">
     <div class="turno-header">
@@ -365,66 +497,64 @@ function turnoCard(titulo, hora, key, slots_spec, editar){
 function asignar(k, v){ asignaciones[k]=v; guardar(); renderEquipo(); mostrarAlerta(v?`✅ ${v} asignado`:"↩ Slot liberado"); }
 window.asignar=asignar;
 
-// ── RENDER POR ÁREA ───────────────────────────────────────────
-
-// 1. Cocina: después de cada comida, 4 personas (mixto)
-function renderCocina(){
-  const editar=puedeEditar();
-  document.getElementById("grid-cocina").innerHTML = COMIDAS.map(c=>
-    turnoCard(`Post-${c.label}`, "Después de la comida", `cocina_${diaActivo}_${c.id}`,
-      [{id:"mix", count:4, pool:todasLasPersonas, badge:`<span class="tag-h">H/M</span>`}], editar)
-  ).join("");
+// ── RENDER ÁREAS ──────────────────────────────────────────────
+function getComidasDia(){
+  const dia = DIAS.find(d=>d.id===diaActivo);
+  return dia ? dia.comidas.map(id=>COMIDAS_MAP[id]) : [];
 }
 
-// 2. Baños hombres: 3 turnos, 1 hombre
+function renderCocina(){
+  const editar=puedeEditar();
+  const comidas=getComidasDia();
+  document.getElementById("grid-cocina").innerHTML = comidas.length
+    ? comidas.map(c=>turnoCard(`Post-${c.label}`,"Después de la comida",`cocina_${diaActivo}_${c.id}`,
+        [{id:"mix",count:4,pool:()=>equipoAseo,badge:`<span class="tag-h">H/M</span>`}],editar)).join("")
+    : `<div class="empty">No hay comidas programadas este día.</div>`;
+}
+
 function renderBanosH(){
   const editar=puedeEditar();
   document.getElementById("grid-banos-h").innerHTML = TURNOS_BANOS.map(t=>
-    turnoCard(t.label, t.hora, `banosh_${diaActivo}_${t.id}`,
-      [{id:"h", count:1, pool:hombres, badge:`<span class="tag-h">H</span>`}], editar)
-  ).join("");
+    turnoCard(t.label,t.hora,`banosh_${diaActivo}_${t.id}`,
+      [{id:"h",count:1,pool:hombres,badge:`<span class="tag-h">H</span>`}],editar)).join("");
 }
 
-// 3. Baños mujeres: 3 turnos, 1 mujer
 function renderBanosM(){
   const editar=puedeEditar();
   document.getElementById("grid-banos-m").innerHTML = TURNOS_BANOS.map(t=>
-    turnoCard(t.label, t.hora, `banoosm_${diaActivo}_${t.id}`,
-      [{id:"m", count:1, pool:mujeres, badge:`<span class="tag-m">M</span>`}], editar)
-  ).join("");
+    turnoCard(t.label,t.hora,`banoosm_${diaActivo}_${t.id}`,
+      [{id:"m",count:1,pool:mujeres,badge:`<span class="tag-m">M</span>`}],editar)).join("");
 }
 
-// 4. Salón: antes y después de cada comida, 3 mujeres + 2 hombres
 function renderSalon(){
   const editar=puedeEditar();
-  const momentos=[
-    {sfx:"antes", hora:"Antes de la comida"},
-    {sfx:"desp",  hora:"Después de la comida"},
-  ];
-  document.getElementById("grid-salon").innerHTML = COMIDAS.flatMap(c=>
-    momentos.map(m=>
-      turnoCard(`${m.hora} — ${c.label}`, m.hora, `salon_${diaActivo}_${c.id}_${m.sfx}`, [
-        {id:"m", count:3, pool:mujeres, badge:`<span class="tag-m">M</span>`},
-        {id:"h", count:2, pool:hombres, badge:`<span class="tag-h">H</span>`},
-      ], editar)
-    )
-  ).join("");
+  const comidas=getComidasDia();
+  const momentos=[{sfx:"antes",hora:"Antes de la comida"},{sfx:"desp",hora:"Después de la comida"}];
+  document.getElementById("grid-salon").innerHTML = comidas.length
+    ? comidas.flatMap(c=>momentos.map(mo=>
+        turnoCard(`${mo.hora} — ${c.label}`,mo.hora,`salon_${diaActivo}_${c.id}_${mo.sfx}`,[
+          {id:"m",count:3,pool:mujeres,badge:`<span class="tag-m">M</span>`},
+          {id:"h",count:2,pool:hombres,badge:`<span class="tag-h">H</span>`}
+        ],editar)
+      )).join("")
+    : `<div class="empty">No hay comidas programadas este día.</div>`;
 }
 
-// 5. Basura: después de cada comida, 2 hombres
 function renderBasura(){
   const editar=puedeEditar();
-  document.getElementById("grid-basura").innerHTML = COMIDAS.map(c=>
-    turnoCard(`Post-${c.label}`, "Después de la comida", `basura_${diaActivo}_${c.id}`,
-      [{id:"h", count:2, pool:hombres, badge:`<span class="tag-h">H</span>`}], editar)
-  ).join("");
+  const comidas=getComidasDia();
+  document.getElementById("grid-basura").innerHTML = comidas.length
+    ? comidas.map(c=>turnoCard(`Post-${c.label}`,"Después de la comida",`basura_${diaActivo}_${c.id}`,
+        [{id:"h",count:2,pool:hombres,badge:`<span class="tag-h">H</span>`}],editar)).join("")
+    : `<div class="empty">No hay comidas programadas este día.</div>`;
 }
 
 // ── TABS ──────────────────────────────────────────────────────
 function renderTabs(){
-  document.getElementById("tabs-dia").innerHTML = DIAS.map(d=>
-    `<button class="dtab${d.id===diaActivo?" on":""}" onclick="selDia('${d.id}')">${d.label}</button>`
-  ).join("");
+  document.getElementById("tabs-dia").innerHTML = DIAS.map(d=>{
+    const note = d.id==="mie" ? ' <span style="font-size:9px;opacity:.6">(solo cena)</span>' : '';
+    return `<button class="dtab${d.id===diaActivo?" on":""}" onclick="selDia('${d.id}')">${d.label}${note}</button>`;
+  }).join("");
 }
 function selDia(id){ diaActivo=id; renderTabs(); renderAreas(); }
 window.selDia=selDia;
@@ -435,20 +565,16 @@ function renderAreas(){ renderCocina(); renderBanosH(); renderBanosM(); renderSa
 function turnosDePersona(nombre){
   const lista=[];
   DIAS.forEach(d=>{
-    // cocina
-    COMIDAS.forEach(c=>{
+    const comidas=d.comidas.map(id=>COMIDAS_MAP[id]);
+    comidas.forEach(c=>{
       for(let i=0;i<4;i++) if(asignaciones[`cocina_${d.id}_${c.id}_mix_${i}`]===nombre) lista.push(`${d.label} Cocina post-${c.id}`);
     });
-    // baños h
     TURNOS_BANOS.forEach(t=>{ if(asignaciones[`banosh_${d.id}_${t.id}_h_0`]===nombre) lista.push(`${d.label} Baño H ${t.label}`); });
-    // baños m
     TURNOS_BANOS.forEach(t=>{ if(asignaciones[`banoosm_${d.id}_${t.id}_m_0`]===nombre) lista.push(`${d.label} Baño M ${t.label}`); });
-    // salón
-    COMIDAS.forEach(c=>["antes","desp"].forEach(m=>{
-      for(let i=0;i<5;i++) if(asignaciones[`salon_${d.id}_${c.id}_${m}_m_${i}`]===nombre||asignaciones[`salon_${d.id}_${c.id}_${m}_h_${i}`]===nombre) lista.push(`${d.label} Salón ${c.id} ${m}`);
+    comidas.forEach(c=>["antes","desp"].forEach(mo=>{
+      for(let i=0;i<5;i++) if(asignaciones[`salon_${d.id}_${c.id}_${mo}_m_${i}`]===nombre||asignaciones[`salon_${d.id}_${c.id}_${mo}_h_${i}`]===nombre) lista.push(`${d.label} Salón ${c.id} ${mo}`);
     }));
-    // basura
-    COMIDAS.forEach(c=>{
+    comidas.forEach(c=>{
       for(let i=0;i<2;i++) if(asignaciones[`basura_${d.id}_${c.id}_h_${i}`]===nombre) lista.push(`${d.label} Basura post-${c.id}`);
     });
   });
@@ -456,48 +582,25 @@ function turnosDePersona(nombre){
 }
 
 function renderEquipo(){
-  const todas=todasLasPersonas();
-  document.getElementById("contador").textContent=`${todas.length} personas · ${hombres().length} H · ${mujeres().length} M`;
+  document.getElementById("contador").textContent=`${equipoAseo.length} en equipo · ${hombres().length} H · ${mujeres().length} M`;
   const editar=puedeEditar();
-  document.getElementById("tbody-equipo").innerHTML=todas.map((p,i)=>{
+  if(!equipoAseo.length){
+    document.getElementById("tbody-equipo").innerHTML=`<tr><td colspan="6" class="empty">Aún no hay personas en el equipo de aseo.<br><small style="color:var(--muted)">Usa "Agregar persona" para comenzar.</small></td></tr>`;
+    return;
+  }
+  document.getElementById("tbody-equipo").innerHTML=equipoAseo.map((p,i)=>{
     const tps=turnosDePersona(p.nombre);
+    const extraTag=p.esExtra?`<span class="equipo-extra-tag">Externo</span>`:"";
     return `<tr>
       <td style="color:var(--muted)">${i+1}</td>
-      <td style="font-weight:600">${p.nombre}</td>
-      <td style="color:var(--muted);font-size:12px">${p.cong}</td>
+      <td style="font-weight:600">${p.nombre}${extraTag}</td>
+      <td style="color:var(--muted);font-size:12px">${p.cong||"—"}</td>
       <td><span class="badge ${p.sexo==="H"?"b-h":"b-m"}">${p.sexo==="H"?"Hombre":"Mujer"}</span></td>
       <td style="font-size:11px;color:var(--muted);line-height:1.7">${tps.length?tps.join("<br>"):"<span style='font-style:italic'>Sin asignar</span>"}</td>
-      <td>${editar?`<button class="btn-del" onclick="eliminarPersona('${p.nombre}')">✕</button>`:""}</td>
+      <td>${editar?`<button class="btn-del" onclick="eliminarDelEquipo('${p.nombre.replace(/'/g,"\\'")}')">✕</button>`:""}</td>
     </tr>`;
   }).join("");
 }
-
-function eliminarPersona(nombre){
-  if(!confirm(`¿Eliminar a ${nombre}?`)) return;
-  const esExtra=personasExtra.some(p=>p.nombre===nombre);
-  if(esExtra) personasExtra=personasExtra.filter(p=>p.nombre!==nombre);
-  else { if(!eliminados.includes(nombre)) eliminados.push(nombre); }
-  guardar(); renderTodo(); mostrarAlerta(`↩ ${nombre} eliminado`);
-}
-window.eliminarPersona=eliminarPersona;
-
-function mostrarFormAgregar(){ document.getElementById("form-agregar").style.display="block"; document.getElementById("new-nombre").focus(); }
-window.mostrarFormAgregar=mostrarFormAgregar;
-
-function agregarPersona(){
-  const nombre=document.getElementById("new-nombre").value.trim();
-  const cong  =document.getElementById("new-cong").value.trim();
-  const sexo  =document.getElementById("new-sexo").value;
-  if(!nombre){ mostrarAlerta("⚠️ Ingresa el nombre",true); return; }
-  if(todasLasPersonas().some(p=>p.nombre===nombre)){ mostrarAlerta("⚠️ Ya existe",true); return; }
-  personasExtra.push({nombre, cong:cong||"—", sexo});
-  guardar();
-  document.getElementById("new-nombre").value="";
-  document.getElementById("new-cong").value="";
-  document.getElementById("form-agregar").style.display="none";
-  renderTodo(); mostrarAlerta(`✅ ${nombre} agregado`);
-}
-window.agregarPersona=agregarPersona;
 
 // ── NOTAS ─────────────────────────────────────────────────────
 function renderNotas(){
@@ -528,7 +631,7 @@ function mostrarAlerta(msg,err=false){
 }
 
 // ── INIT ──────────────────────────────────────────────────────
-function renderTodo(){ renderTabs(); renderAreas(); renderEquipo(); renderNotas(); }
+function renderTodo(){ renderTabs(); renderAreas(); renderEquipo(); renderNotas(); actualizarBtn(); }
 actualizarBtn();
 renderTodo();
 </script>

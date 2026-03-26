@@ -94,7 +94,7 @@ table.res tr:hover td{background:rgba(232,168,56,.03)}
 <div class="topbar">
   <div style="display:flex;align-items:center;gap:14px">
     <a href="index.html" class="back">← Inicio</a>
-    <div class="topbar-title"><span class="sync-dot"></span>📊 Dashboard — Alimentación</div>
+    <div class="topbar-title"><span class="sync-dot"></span>Dashboard — Alimentación</div>
   </div>
   <span class="last-update" id="last-update">Conectando...</span>
 </div>
@@ -110,9 +110,9 @@ table.res tr:hover td{background:rgba(232,168,56,.03)}
   <div class="sep"></div>
   <span class="view-label">Tiempo:</span>
   <button class="vbtn desayuno on" onclick="setVistaTiempo('todos',this)">Todos</button>
-  <button class="vbtn desayuno"    onclick="setVistaTiempo('desayuno',this)">☀️ Desayuno</button>
-  <button class="vbtn almuerzo"    onclick="setVistaTiempo('almuerzo',this)">🌤️ Almuerzo</button>
-  <button class="vbtn cena"        onclick="setVistaTiempo('cena',this)">🌙 Cena</button>
+  <button class="vbtn desayuno"    onclick="setVistaTiempo('desayuno',this)">Desayuno</button>
+  <button class="vbtn almuerzo"    onclick="setVistaTiempo('almuerzo',this)">Almuerzo</button>
+  <button class="vbtn cena"        onclick="setVistaTiempo('cena',this)">Cena</button>
 </div>
 
 <div class="main" id="main">
@@ -138,7 +138,22 @@ const db  = getDatabase(app);
 const SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vS-FHGAAPJvj_dQEHyN09G1xVJWfblbjGrDgjCREmoi19ucjl1cuPLm5fR0ZHvcmZZ6PPdrEQ7g1pSV/pub?gid=1479802457&single=true&output=csv";
 const DIAS    = [1,2,3,4];
 const TIEMPOS = ["desayuno","almuerzo","cena"];
-const TLABEL  = {desayuno:"☀️ Desayuno",almuerzo:"🌤️ Almuerzo",cena:"🌙 Cena"};
+const TLABEL  = {desayuno:"Desayuno",almuerzo:"Almuerzo",cena:"Cena"};
+// Miércoles (día 1) solo tiene cena
+const TIEMPOS_POR_DIA = {1:["cena"],2:["desayuno","almuerzo","cena"],3:["desayuno","almuerzo","cena"],4:["desayuno","almuerzo","cena"]};
+// Mapeo día_tiempo → columna de comida en el CSV
+const MEAL_KEY = {
+  '1_cena':    'cena - miercoles',
+  '2_desayuno':'desayuno -jueves',
+  '2_almuerzo':'almuerzo -jueves',
+  '2_cena':    'cena - jueves',
+  '3_desayuno':'desayuno -viernes',
+  '3_almuerzo':'almuerzo -viernes',
+  '3_cena':    'cena - viernes',
+  '4_desayuno':'desayuno - sábado',
+  '4_almuerzo':'almuerzo -sábado',
+  '4_cena':    'cena - sábado'
+};
 
 let DATA  = [];
 let retiros = {};
@@ -147,30 +162,51 @@ let vistaTiempo = "todos";
 
 const fkey = (dia,tiempo,id) => `d${dia}_${tiempo}_${id.replace(/-/g,"_")}`;
 
-// Filtrar retiros según vista
-function contarRetiros(id) {
+// Filtrar retiros según vista y comidas asignadas al participante
+function getTiemposPosibles(d) {
   const dias    = vistaDia    === "todos" ? DIAS    : [parseInt(vistaDia)];
   const tiempos = vistaTiempo === "todos" ? TIEMPOS : [vistaTiempo];
-  return dias.flatMap(d => tiempos.map(t => fkey(d,t,id))).filter(k => retiros[k]).length;
+  return dias.flatMap(dia => {
+    const validosDia = TIEMPOS_POR_DIA[dia] || TIEMPOS;
+    return tiempos.filter(t => validosDia.includes(t)).map(t => ({dia, t}));
+  }).filter(({dia, t}) => {
+    const col = MEAL_KEY[`${dia}_${t}`];
+    return !col || !d || !d.comidas || d.comidas[col] !== false;
+  });
 }
-function maxPosible() {
-  const dias    = vistaDia    === "todos" ? DIAS.length    : 1;
-  const tiempos = vistaTiempo === "todos" ? TIEMPOS.length : 1;
-  return dias * tiempos;
+function contarRetiros(d) {
+  return getTiemposPosibles(d).filter(({dia,t}) => retiros[fkey(dia,t,d.id)]).length;
+}
+function maxPosible(d) {
+  return getTiemposPosibles(d).length;
 }
 
 // Selectores de vista
 function setVistaDia(v, el) {
   vistaDia = v;
-  document.querySelectorAll(".view-bar .vbtn").forEach(b => {
-    if (["todos","1","2","3","4"].includes(b.textContent.trim().split(" ")[0].toLowerCase()) ||
-        b.onclick?.toString().includes("setVistaDia")) {}
-  });
   // Resaltar botones día
   el.parentElement.querySelectorAll(".vbtn").forEach(b => {
     if (b.onclick?.toString().includes("setVistaDia")) b.classList.remove("on");
   });
   el.classList.add("on");
+  // Ocultar/mostrar botones de tiempo según TIEMPOS_POR_DIA
+  const valid = v === "todos" ? TIEMPOS : (TIEMPOS_POR_DIA[parseInt(v)] || TIEMPOS);
+  document.querySelectorAll(".view-bar .vbtn").forEach(b => {
+    const fn = b.onclick?.toString() || "";
+    if (!fn.includes("setVistaTiempo")) return;
+    const arg = fn.match(/setVistaTiempo\('([^']+)'/)?.[1];
+    if (!arg || arg === "todos") return;
+    b.style.display = valid.includes(arg) ? "" : "none";
+  });
+  // Si el tiempo actual no es válido para este día, cambiar a "todos"
+  if (v !== "todos" && vistaTiempo !== "todos" && !valid.includes(vistaTiempo)) {
+    document.querySelectorAll(".view-bar .vbtn").forEach(b => {
+      if (b.onclick?.toString().includes("setVistaTiempo")) b.classList.remove("on");
+    });
+    const todoBtn = [...document.querySelectorAll(".view-bar .vbtn")].find(b => b.onclick?.toString().includes("setVistaTiempo('todos'"));
+    if (todoBtn) todoBtn.classList.add("on");
+    vistaTiempo = "todos";
+  }
   renderDashboard();
 }
 function setVistaTiempo(v, el) {
@@ -201,13 +237,23 @@ async function cargarDatos(){
   const rows=parseCSV(text),h=rows[0].map(x=>x.replace(/^"|"$/g,"").trim());
   const c=n=>h.findIndex(x=>x===n);
   const iID=c("ID"),iNom=c("Nombre"),iEdad=c("Edad"),iCong=c("Congregación"),iAlim=c("Alimentación"),iCat=c("CategoriaE");
+  // Índices de columnas de comida
+  const mealCols = Object.values(MEAL_KEY);
+  const mealIdx  = {};
+  mealCols.forEach(col => { mealIdx[col] = c(col); });
   DATA=[];
   for(let i=1;i<rows.length;i++){
     const r=rows[i];
     if(!/^s[ií]/i.test((r[iAlim]||"").trim()))continue;
     const edad=parseInt(r[iEdad])||0;
     let cat=(r[iCat]||"").trim();if(!cat)cat=edad<7?"Menor":edad<18?"Joven":"Adulto";
-    DATA.push({id:(r[iID]||"").replace(/^"|"$/g,"").trim(),nombre:(r[iNom]||"").replace(/^"|"$/g,"").trim(),congregacion:(r[iCong]||"").replace(/^"|"$/g,"").trim(),categoria:cat});
+    // Leer comidas individuales
+    const comidas = {};
+    mealCols.forEach(col => {
+      const idx = mealIdx[col];
+      if(idx >= 0) comidas[col] = /^s[ií]/i.test((r[idx]||"").trim()) || (r[idx]||"").trim()==="TRUE";
+    });
+    DATA.push({id:(r[iID]||"").replace(/^"|"$/g,"").trim(),nombre:(r[iNom]||"").replace(/^"|"$/g,"").trim(),congregacion:(r[iCong]||"").replace(/^"|"$/g,"").trim(),categoria:cat,comidas});
   }
   renderDashboard();
 }
@@ -223,23 +269,24 @@ onValue(ref(db,"retiros"), snap => {
 function renderDashboard() {
   if (!DATA.length) return;
 
-  const max   = maxPosible();
   const total = DATA.length;
 
   // Totales generales
-  const totalRet = DATA.reduce((s,d) => s + Math.min(contarRetiros(d.id), max), 0);
-  const totalPen = total * max - totalRet;
-  const pct      = Math.round(totalRet / (total * max) * 100) || 0;
+  const totalRet = DATA.reduce((s,d) => s + Math.min(contarRetiros(d), maxPosible(d)), 0);
+  const totalMax = DATA.reduce((s,d) => s + maxPosible(d), 0);
+  const totalPen = totalMax - totalRet;
+  const pct      = Math.round(totalRet / (totalMax||1) * 100) || 0;
 
   // Por categoría
   const cats = { Adulto:{total:0,ret:0}, Joven:{total:0,ret:0}, Menor:{total:0,ret:0} };
   DATA.forEach(d => {
     const cat = cats[d.categoria] || cats["Adulto"];
-    cat.total += max;
-    cat.ret   += Math.min(contarRetiros(d.id), max);
+    const mx = maxPosible(d);
+    cat.total += mx;
+    cat.ret   += Math.min(contarRetiros(d), mx);
   });
 
-  // Últimos retiros (filtrando vista)
+  // Últimos retiros (filtrando vista y respetando tiempos por día)
   const dias    = vistaDia    === "todos" ? DIAS    : [parseInt(vistaDia)];
   const tiempos = vistaTiempo === "todos" ? TIEMPOS : [vistaTiempo];
   const ultimos = Object.entries(retiros)
@@ -247,7 +294,8 @@ function renderDashboard() {
       const parts = k.split("_"); // d1_desayuno_CR_11001
       const dia   = parseInt(parts[0].replace("d",""));
       const tiem  = parts[1];
-      return dias.includes(dia) && tiempos.includes(tiem);
+      const validosDia = TIEMPOS_POR_DIA[dia] || TIEMPOS;
+      return dias.includes(dia) && tiempos.includes(tiem) && validosDia.includes(tiem);
     })
     .map(([k,v]) => {
       const parts = k.split("_");
@@ -264,11 +312,16 @@ function renderDashboard() {
   // Tabla resumen días × tiempos
   const resumenFilas = DIAS.map(dia => {
     const row = { dia };
+    const validosDia = TIEMPOS_POR_DIA[dia] || TIEMPOS;
     TIEMPOS.forEach(tiem => {
+      if (!validosDia.includes(tiem)) return; // miércoles: sin desayuno/almuerzo
       if (vistaDia !== "todos" && parseInt(vistaDia) !== dia) return;
       if (vistaTiempo !== "todos" && vistaTiempo !== tiem) return;
-      const ret = DATA.filter(d => retiros[fkey(dia,tiem,d.id)]).length;
-      row[tiem] = { ret, pen: total - ret };
+      // Solo contar participantes que tienen esta comida asignada
+      const col = MEAL_KEY[`${dia}_${tiem}`];
+      const elegibles = DATA.filter(d => !col || !d.comidas || d.comidas[col] !== false);
+      const ret = elegibles.filter(d => retiros[fkey(dia,tiem,d.id)]).length;
+      row[tiem] = { ret, pen: elegibles.length - ret };
     });
     return row;
   });
@@ -293,7 +346,7 @@ function renderDashboard() {
       </div>
       <div class="prog-track"><div class="prog-fill" style="width:${pct}%"></div></div>
       <div class="prog-nums">
-        <div class="pn total"><div class="pn-num">${total * max}</div><div class="pn-lbl">Esperados</div></div>
+        <div class="pn total"><div class="pn-num">${totalMax}</div><div class="pn-lbl">Esperados</div></div>
         <div class="pn ret">  <div class="pn-num">${totalRet}</div>  <div class="pn-lbl">Retirados</div></div>
         <div class="pn pen">  <div class="pn-num">${totalPen}</div>  <div class="pn-lbl">Pendientes</div></div>
       </div>
@@ -304,11 +357,10 @@ function renderDashboard() {
       ${["Adulto","Joven","Menor"].map(cat => {
         const d = cats[cat];
         const p = d.total ? Math.round(d.ret/d.total*100) : 0;
-        const icon = cat==="Adulto"?"🧑":cat==="Joven"?"🧒":"👶";
         const color = cat==="Adulto"?"var(--lav)":cat==="Joven"?"var(--gold)":"var(--orange)";
         return `<div class="cat-card ${cat.toLowerCase()}">
           <div class="cat-hdr">
-            <div><div style="font-size:1.3rem;margin-bottom:3px">${icon}</div><div class="cat-name">${cat}s</div></div>
+            <div><div class="cat-name">${cat}s</div></div>
             <div class="cat-total">${d.total}</div>
           </div>
           <div class="bar-row">
