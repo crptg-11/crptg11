@@ -85,6 +85,8 @@ tr:last-child td{border-bottom:none}tr:hover td{background:rgba(232,168,56,.025)
 .btn-undo{padding:4px 12px;border-radius:7px;border:1px solid rgba(232,107,139,.4);background:transparent;color:var(--rose);font-size:12px;cursor:pointer;transition:all .15s;font-family:'DM Sans',sans-serif}
 .btn-undo:hover{background:rgba(232,107,139,.1)}
 .btn-no-meal{padding:4px 12px;border-radius:7px;border:1px solid rgba(255,255,255,.1);background:transparent;color:var(--muted);font-size:11px;cursor:default;font-family:'DM Sans',sans-serif}
+.btn-edit-meals{padding:4px 9px;border-radius:7px;border:1px solid rgba(139,127,232,.35);background:transparent;color:var(--lav);font-size:12px;cursor:pointer;transition:all .15s;font-family:'DM Sans',sans-serif}
+.btn-edit-meals:hover{background:rgba(139,127,232,.12)}
 
 /* ── ADD PARTICIPANT PANEL ── */
 .add-form{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:24px;max-width:680px;margin:0 auto}
@@ -265,7 +267,7 @@ tr:last-child td{border-bottom:none}tr:hover td{background:rgba(232,168,56,.025)
     <table>
       <thead><tr>
         <th>ID</th><th>Nombre</th><th>Cat.</th><th>Congregación</th>
-        <th>Este tiempo</th><th>Estado</th><th>Acción</th>
+        <th>Este tiempo</th><th>Estado</th><th>Acción</th><th>Editar</th>
       </tr></thead>
       <tbody id="tbody"></tbody>
     </table>
@@ -350,7 +352,7 @@ tr:last-child td{border-bottom:none}tr:hover td{background:rgba(232,168,56,.025)
           <button type="button" class="btn-all-meals" onclick="toggleAllMeals(false)">❌ Quitar todas</button>
         </div>
         <div class="meal-grid">
-          <div class="meal-day-header">📅 Miércoles 1 Abr</div>
+          <div class="meal-day-header">📅 Miércoles 1 Abr <span style="color:var(--muted);font-size:9px;font-weight:400">(solo cena)</span></div>
           <label class="meal-check cen-check"><input type="checkbox" name="meal" value="cena - miercoles"> 🌙 Cena</label>
 
           <div class="meal-day-header">📅 Jueves 2 Abr</div>
@@ -437,6 +439,7 @@ const db  = getDatabase(app);
 
 // ── MEAL KEY MAP ─────────────────────────────────────────
 // Maps dia+tiempo → exact column key in data
+// Miércoles (día 1) solo tiene CENA — sin desayuno ni almuerzo
 const MEAL_KEY = {
   '1_cena':    'cena - miercoles',
   '2_desayuno':'desayuno -jueves',
@@ -448,6 +451,13 @@ const MEAL_KEY = {
   '4_desayuno':'desayuno - sábado',
   '4_almuerzo':'almuerzo -sábado',
   '4_cena':    'cena - sábado'
+};
+// Tiempos válidos por día (miércoles sin desayuno ni almuerzo)
+const TIEMPOS_POR_DIA = {
+  1: ['cena'],
+  2: ['desayuno','almuerzo','cena'],
+  3: ['desayuno','almuerzo','cena'],
+  4: ['desayuno','almuerzo','cena']
 };
 
 const CLAVE   = "IglesiaRestaurada2026";
@@ -479,10 +489,28 @@ onValue(ref(db,"participantes_extra"), snap => {
   const val = snap.val() || {};
   Object.values(val).forEach(p => DATA_EXTRA.push(p));
   DATA_ALL = [...DATA_BASE, ...DATA_EXTRA];
+  // Aplicar overrides de comidas si los hay
+  if(window._comidasOverrides){
+    aplicarOverrides(window._comidasOverrides);
+  }
   populateFilters();
   actualizarStats(); renderLista(); renderQR();
   generarNextId();
 });
+
+onValue(ref(db,"comidas_override"), snap => {
+  window._comidasOverrides = snap.val() || {};
+  aplicarOverrides(window._comidasOverrides);
+  actualizarStats(); renderLista(); renderQR();
+});
+
+function aplicarOverrides(overrides){
+  Object.entries(overrides).forEach(([keyFb, comidas])=>{
+    // Firebase key is id.replace(/-/g,'_'), so reverse: _ back to -
+    const p = DATA_ALL.find(d => d.id.replace(/-/g,'_') === keyFb);
+    if(p) p.comidas = {...(p.comidas||{}), ...comidas};
+  });
+}
 
 // ── HELPERS ───────────────────────────────────────────────
 const fbKey = (dia, tiempo, id) => `d${dia}_${tiempo}_${id.replace(/-/g,'_')}`;
@@ -519,6 +547,13 @@ function autoDetect(){
 window.setDia = function(n){
   diaActual=n;
   [1,2,3,4].forEach(i=>document.getElementById('d'+i).classList.toggle('active-dia',i===n));
+  // Ocultar tiempos no disponibles para este día
+  const valid = TIEMPOS_POR_DIA[n]||['desayuno','almuerzo','cena'];
+  document.getElementById('t-des').style.display = valid.includes('desayuno') ? '' : 'none';
+  document.getElementById('t-alm').style.display = valid.includes('almuerzo') ? '' : 'none';
+  document.getElementById('t-cen').style.display = valid.includes('cena')     ? '' : 'none';
+  // Si el tiempo actual no está disponible para este día, cambiar al primero válido
+  if(!valid.includes(tiempoActual)) setTiempo(valid[0]);
   actualizarStats();renderLista();
 };
 window.setTiempo = function(t){
@@ -585,6 +620,7 @@ window.renderLista = function(){
       <td>${hasMeal?`<span style="color:var(--teal);font-size:11px">✅ Sí</span>`:`<span class="badge b-no-meal">No</span>`}</td>
       <td>${r?`<span class="badge b-ret">✅ ${r.hora}</span>`:(hasMeal?`<span class="badge b-pen">⏳ Pendiente</span>`:`<span class="badge b-no-meal">—</span>`)}</td>
       <td>${hasMeal?(r?`<button class="btn-undo" onclick="deshacerRetiro('${p.id}')">↩</button>`:`<button class="btn-ret" onclick="marcarRetiro('${p.id}')">✅ Marcar</button>`):`<button class="btn-no-meal" disabled>Sin comida</button>`}</td>
+      <td><button class="btn-edit-meals" onclick="abrirEditComidas('${p.id}')">✏️</button></td>
     </tr>`;
   }).join('') : `<tr><td colspan="7" style="text-align:center;padding:30px;color:var(--muted)">Sin resultados</td></tr>`;
 
@@ -937,6 +973,110 @@ function procesarScan(id){
   document.getElementById('scan-overlay').classList.add('show');
 }
 
+
+// ── EDIT COMIDAS ──────────────────────────────────────────
+const ALL_MEALS = [
+  {key:'cena - miercoles',   label:'🌙 Cena — Miércoles 1 Abr',  cls:'cen'},
+  {key:'desayuno -jueves',   label:'☀️ Desayuno — Jueves 2 Abr', cls:'des'},
+  {key:'almuerzo -jueves',   label:'🌤️ Almuerzo — Jueves 2 Abr', cls:'alm'},
+  {key:'cena - jueves',      label:'🌙 Cena — Jueves 2 Abr',     cls:'cen'},
+  {key:'desayuno -viernes',  label:'☀️ Desayuno — Viernes 3 Abr',cls:'des'},
+  {key:'almuerzo -viernes',  label:'🌤️ Almuerzo — Viernes 3 Abr',cls:'alm'},
+  {key:'cena - viernes',     label:'🌙 Cena — Viernes 3 Abr',    cls:'cen'},
+  {key:'desayuno - sábado',  label:'☀️ Desayuno — Sábado 4 Abr', cls:'des'},
+  {key:'almuerzo -sábado',   label:'🌤️ Almuerzo — Sábado 4 Abr', cls:'alm'},
+  {key:'cena - sábado',      label:'🌙 Cena — Sábado 4 Abr',     cls:'cen'},
+];
+
+let editPid = null;
+
+window.abrirEditComidas = function(id){
+  if(!estaAuth()){
+    window._pendingFn = ()=>abrirEditComidas(id);
+    mostrarAuth(); return;
+  }
+  const p = DATA_ALL.find(d=>d.id===id);
+  if(!p) return;
+  editPid = id;
+  document.getElementById('edit-p-name').textContent = `${p.nombre} · ${p.id} · ${p.congregacion||''}`;
+
+  const grid = document.getElementById('edit-meal-grid');
+  grid.innerHTML = ALL_MEALS.map(m=>{
+    const checked = p.comidas && p.comidas[m.key] === true;
+    const clrMap = {des:'var(--gold)',alm:'var(--teal)',cen:'var(--lav)'};
+    const bgMap  = {des:'rgba(232,168,56,.1)',alm:'rgba(62,207,184,.1)',cen:'rgba(139,127,232,.1)'};
+    const bdMap  = {des:'rgba(232,168,56,.35)',alm:'rgba(62,207,184,.35)',cen:'rgba(139,127,232,.35)'};
+    return `<label style="display:flex;align-items:center;gap:10px;padding:8px 12px;border-radius:9px;border:1px solid ${checked?bdMap[m.cls]:' var(--border)'};background:${checked?bgMap[m.cls]:'transparent'};cursor:pointer;transition:all .15s" id="edit-row-${m.key.replace(/[^a-z0-9]/gi,'_')}">
+      <input type="checkbox" name="edit-meal" value="${m.key}" ${checked?'checked':''} style="accent-color:${clrMap[m.cls]};width:15px;height:15px;cursor:pointer" onchange="actualizarEditRow(this)">
+      <span style="font-size:13px;color:${checked?clrMap[m.cls]:'var(--muted)'};font-weight:${checked?'600':'400'}">${m.label}</span>
+    </label>`;
+  }).join('');
+
+  document.getElementById('edit-feedback').style.display='none';
+  document.getElementById('edit-overlay').classList.add('show');
+};
+
+window.actualizarEditRow = function(cb){
+  const m = ALL_MEALS.find(x=>x.key===cb.value);
+  if(!m) return;
+  const clrMap = {des:'var(--gold)',alm:'var(--teal)',cen:'var(--lav)'};
+  const bgMap  = {des:'rgba(232,168,56,.1)',alm:'rgba(62,207,184,.1)',cen:'rgba(139,127,232,.1)'};
+  const bdMap  = {des:'rgba(232,168,56,.35)',alm:'rgba(62,207,184,.35)',cen:'rgba(139,127,232,.35)'};
+  const row = cb.closest('label');
+  const span = row.querySelector('span');
+  if(cb.checked){
+    row.style.border=`1px solid ${bdMap[m.cls]}`;
+    row.style.background=bgMap[m.cls];
+    span.style.color=clrMap[m.cls]; span.style.fontWeight='600';
+  } else {
+    row.style.border='1px solid var(--border)';
+    row.style.background='transparent';
+    span.style.color='var(--muted)'; span.style.fontWeight='400';
+  }
+};
+
+window.editToggleAll = function(val){
+  document.querySelectorAll('input[name="edit-meal"]').forEach(cb=>{
+    cb.checked=val; actualizarEditRow(cb);
+  });
+};
+
+window.guardarEditComidas = async function(){
+  if(!editPid) return;
+  const comidas = {};
+  document.querySelectorAll('input[name="edit-meal"]').forEach(cb=>{
+    comidas[cb.value] = cb.checked;
+  });
+
+  // Find if participant is from BASE or EXTRA
+  const isExtra = DATA_EXTRA.some(p=>p.id===editPid);
+  const keyFb = editPid.replace(/-/g,'_');
+
+  if(isExtra){
+    // Update full record in Firebase
+    const p = DATA_EXTRA.find(d=>d.id===editPid);
+    await set(ref(db,`participantes_extra/${keyFb}`), {...p, comidas});
+  } else {
+    // Save comidas override in Firebase for base participants
+    await set(ref(db,`comidas_override/${keyFb}`), comidas);
+  }
+
+  // Update local DATA_ALL immediately
+  const pLocal = DATA_ALL.find(d=>d.id===editPid);
+  if(pLocal) pLocal.comidas = comidas;
+
+  const fb = document.getElementById('edit-feedback');
+  fb.style.display='block'; fb.textContent='✅ Cambios guardados correctamente';
+  setTimeout(()=>fb.style.display='none', 3000);
+  actualizarStats(); renderLista(); renderQR();
+  mostrarAlerta('✅ Comidas actualizadas');
+};
+
+window.cerrarEditComidas = function(){
+  document.getElementById('edit-overlay').classList.remove('show');
+  editPid=null;
+};
+
 window.cerrarScan = function(){
   document.getElementById('scan-overlay').classList.remove('show');
   history.replaceState(null,'',location.pathname);
@@ -997,6 +1137,33 @@ setTimeout(checkURLScan, 800);
 })();
 
 </script>
+
+
+<!-- ── EDIT COMIDAS MODAL ── -->
+<div class="overlay" id="edit-overlay">
+  <div style="background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:28px 32px;max-width:440px;width:92%;max-height:90vh;overflow-y:auto">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+      <div>
+        <div style="font-family:'Playfair Display',serif;font-size:1.1rem;color:var(--gold)">✏️ Editar comidas</div>
+        <div style="font-size:12px;color:var(--muted);margin-top:2px" id="edit-p-name">—</div>
+      </div>
+      <button onclick="cerrarEditComidas()" style="background:transparent;border:1px solid var(--border);color:var(--muted);padding:5px 12px;border-radius:8px;font-family:'DM Sans',sans-serif;cursor:pointer;font-size:13px">✕ Cerrar</button>
+    </div>
+    <div style="font-size:11px;color:var(--muted);margin-bottom:12px">Selecciona los tiempos de comida asignados a este participante:</div>
+
+    <div style="display:grid;grid-template-columns:1fr;gap:4px" id="edit-meal-grid">
+      <!-- Generado por JS -->
+    </div>
+
+    <div style="display:flex;gap:8px;margin-top:16px;flex-wrap:wrap">
+      <button onclick="editToggleAll(true)" style="padding:6px 12px;border-radius:8px;border:1px solid var(--border);background:transparent;color:var(--teal);font-family:'DM Sans',sans-serif;font-size:12px;cursor:pointer">✅ Todas</button>
+      <button onclick="editToggleAll(false)" style="padding:6px 12px;border-radius:8px;border:1px solid var(--border);background:transparent;color:var(--rose);font-family:'DM Sans',sans-serif;font-size:12px;cursor:pointer">❌ Ninguna</button>
+      <div style="flex:1"></div>
+      <button onclick="guardarEditComidas()" style="padding:9px 20px;border-radius:10px;border:none;background:var(--gold);color:#000;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:700;cursor:pointer">💾 Guardar</button>
+    </div>
+    <div id="edit-feedback" style="display:none;margin-top:10px;padding:9px 12px;background:rgba(62,207,184,.1);border:1px solid rgba(62,207,184,.3);border-radius:8px;color:var(--teal);font-size:13px;font-weight:600"></div>
+  </div>
+</div>
 
 <!-- ── ACCESO OVERLAY ── -->
 <div id="acceso-overlay" style="display:none;position:fixed;inset:0;background:rgba(11,13,19,.97);z-index:9999;align-items:center;justify-content:center;flex-direction:column">
