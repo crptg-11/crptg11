@@ -391,28 +391,35 @@ function todosParticipantes() {
 }
 
 // ── ESTADO ────────────────────────────────────────────────────
-let ayudantesExtra = JSON.parse(localStorage.getItem("crptg11-cocina-extra") || "[]");
 let asignaciones   = JSON.parse(localStorage.getItem("crptg11-cocina-asig")  || "{}");
 let asignSab       = JSON.parse(localStorage.getItem("crptg11-cocina-sab")   || "{}");
 let notas          = JSON.parse(localStorage.getItem("crptg11-cocina-notas") || "[]");
-let eliminados     = JSON.parse(localStorage.getItem("crptg11-cocina-elim")  || "[]");
+// equipoDia: { mie:[nombre,...], jue:[...], vie:[...] } — personas seleccionadas del registro
+let equipoDia      = JSON.parse(localStorage.getItem("crptg11-cocina-equipo")|| "{}");
+// extras por día: { mie:[{nombre,cong},...], ... }
+let ayudantesExtra = JSON.parse(localStorage.getItem("crptg11-cocina-extra") || "{}");
+if(Array.isArray(ayudantesExtra)) ayudantesExtra = {}; // migración
 let diaActivo      = "mie";
 
-const BASE_AYUDANTES = Array.from({length:10},(_,i)=>({nombre:`Ayudante ${i+1}`, cong:"—"}));
+// Devuelve el equipo de ayudantes activo para un día
+function getEquipoDia(dia){
+  const sel  = equipoDia[dia] || [];
+  const pool = participantesDia(dia);
+  const base = sel.map(n => pool.find(p=>p.nombre===n)).filter(Boolean);
+  const ext  = (ayudantesExtra[dia]||[]).map(e=>({...e}));
+  return [...base, ...ext];
+}
 
-const todosLosAyudantes = () => [
-  ...BASE_AYUDANTES.filter(p=>!eliminados.includes(p.nombre)),
-  ...ayudantesExtra
-];
+const todosLosAyudantes = () => getEquipoDia(diaActivo);
 
 const puedeEditar = () => localStorage.getItem(AUTH_KEY) === "ok";
 
 function guardar(){
-  localStorage.setItem("crptg11-cocina-extra", JSON.stringify(ayudantesExtra));
   localStorage.setItem("crptg11-cocina-asig",  JSON.stringify(asignaciones));
   localStorage.setItem("crptg11-cocina-sab",   JSON.stringify(asignSab));
   localStorage.setItem("crptg11-cocina-notas", JSON.stringify(notas));
-  localStorage.setItem("crptg11-cocina-elim",  JSON.stringify(eliminados));
+  localStorage.setItem("crptg11-cocina-equipo",JSON.stringify(equipoDia));
+  localStorage.setItem("crptg11-cocina-extra", JSON.stringify(ayudantesExtra));
 }
 
 // ── AUTH ──────────────────────────────────────────────────────
@@ -469,21 +476,102 @@ function renderSeccionDia(){
     sec.innerHTML = renderSabadoHTML();
     eq.style.display = "none";
   } else {
-    sec.innerHTML = renderAyudantesHTML() + renderPicadoresHTML();
+    sec.innerHTML = renderEquipoSelectorHTML() + renderAyudantesHTML() + renderPicadoresHTML();
     eq.style.display = "block";
   }
 }
 
+// ── SELECTOR DE EQUIPO POR DÍA ────────────────────────────────
+function renderEquipoSelectorHTML(){
+  const dia = diaActivo;
+  const congs = CONG_POR_DIA[dia] || [];
+  const sel = new Set(equipoDia[dia] || []);
+  const equipo = getEquipoDia(dia);
+  const editar = puedeEditar();
+  const hayEquipo = equipo.length > 0;
+  const hayPropuesta = hayEquipo && Object.keys(asignaciones).some(k=>k.startsWith(`ay_${dia}`));
+
+  const banner = hayPropuesta
+    ? `<div class="propuesta-banner" style="background:rgba(62,207,184,.08);border-color:rgba(62,207,184,.25)">
+        <div class="propuesta-txt" style="color:var(--accent)">✅ <strong>Propuesta generada.</strong> Podés modificar cualquier slot abajo.</div>
+        ${editar?`<button class="btn-cancel" onclick="limpiarDia('${dia}')" style="font-size:12px;padding:5px 12px">↩ Limpiar</button>`:""}
+       </div>`
+    : hayEquipo && editar
+      ? `<div class="propuesta-banner" style="background:rgba(62,207,184,.06);border-color:rgba(62,207,184,.2)">
+          <div class="propuesta-txt" style="color:var(--accent)">💡 Equipo listo (${equipo.length} personas). Generá la propuesta de turnos.</div>
+          <button class="btn-green" onclick="generarPropuestaDia('${dia}')">⚡ Propuesta automática</button>
+         </div>`
+      : !hayEquipo && editar
+        ? `<div class="propuesta-banner" style="background:rgba(232,168,56,.06);border-color:rgba(232,168,56,.2)">
+            <div class="propuesta-txt" style="color:var(--gold)">⚠️ Seleccioná personas del equipo de ayudantes primero.</div>
+           </div>`
+        : "";
+
+  if(!editar && !hayEquipo) return banner;
+
+  // Listado de personas de las congregaciones del día para seleccionar
+  const personasHTML = editar ? congs.map(cong => {
+    const miembros = (PARTICIPANTES[cong]||[]).filter(p=>p.cat!=="N");
+    return `<div style="margin-bottom:12px">
+      <div style="font-size:10px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:var(--muted);margin-bottom:6px;display:flex;align-items:center;justify-content:space-between">
+        <span>📍 ${cong}</span>
+        <div style="display:flex;gap:6px">
+          <button onclick="selTodosCong('${dia}','${cong}')" style="padding:2px 9px;border-radius:6px;border:1px solid rgba(62,207,184,.3);background:transparent;color:var(--accent);font-size:10px;cursor:pointer">Todos</button>
+          <button onclick="deselTodosCong('${dia}','${cong}')" style="padding:2px 9px;border-radius:6px;border:1px solid var(--border);background:transparent;color:var(--muted);font-size:10px;cursor:pointer">Ninguno</button>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:5px">
+        ${miembros.map(p=>{
+          const marcado = sel.has(p.nombre);
+          return `<label style="display:flex;align-items:center;gap:7px;padding:6px 9px;border-radius:7px;
+            background:${marcado?'rgba(62,207,184,.08)':'#1a1d2a'};
+            border:1px solid ${marcado?'rgba(62,207,184,.3)':'var(--border)'};cursor:pointer;transition:all .15s">
+            <input type="checkbox" ${marcado?'checked':''} onchange="toggleEquipoDia('${dia}','${p.nombre.replace(/'/g,"\\'")}',this.checked)"
+              style="accent-color:var(--accent);width:13px;height:13px">
+            <div style="flex:1;min-width:0">
+              <div style="font-size:12px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${p.nombre}</div>
+              <div style="font-size:10px;color:var(--muted)">${p.sexo==="F"?"🔴 F":"🔵 M"} · ${p.cat==="J"?"Joven":"Adulto"}</div>
+            </div>
+          </label>`;
+        }).join("")}
+      </div>
+    </div>`;
+  }).join("") : "";
+
+  const extrasHTML = editar ? `
+    <div style="margin-top:8px;display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+      <input type="text" id="ext-nombre-${dia}" placeholder="Nombre externo..." style="background:#0f1117;border:1px solid var(--border);color:var(--text);font-family:'DM Sans',sans-serif;font-size:12px;padding:6px 10px;border-radius:7px;outline:none;width:180px;transition:border-color .2s" onfocus="this.style.borderColor='#3ecfb8'" onblur="this.style.borderColor='#2a2d40'">
+      <input type="text" id="ext-cong-${dia}" placeholder="Congregación" style="background:#0f1117;border:1px solid var(--border);color:var(--text);font-family:'DM Sans',sans-serif;font-size:12px;padding:6px 10px;border-radius:7px;outline:none;width:140px;transition:border-color .2s" onfocus="this.style.borderColor='#3ecfb8'" onblur="this.style.borderColor='#2a2d40'">
+      <button class="btn-teal" style="padding:6px 14px;font-size:12px" onclick="agregarExternoDia('${dia}')">+ Externo</button>
+    </div>` : "";
+
+  return `<div class="card" style="border-color:rgba(62,207,184,.2)">
+    <div class="section-title">
+      <span>🙌 Equipo de Ayudantes — ${DIAS.find(d=>d.id===dia)?.label}</span>
+      <span style="font-size:11px;color:var(--muted);font-family:'DM Sans',sans-serif;font-weight:400">${equipo.length} seleccionados · Congregaciones: ${congs.join(" & ")}</span>
+    </div>
+    ${banner}
+    ${editar ? `<div style="margin-bottom:12px">${personasHTML}${extrasHTML}</div>` : ""}
+  </div>`;
+}
+
 // ── AYUDANTES (Mié/Jue/Vie) ───────────────────────────────────
 function buildOptsAyudantes(dia, keySelected){
-  const personas = participantesDia(dia);
-  const congs = CONG_POR_DIA[dia] || [];
+  const equipo = getEquipoDia(dia);
+  const congs  = CONG_POR_DIA[dia] || [];
   let opts = `<option value="">— Sin asignar —</option>`;
-  congs.forEach(cong => {
-    const miembros = personas.filter(p => p.cong === cong);
+  // Agrupar por congregación
+  const porCong = {};
+  equipo.forEach(p => {
+    const c = p.cong || "—";
+    if(!porCong[c]) porCong[c] = [];
+    porCong[c].push(p);
+  });
+  Object.keys(porCong).forEach(cong => {
     opts += `<optgroup label="📍 ${cong}">`;
-    miembros.forEach(p => {
-      opts += `<option value="${p.nombre}__${p.cong}"${keySelected===`${p.nombre}__${p.cong}`?" selected":""}>${p.nombre}</option>`;
+    porCong[cong].forEach(p => {
+      const val = `${p.nombre}__${p.cong||cong}`;
+      opts += `<option value="${val}"${keySelected===val?" selected":""}>${p.nombre}</option>`;
     });
     opts += `</optgroup>`;
   });
@@ -799,32 +887,139 @@ function renderEquipo(){
   if(diaActivo==="sab") return;
   const todas=todosLosAyudantes();
   const cEl=document.getElementById("contador");
-  if(cEl) cEl.textContent=`${todas.length} ayudantes`;
+  if(cEl) cEl.textContent=`${todas.length} en el equipo`;
   const editar=puedeEditar();
-  const thDel=document.getElementById("th-del");
-  if(thDel) thDel.textContent="";
   const tb=document.getElementById("tbody-equipo");
   if(!tb) return;
+  if(!todas.length){
+    tb.innerHTML=`<tr><td colspan="5" class="empty">Aún no hay personas en el equipo de este día.<br><small style="color:var(--muted)">Seleccionalas en el panel de arriba.</small></td></tr>`;
+    return;
+  }
   tb.innerHTML=todas.map((p,i)=>{
     const tps=turnosDePersona(p.nombre);
     return `<tr>
       <td style="color:var(--muted)">${i+1}</td>
       <td style="font-weight:600">${p.nombre}</td>
-      <td style="color:var(--muted);font-size:12px">${p.cong}</td>
+      <td style="color:var(--muted);font-size:12px">${p.cong||"—"}</td>
       <td style="font-size:11px;color:var(--muted);line-height:1.7">${tps.length?tps.join("<br>"):"<span style='font-style:italic'>Sin asignar</span>"}</td>
-      <td>${editar?`<button class="btn-del" onclick="eliminarAyudante('${p.nombre}')">✕</button>`:""}</td>
+      <td>${editar?`<button class="btn-del" onclick="eliminarAyudante('${p.nombre.replace(/'/g,"\\'")}')">✕</button>`:""}</td>
     </tr>`;
   }).join("");
 }
 
+// ── GESTIÓN DE EQUIPO POR DÍA ────────────────────────────────
+function toggleEquipoDia(dia, nombre, checked){
+  if(!equipoDia[dia]) equipoDia[dia]=[];
+  if(checked){
+    if(!equipoDia[dia].includes(nombre)) equipoDia[dia].push(nombre);
+  } else {
+    equipoDia[dia] = equipoDia[dia].filter(n=>n!==nombre);
+    // limpiar asignaciones de esa persona en ese día
+    for(const k in asignaciones){
+      if(k.startsWith(`ay_${dia}`) && asignaciones[k]?.split("__")[0]===nombre) delete asignaciones[k];
+    }
+  }
+  guardar(); renderSeccionDia(); renderEquipo();
+}
+window.toggleEquipoDia=toggleEquipoDia;
+
+function selTodosCong(dia, cong){
+  if(!equipoDia[dia]) equipoDia[dia]=[];
+  (PARTICIPANTES[cong]||[]).filter(p=>p.cat!=="N").forEach(p=>{
+    if(!equipoDia[dia].includes(p.nombre)) equipoDia[dia].push(p.nombre);
+  });
+  guardar(); renderSeccionDia(); renderEquipo();
+}
+window.selTodosCong=selTodosCong;
+
+function deselTodosCong(dia, cong){
+  if(!equipoDia[dia]) return;
+  const nombres = new Set((PARTICIPANTES[cong]||[]).map(p=>p.nombre));
+  equipoDia[dia] = equipoDia[dia].filter(n=>!nombres.has(n));
+  guardar(); renderSeccionDia(); renderEquipo();
+}
+window.deselTodosCong=deselTodosCong;
+
+function agregarExternoDia(dia){
+  const nombre = document.getElementById(`ext-nombre-${dia}`)?.value.trim();
+  const cong   = document.getElementById(`ext-cong-${dia}`)?.value.trim();
+  if(!nombre){ mostrarAlerta("⚠️ Ingresa el nombre",true); return; }
+  if(!ayudantesExtra[dia]) ayudantesExtra[dia]=[];
+  if(ayudantesExtra[dia].some(p=>p.nombre===nombre)){ mostrarAlerta("⚠️ Ya existe",true); return; }
+  ayudantesExtra[dia].push({nombre, cong:cong||"—"});
+  guardar(); renderSeccionDia(); renderEquipo();
+  mostrarAlerta(`✅ ${nombre} agregado como externo`);
+}
+window.agregarExternoDia=agregarExternoDia;
+
 function eliminarAyudante(nombre){
-  if(!confirm(`¿Eliminar a ${nombre} del equipo?`)) return;
-  const esExtra=ayudantesExtra.some(p=>p.nombre===nombre);
-  if(esExtra) ayudantesExtra=ayudantesExtra.filter(p=>p.nombre!==nombre);
-  else { if(!eliminados.includes(nombre)) eliminados.push(nombre); }
+  if(!confirm(`¿Quitar a ${nombre} del equipo?`)) return;
+  const dia = diaActivo;
+  // quitar de seleccionados
+  if(equipoDia[dia]) equipoDia[dia] = equipoDia[dia].filter(n=>n!==nombre);
+  // quitar de extras
+  if(ayudantesExtra[dia]) ayudantesExtra[dia] = ayudantesExtra[dia].filter(p=>p.nombre!==nombre);
+  // limpiar asignaciones
+  for(const k in asignaciones){
+    if(k.startsWith(`ay_${dia}`) && asignaciones[k]?.split("__")[0]===nombre) delete asignaciones[k];
+  }
   guardar(); renderTodo(); mostrarAlerta(`↩ ${nombre} eliminado`);
 }
 window.eliminarAyudante=eliminarAyudante;
+
+// ── PROPUESTA AUTOMÁTICA DÍA (Mié/Jue/Vie) ────────────────────
+function generarPropuestaDia(dia){
+  const equipo = getEquipoDia(dia);
+  if(!equipo.length){ mostrarAlerta("⚠️ Agrega personas al equipo primero",true); return; }
+
+  // limpiar asignaciones del día
+  for(const k in asignaciones){ if(k.startsWith(`ay_${dia}`) || k.startsWith(`pic_${dia}`)) delete asignaciones[k]; }
+
+  // Conteo para no repetir la misma persona en la misma comida
+  const conteo = {};
+  equipo.forEach(p => { conteo[p.nombre] = 0; });
+
+  function elegir(pool, excluidos){
+    const cands = pool.filter(p=>!excluidos.has(p.nombre));
+    if(!cands.length) return null;
+    cands.sort((a,b)=>(conteo[a.nombre]||0)-(conteo[b.nombre]||0));
+    const p = cands[0];
+    conteo[p.nombre] = (conteo[p.nombre]||0) + 1;
+    return p;
+  }
+
+  COMIDAS.forEach(c => {
+    const usados = new Set();
+    for(let i=0;i<4;i++){
+      const p = elegir(equipo, usados);
+      if(p){ asignaciones[`ay_${dia}_${c.id}_${i}`] = `${p.nombre}__${p.cong}`; usados.add(p.nombre); }
+    }
+  });
+
+  // Picadores si aplica
+  const diaObj = DIAS.find(d=>d.id===dia);
+  if(diaObj?.picado){
+    const poolPic = todosParticipantes().filter(p=>p.cat!=="N");
+    const usados = new Set();
+    for(let i=0;i<5;i++){
+      const sorted = poolPic.filter(p=>!usados.has(p.nombre));
+      if(!sorted.length) break;
+      const p = sorted[Math.floor(Math.random()*Math.min(3,sorted.length))];
+      asignaciones[`pic_${dia}_${i}`] = `${p.nombre}__${p.cong}`;
+      usados.add(p.nombre);
+    }
+  }
+
+  guardar(); renderSeccionDia(); renderEquipo(); mostrarAlerta("⚡ Propuesta generada. Podés editarla libremente.");
+}
+window.generarPropuestaDia=generarPropuestaDia;
+
+function limpiarDia(dia){
+  if(!confirm(`¿Limpiar todas las asignaciones de ${DIAS.find(d=>d.id===dia)?.label}?`)) return;
+  for(const k in asignaciones){ if(k.startsWith(`ay_${dia}`) || k.startsWith(`pic_${dia}`)) delete asignaciones[k]; }
+  guardar(); renderSeccionDia(); renderEquipo(); mostrarAlerta("↩ Asignaciones limpiadas");
+}
+window.limpiarDia=limpiarDia;
 
 function mostrarFormAgregar(){ document.getElementById("form-agregar").style.display="block"; document.getElementById("new-nombre").focus(); }
 window.mostrarFormAgregar=mostrarFormAgregar;
@@ -833,8 +1028,10 @@ function agregarAyudante(){
   const nombre=document.getElementById("new-nombre").value.trim();
   const cong  =document.getElementById("new-cong").value.trim();
   if(!nombre){ mostrarAlerta("⚠️ Ingresa el nombre",true); return; }
-  if(todosLosAyudantes().some(p=>p.nombre===nombre)){ mostrarAlerta("⚠️ Ya existe",true); return; }
-  ayudantesExtra.push({nombre, cong:cong||"—"});
+  const dia = diaActivo;
+  if(!ayudantesExtra[dia]) ayudantesExtra[dia]=[];
+  if(getEquipoDia(dia).some(p=>p.nombre===nombre)){ mostrarAlerta("⚠️ Ya existe",true); return; }
+  ayudantesExtra[dia].push({nombre, cong:cong||"—"});
   guardar();
   document.getElementById("new-nombre").value="";
   document.getElementById("new-cong").value="";
