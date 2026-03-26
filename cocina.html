@@ -11,7 +11,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
-:root{--bg:#0f1117;--surface:#181b24;--border:#2a2d40;--accent:#3ecfb8;--gold:#e8a838;--rose:#e86b8b;--lav:#8b7fe8;--text:#e8e8f0;--muted:#7a7d95}
+:root{--bg:#0f1117;--surface:#181b24;--border:#2a2d40;--accent:#3ecfb8;--gold:#e8a838;--rose:#e86b8b;--lav:#8b7fe8;--green:#5ecf7a;--text:#e8e8f0;--muted:#7a7d95}
 body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min-height:100vh}
 .header{background:var(--surface);border-bottom:1px solid var(--border);padding:14px 28px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px}
 .header-left{display:flex;align-items:center;gap:14px}
@@ -47,6 +47,7 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min
 .sel-ayudante:focus{border-color:var(--accent)}
 .sel-ayudante:disabled{opacity:.4;cursor:not-allowed;background:#181b24}
 .sel-ayudante option{background:#0f1117}
+.sel-ayudante optgroup{background:#0f1117;color:var(--muted);font-size:11px}
 /* Tabla equipo */
 table{width:100%;border-collapse:collapse}
 th{background:#1f2333;color:var(--muted);font-size:10px;font-weight:600;letter-spacing:1px;text-transform:uppercase;padding:9px 13px;text-align:left;border-bottom:1px solid var(--border)}
@@ -55,18 +56,21 @@ tr:last-child td{border-bottom:none}tr:hover td{background:rgba(62,207,184,.03)}
 .badge{display:inline-block;padding:2px 9px;border-radius:100px;font-size:11px;font-weight:600;background:rgba(62,207,184,.15);color:var(--accent)}
 .badge-gold{background:rgba(232,168,56,.15);color:var(--gold)}
 .badge-lav{background:rgba(139,127,232,.15);color:var(--lav)}
+.badge-cong{display:inline-block;padding:1px 7px;border-radius:100px;font-size:10px;font-weight:600;background:rgba(62,207,184,.1);color:var(--accent);border:1px solid rgba(62,207,184,.2)}
 /* Form / botones */
 .form-box{background:#1f2333;border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:14px}
 .form-row{display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end}
 .form-group label{display:block;font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;margin-bottom:4px;font-weight:600}
-.form-group input{background:#0f1117;border:1px solid var(--border);color:var(--text);font-family:'DM Sans',sans-serif;font-size:13px;padding:7px 10px;border-radius:7px;outline:none;transition:border-color .2s}
-.form-group input:focus{border-color:var(--accent)}
+.form-group input,.form-group select{background:#0f1117;border:1px solid var(--border);color:var(--text);font-family:'DM Sans',sans-serif;font-size:13px;padding:7px 10px;border-radius:7px;outline:none;transition:border-color .2s}
+.form-group input:focus,.form-group select:focus{border-color:var(--accent)}
 .btn-teal{padding:8px 18px;border-radius:7px;border:none;background:var(--accent);color:#000;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:700;cursor:pointer}
 .btn-cancel{padding:8px 14px;border-radius:7px;border:1px solid var(--border);background:transparent;color:var(--muted);font-family:'DM Sans',sans-serif;font-size:13px;cursor:pointer}
 .btn-outline{padding:5px 14px;border-radius:100px;border:1px solid rgba(62,207,184,.4);background:transparent;color:var(--accent);font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .15s}
 .btn-outline:hover{background:rgba(62,207,184,.1)}
 .btn-del{padding:3px 9px;border-radius:6px;border:1px solid rgba(232,107,139,.4);background:transparent;color:var(--rose);font-size:11px;cursor:pointer}
 .btn-del:hover{background:rgba(232,107,139,.1)}
+.btn-green{padding:8px 18px;border-radius:7px;border:none;background:var(--green);color:#000;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:700;cursor:pointer;transition:opacity .15s}
+.btn-green:hover{opacity:.85}
 /* Notas */
 .nota-add{display:flex;gap:8px;margin-bottom:12px}
 .nota-input{flex:1;background:#1f2333;border:1px solid var(--border);color:var(--text);font-family:'DM Sans',sans-serif;font-size:13px;padding:9px 12px;border-radius:8px;outline:none;transition:border-color .2s}
@@ -78,7 +82,29 @@ tr:last-child td{border-bottom:none}tr:hover td{background:rgba(62,207,184,.03)}
 .empty{color:var(--muted);font-size:13px;text-align:center;padding:20px}
 .alert{position:fixed;top:20px;right:20px;background:var(--accent);color:#000;padding:12px 20px;border-radius:10px;font-weight:600;font-size:13px;z-index:999;transform:translateX(200px);opacity:0;transition:all .3s}
 .alert.show{transform:translateX(0);opacity:1}.alert.error{background:var(--rose);color:#fff}
-@media(max-width:600px){.main{padding:14px 12px}.header{padding:10px 12px}.turno-grid{grid-template-columns:1fr}}
+/* Equipo Sábado */
+.equipo-sabado-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px;margin-bottom:16px}
+.rol-card{background:#1f2333;border:1px solid var(--border);border-radius:10px;padding:14px}
+.rol-card.picador{border-color:rgba(139,127,232,.25)}
+.rol-title{font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:10px}
+.rol-title.aux{color:var(--accent)}
+.rol-title.pica{color:var(--lav)}
+.miembro-row{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+.sel-miembro{flex:1;padding:5px 8px;border-radius:7px;border:1px solid var(--border);background:#0f1117;color:var(--text);font-family:'DM Sans',sans-serif;font-size:12px;outline:none;cursor:pointer;transition:border-color .2s}
+.sel-miembro:focus{border-color:var(--accent)}
+.sel-miembro option{background:#0f1117}
+.sel-miembro optgroup{background:#1f2333;font-size:11px;color:var(--muted)}
+.info-cong{font-size:10px;color:var(--muted);white-space:nowrap;max-width:90px;overflow:hidden;text-overflow:ellipsis}
+/* Propuesta banner */
+.propuesta-banner{background:rgba(94,207,122,.08);border:1px solid rgba(94,207,122,.25);border-radius:10px;padding:14px 18px;margin-bottom:16px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.propuesta-txt{font-size:13px;color:var(--green)}
+.propuesta-txt strong{font-weight:700}
+/* Tabla equipo sábado */
+.equipo-sab-table{overflow:auto}
+.tag-rol{display:inline-block;padding:2px 8px;border-radius:100px;font-size:10px;font-weight:700}
+.tag-aux{background:rgba(62,207,184,.12);color:var(--accent);border:1px solid rgba(62,207,184,.2)}
+.tag-pic{background:rgba(139,127,232,.12);color:var(--lav);border:1px solid rgba(139,127,232,.2)}
+@media(max-width:600px){.main{padding:14px 12px}.header{padding:10px 12px}.turno-grid{grid-template-columns:1fr}.equipo-sabado-grid{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
@@ -119,26 +145,11 @@ tr:last-child td{border-bottom:none}tr:hover td{background:rgba(62,207,184,.03)}
     </div>
   </div>
 
-  <!-- AYUDANTES POR COMIDA -->
-  <div class="card">
-    <div class="section-title">
-      <span>🙌 Ayudantes de Cocina</span>
-      <small style="font-family:'DM Sans',sans-serif;font-size:11px;color:var(--muted);font-weight:400">4 ayudantes por turno de comida</small>
-    </div>
-    <div class="turno-grid" id="grid-ayudantes"></div>
-  </div>
+  <!-- SECCIÓN DINÁMICA POR DÍA -->
+  <div id="seccion-dia"></div>
 
-  <!-- PICADORES (solo Jue y Vie) -->
-  <div class="card" id="card-picadores">
-    <div class="section-title" style="color:var(--lav)">
-      <span>🔪 Picadores</span>
-      <small style="font-family:'DM Sans',sans-serif;font-size:11px;color:var(--muted);font-weight:400">Solo Jue y Vie · Fuera del horario de comidas</small>
-    </div>
-    <div class="turno-grid" id="grid-picadores"></div>
-  </div>
-
-  <!-- EQUIPO AYUDANTES -->
-  <div class="card">
+  <!-- EQUIPO AYUDANTES (Mié/Jue/Vie) -->
+  <div class="card" id="card-equipo-general">
     <div class="section-title">
       <span>👤 Equipo de Ayudantes</span>
       <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
@@ -237,14 +248,156 @@ const COMIDAS = [
   { id:"cen", label:"🌙 Cena",     hora:"17:00 – 20:00" },
 ];
 
+// ── PARTICIPANTES POR CONGREGACIÓN (del Excel, solo adultos/jóvenes ≥14) ──────
+// Sábado: Angelina e Ipís
+// Viernes: Valle la Estrella y Tucurrique
+// Jueves: Bribrí y Santa Marta
+// Miércoles: Limoncito y Río Banano
+// Picadores: cualquier congregación (todos los días)
+
+const PARTICIPANTES = {
+  "Angelina": [
+    {nombre:"Alison Arias Ugalde", edad:16, cat:"J", sexo:"F"},
+    {nombre:"Ashley Arias Ugalde", edad:16, cat:"J", sexo:"F"},
+    {nombre:"Carlos Eduardo Espinoza Calderón", edad:66, cat:"A", sexo:"M"},
+    {nombre:"Carlos José García Quiroz", edad:48, cat:"A", sexo:"M"},
+    {nombre:"Carlos Sebastián Ríos Bonilla", edad:18, cat:"A", sexo:"M"},
+    {nombre:"Ivonne Noelia Ríos Bonilla", edad:21, cat:"A", sexo:"F"},
+    {nombre:"Jackeline Monge Graham", edad:47, cat:"A", sexo:"F"},
+    {nombre:"Jeffry David López Hernández", edad:17, cat:"J", sexo:"M"},
+    {nombre:"Josué Gómez Barrientos", edad:62, cat:"A", sexo:"M"},
+    {nombre:"Mildred Esther Vargas Coronado", edad:63, cat:"A", sexo:"F"},
+    {nombre:"Mirna Graham McHayle", edad:60, cat:"A", sexo:"F"},
+    {nombre:"Vera Carranza Graham", edad:62, cat:"A", sexo:"F"},
+    {nombre:"Adita Mata", edad:57, cat:"A", sexo:"F"},
+    {nombre:"Cristian León Aguero", edad:42, cat:"A", sexo:"M"},
+    {nombre:"Ebony Alondra Zamora Monge", edad:14, cat:"J", sexo:"F"},
+    {nombre:"Eser Jeriel García Villalobos", edad:12, cat:"N", sexo:"M"},
+    {nombre:"Gerlly Hadassa García Villalobos", edad:22, cat:"A", sexo:"F"},
+    {nombre:"Gerlly Vanessa Villalobos Rodríguez", edad:47, cat:"A", sexo:"F"},
+    {nombre:"Ismael Santiago Leon Ureña", edad:16, cat:"J", sexo:"M"},
+  ],
+  "Ipís": [
+    {nombre:"Audrey Tatiana Jaubert Vargas", edad:39, cat:"A", sexo:"F"},
+    {nombre:"Carmen Villarreal Torres", edad:63, cat:"A", sexo:"F"},
+    {nombre:"Damaris Elizabeth Vargas Coronado", edad:65, cat:"A", sexo:"F"},
+    {nombre:"Eyber Degracia Mata", edad:41, cat:"A", sexo:"M"},
+    {nombre:"Gerardo Vargas", edad:68, cat:"A", sexo:"M"},
+    {nombre:"Juan Rafael Sánchez Aguilar", edad:39, cat:"A", sexo:"M"},
+    {nombre:"Luis Mauricio Mora Jara", edad:47, cat:"A", sexo:"M"},
+    {nombre:"Maritza Vargas Coronado", edad:69, cat:"A", sexo:"F"},
+    {nombre:"Nadia De Gracia Núñez", edad:35, cat:"A", sexo:"F"},
+    {nombre:"Raquel Gómez Vargas", edad:41, cat:"A", sexo:"F"},
+    {nombre:"Sandra Vargas Coronado", edad:67, cat:"A", sexo:"F"},
+    {nombre:"Sebastiana Del Carmen López Chevez", edad:43, cat:"A", sexo:"F"},
+    {nombre:"Zeidy Valverde Valverde", edad:65, cat:"A", sexo:"F"},
+  ],
+  "Valle la Estrella": [
+    {nombre:"Adriel Salazar", edad:17, cat:"J", sexo:"M"},
+    {nombre:"Hilary Salazar", edad:17, cat:"J", sexo:"F"},
+    {nombre:"Irene Chavarría Salgado", edad:62, cat:"A", sexo:"F"},
+    {nombre:"Joel Isaac Chaves Chavarría", edad:39, cat:"A", sexo:"M"},
+    {nombre:"Johalis Pinzón Ayala", edad:41, cat:"A", sexo:"F"},
+    {nombre:"Leonel Soto Gomez", edad:40, cat:"A", sexo:"M"},
+    {nombre:"Marcia Golding Narathan", edad:45, cat:"A", sexo:"F"},
+    {nombre:"María Elisabeth Reyes Castillo", edad:38, cat:"A", sexo:"F"},
+    {nombre:"Minor Rodríguez Acuña", edad:65, cat:"A", sexo:"M"},
+    {nombre:"Neigel Cuff Golding", edad:15, cat:"J", sexo:"M"},
+    {nombre:"Oriel Salazar", edad:13, cat:"J", sexo:"M"},
+    {nombre:"Ruby Golding Narathan", edad:66, cat:"A", sexo:"F"},
+    {nombre:"Samir Soto Pinzón", edad:13, cat:"J", sexo:"M"},
+    {nombre:"Steven Soto Pinzon", edad:17, cat:"J", sexo:"M"},
+    {nombre:"Yarisel Cardenas Martinez", edad:41, cat:"A", sexo:"F"},
+  ],
+  "Tucurrique": [
+    {nombre:"Abiezer D'Gracia Mata", edad:29, cat:"A", sexo:"M"},
+    {nombre:"Eneida Vargas Mata", edad:52, cat:"A", sexo:"F"},
+    {nombre:"José Luis Mata Ortiz", edad:33, cat:"A", sexo:"M"},
+    {nombre:"Kathya Vanesa Mora Burgos", edad:40, cat:"A", sexo:"F"},
+    {nombre:"Kimberly Macloud Manzanares", edad:34, cat:"A", sexo:"F"},
+    {nombre:"María Eugenia Mata Nuñez", edad:58, cat:"A", sexo:"F"},
+    {nombre:"Sebastián Murillo Macloud", edad:16, cat:"J", sexo:"M"},
+  ],
+  "Bribrí": [
+    {nombre:"Angela Zapata Zúñiga", edad:64, cat:"A", sexo:"F"},
+    {nombre:"Barbara Fonseca Méndez", edad:14, cat:"J", sexo:"F"},
+    {nombre:"Brígida Miranda Blanco", edad:63, cat:"A", sexo:"F"},
+    {nombre:"Carla Blanco Blanco", edad:45, cat:"A", sexo:"F"},
+    {nombre:"Damaris Arias Zapata", edad:41, cat:"A", sexo:"F"},
+    {nombre:"Eliseo Mata Miranda", edad:50, cat:"A", sexo:"M"},
+    {nombre:"Jennifer Viviana Zúñiga Tapia", edad:32, cat:"A", sexo:"F"},
+    {nombre:"Joel Blanco Pereira", edad:23, cat:"A", sexo:"M"},
+    {nombre:"Karla Blanco Blanco", edad:45, cat:"A", sexo:"F"},
+    {nombre:"Karla Sulay Montiel Blanco", edad:15, cat:"J", sexo:"F"},
+    {nombre:"Lidia Price Blanco", edad:56, cat:"A", sexo:"F"},
+    {nombre:"Luis Madriz Abarca", edad:67, cat:"A", sexo:"M"},
+    {nombre:"Mariangel Pereira Arias", edad:14, cat:"J", sexo:"F"},
+    {nombre:"Martina Miranda Blanco", edad:67, cat:"A", sexo:"F"},
+    {nombre:"Mercedes Blanco Blanco", edad:62, cat:"A", sexo:"F"},
+    {nombre:"Nícole Fonseca Méndez", edad:14, cat:"J", sexo:"F"},
+    {nombre:"Rodolfo Rojas Brenes", edad:67, cat:"A", sexo:"M"},
+    {nombre:"Sandra Mancía Mancía", edad:53, cat:"A", sexo:"F"},
+    {nombre:"Sulay Montiel Blanco", edad:15, cat:"J", sexo:"F"},
+  ],
+  "Santa Marta": [
+    {nombre:"Ana Marys Montes De Oca Díaz", edad:38, cat:"A", sexo:"F"},
+    {nombre:"Kaytlyn Gutiérrez Picado", edad:18, cat:"A", sexo:"F"},
+  ],
+  "Limoncito": [
+    {nombre:"Juan Carlos Campos Muñoz", edad:47, cat:"A", sexo:"M"},
+    {nombre:"Lois Annette Johnson West", edad:57, cat:"A", sexo:"F"},
+    {nombre:"Annette Campos", edad:null, cat:"A", sexo:"F"},
+  ],
+  "Río Banano": [
+    {nombre:"Arnold Sandoval Monge", edad:39, cat:"A", sexo:"M"},
+    {nombre:"Axa Milipsa Jiménez Rodríguez", edad:32, cat:"A", sexo:"F"},
+    {nombre:"Fonseca Jiménez Cintia", edad:51, cat:"A", sexo:"F"},
+    {nombre:"Hugo González", edad:43, cat:"A", sexo:"M"},
+    {nombre:"Luis Guillermo Jiménez Mata", edad:63, cat:"A", sexo:"M"},
+    {nombre:"Ordoñez Chevez José Joaquín", edad:64, cat:"A", sexo:"M"},
+    {nombre:"Lisseth Mayorga Jiménez", edad:null, cat:"A", sexo:"F"},
+    {nombre:"Lilliam Jiménez Mata", edad:null, cat:"A", sexo:"F"},
+  ],
+};
+
+// Congregaciones por día (para ayudantes del equipo de cocina)
+const CONG_POR_DIA = {
+  sab: ["Angelina", "Ipís"],
+  vie: ["Valle la Estrella", "Tucurrique"],
+  jue: ["Bribrí", "Santa Marta"],
+  mie: ["Limoncito", "Río Banano"],
+};
+
+// Todas las congregaciones para picadores
+const TODAS_CONG = Object.keys(PARTICIPANTES);
+
+// Obtener participantes del día (para ayudantes)
+function participantesDia(dia) {
+  const congs = CONG_POR_DIA[dia] || [];
+  let lista = [];
+  congs.forEach(cong => {
+    PARTICIPANTES[cong].forEach(p => lista.push({...p, cong}));
+  });
+  return lista;
+}
+
+// Obtener todos los participantes (para picadores)
+function todosParticipantes() {
+  let lista = [];
+  TODAS_CONG.forEach(cong => {
+    PARTICIPANTES[cong].forEach(p => lista.push({...p, cong}));
+  });
+  return lista;
+}
+
 // ── ESTADO ────────────────────────────────────────────────────
 let ayudantesExtra = JSON.parse(localStorage.getItem("crptg11-cocina-extra") || "[]");
 let asignaciones   = JSON.parse(localStorage.getItem("crptg11-cocina-asig")  || "{}");
+let asignSab       = JSON.parse(localStorage.getItem("crptg11-cocina-sab")   || "{}");
 let notas          = JSON.parse(localStorage.getItem("crptg11-cocina-notas") || "[]");
 let eliminados     = JSON.parse(localStorage.getItem("crptg11-cocina-elim")  || "[]");
 let diaActivo      = "mie";
 
-// Lista base de ayudantes (placeholders hasta que se agreguen los reales)
 const BASE_AYUDANTES = Array.from({length:10},(_,i)=>({nombre:`Ayudante ${i+1}`, cong:"—"}));
 
 const todosLosAyudantes = () => [
@@ -257,6 +410,7 @@ const puedeEditar = () => localStorage.getItem(AUTH_KEY) === "ok";
 function guardar(){
   localStorage.setItem("crptg11-cocina-extra", JSON.stringify(ayudantesExtra));
   localStorage.setItem("crptg11-cocina-asig",  JSON.stringify(asignaciones));
+  localStorage.setItem("crptg11-cocina-sab",   JSON.stringify(asignSab));
   localStorage.setItem("crptg11-cocina-notas", JSON.stringify(notas));
   localStorage.setItem("crptg11-cocina-elim",  JSON.stringify(eliminados));
 }
@@ -296,35 +450,65 @@ function actualizarBtn(){
     btn.textContent="🔓 Bloquear edición";
     btn.style.borderColor="#3ecfb8"; btn.style.color="#3ecfb8";
     if(btnA) btnA.style.display="inline-block";
-    document.getElementById("th-del").textContent="";
+    const thDel=document.getElementById("th-del");
+    if(thDel) thDel.textContent="";
   } else {
     btn.textContent="🔒 Editar";
     btn.style.borderColor="rgba(232,107,139,.4)"; btn.style.color="var(--rose)";
     if(btnA) btnA.style.display="none";
-    document.getElementById("form-agregar").style.display="none";
+    const fa=document.getElementById("form-agregar");
+    if(fa) fa.style.display="none";
   }
 }
 
-// ── RENDER AYUDANTES ──────────────────────────────────────────
-function renderAyudantes(){
-  const editar=puedeEditar();
-  const personas=todosLosAyudantes();
-  document.getElementById("grid-ayudantes").innerHTML = COMIDAS.map(c=>{
-    const key=`ay_${diaActivo}_${c.id}`;
-    const slots = Array.from({length:4},(_,i)=>{
-      const k=`${key}_${i}`;
-      const asig=asignaciones[k]||"";
+// ── RENDER SECCIÓN DÍA ────────────────────────────────────────
+function renderSeccionDia(){
+  const sec = document.getElementById("seccion-dia");
+  const eq  = document.getElementById("card-equipo-general");
+  if(diaActivo === "sab"){
+    sec.innerHTML = renderSabadoHTML();
+    eq.style.display = "none";
+  } else {
+    sec.innerHTML = renderAyudantesHTML() + renderPicadoresHTML();
+    eq.style.display = "block";
+  }
+}
+
+// ── AYUDANTES (Mié/Jue/Vie) ───────────────────────────────────
+function buildOptsAyudantes(dia, keySelected){
+  const personas = participantesDia(dia);
+  const congs = CONG_POR_DIA[dia] || [];
+  let opts = `<option value="">— Sin asignar —</option>`;
+  congs.forEach(cong => {
+    const miembros = personas.filter(p => p.cong === cong);
+    opts += `<optgroup label="📍 ${cong}">`;
+    miembros.forEach(p => {
+      opts += `<option value="${p.nombre}__${p.cong}"${keySelected===`${p.nombre}__${p.cong}`?" selected":""}>${p.nombre}</option>`;
+    });
+    opts += `</optgroup>`;
+  });
+  return opts;
+}
+
+function renderAyudantesHTML(){
+  const editar = puedeEditar();
+  const slots = COMIDAS.map(c => {
+    const key = `ay_${diaActivo}_${c.id}`;
+    const slotsHTML = Array.from({length:4},(_,i) => {
+      const k = `${key}_${i}`;
+      const asig = asignaciones[k] || "";
       if(editar){
-        const opts=`<option value="">— Sin asignar —</option>`
-          +personas.map(p=>`<option${asig===p.nombre?" selected":""} value="${p.nombre}">${p.nombre}</option>`).join("");
+        const opts = buildOptsAyudantes(diaActivo, asig);
         return `<div class="slot-row">
           <span class="slot-num">${i+1}</span>
           <select class="sel-ayudante" onchange="asignar('${k}',this.value)">${opts}</select>
         </div>`;
       } else {
+        const nombre = asig ? asig.split("__")[0] : "";
+        const cong   = asig ? asig.split("__")[1] : "";
         return `<div class="slot-row">
           <span class="slot-num">${i+1}</span>
-          <span style="font-size:13px;${asig?'font-weight:600':'color:var(--muted);font-style:italic'}">${asig||"Sin asignar"}</span>
+          <span style="font-size:13px;${asig?'font-weight:600':'color:var(--muted);font-style:italic'}">${nombre||"Sin asignar"}${cong?` <span class="badge-cong">${cong}</span>`:""}</span>
         </div>`;
       }
     }).join("");
@@ -333,50 +517,254 @@ function renderAyudantes(){
         <span class="turno-label">${c.label}</span>
         <span class="turno-tag">${c.hora}</span>
       </div>
-      ${slots}
+      ${slotsHTML}
     </div>`;
   }).join("");
+
+  return `<div class="card">
+    <div class="section-title">
+      <span>🙌 Ayudantes de Cocina</span>
+      <small style="font-family:'DM Sans',sans-serif;font-size:11px;color:var(--muted);font-weight:400">4 ayudantes por turno · Congregaciones: ${(CONG_POR_DIA[diaActivo]||[]).join(" & ")}</small>
+    </div>
+    <div class="turno-grid">${slots}</div>
+  </div>`;
 }
 
-// ── RENDER PICADORES ──────────────────────────────────────────
-function renderPicadores(){
-  const dia=DIAS.find(d=>d.id===diaActivo);
-  const card=document.getElementById("card-picadores");
-  if(!dia.picado){ card.style.display="none"; return; }
-  card.style.display="block";
-  const editar=puedeEditar();
-  const personas=todosLosAyudantes();
-  // 5 picadores en un solo turno fuera de comidas
-  const key=`pic_${diaActivo}`;
-  const slots=Array.from({length:5},(_,i)=>{
-    const k=`${key}_${i}`;
-    const asig=asignaciones[k]||"";
+// ── PICADORES (Jue y Vie, + cualquier congregación) ───────────
+function buildOptsPicadores(keySelected){
+  let opts = `<option value="">— Sin asignar —</option>`;
+  TODAS_CONG.forEach(cong => {
+    const miembros = PARTICIPANTES[cong];
+    opts += `<optgroup label="📍 ${cong}">`;
+    miembros.forEach(p => {
+      opts += `<option value="${p.nombre}__${p.cong||cong}"${keySelected===`${p.nombre}__${cong}`?" selected":""}>${p.nombre}</option>`;
+    });
+    opts += `</optgroup>`;
+  });
+  return opts;
+}
+
+function renderPicadoresHTML(){
+  const dia = DIAS.find(d=>d.id===diaActivo);
+  if(!dia.picado) return "";
+  const editar = puedeEditar();
+  const key = `pic_${diaActivo}`;
+  const slotsHTML = Array.from({length:5},(_,i)=>{
+    const k = `${key}_${i}`;
+    const asig = asignaciones[k] || "";
     if(editar){
-      const opts=`<option value="">— Sin asignar —</option>`
-        +personas.map(p=>`<option${asig===p.nombre?" selected":""} value="${p.nombre}">${p.nombre}</option>`).join("");
+      const opts = buildOptsPicadores(asig);
       return `<div class="slot-row">
         <span class="slot-num">${i+1}</span>
         <select class="sel-ayudante" style="border-color:rgba(139,127,232,.3)" onchange="asignar('${k}',this.value)">${opts}</select>
       </div>`;
     } else {
+      const nombre = asig ? asig.split("__")[0] : "";
+      const cong   = asig ? asig.split("__")[1] : "";
       return `<div class="slot-row">
         <span class="slot-num">${i+1}</span>
-        <span style="font-size:13px;${asig?'font-weight:600':'color:var(--muted);font-style:italic'}">${asig||"Sin asignar"}</span>
+        <span style="font-size:13px;${asig?'font-weight:600':'color:var(--muted);font-style:italic'}">${nombre||"Sin asignar"}${cong?` <span class="badge-cong" style="background:rgba(139,127,232,.1);color:var(--lav);border-color:rgba(139,127,232,.2)">${cong}</span>`:""}</span>
       </div>`;
     }
   }).join("");
-  document.getElementById("grid-picadores").innerHTML=`
-    <div class="turno-card gold" style="border-color:rgba(139,127,232,.3)">
-      <div class="turno-header">
-        <span class="turno-label" style="color:var(--lav)">🔪 Picado</span>
-        <span class="turno-tag" style="background:rgba(139,127,232,.1);color:var(--lav);border-color:rgba(139,127,232,.25)">Fuera de horario de comidas</span>
+
+  return `<div class="card" id="card-picadores">
+    <div class="section-title" style="color:var(--lav)">
+      <span>🔪 Picadores</span>
+      <small style="font-family:'DM Sans',sans-serif;font-size:11px;color:var(--muted);font-weight:400">Fuera de horario · Cualquier congregación</small>
+    </div>
+    <div class="turno-grid">
+      <div class="turno-card" style="border-color:rgba(139,127,232,.3)">
+        <div class="turno-header">
+          <span class="turno-label" style="color:var(--lav)">🔪 Picado</span>
+          <span class="turno-tag" style="background:rgba(139,127,232,.1);color:var(--lav);border-color:rgba(139,127,232,.25)">Fuera de horario de comidas</span>
+        </div>
+        ${slotsHTML}
       </div>
-      ${slots}
-    </div>`;
+    </div>
+  </div>`;
 }
 
-function asignar(k,v){ asignaciones[k]=v; guardar(); renderEquipo(); mostrarAlerta(v?`✅ ${v} asignado`:"↩ Slot liberado"); }
+function asignar(k,v){ asignaciones[k]=v; guardar(); renderSeccionDia(); renderEquipo(); mostrarAlerta(v?`✅ ${v.split("__")[0]} asignado`:"↩ Slot liberado"); }
 window.asignar=asignar;
+
+// ── SÁBADO ────────────────────────────────────────────────────
+// Roles del equipo de cocina para sábado:
+// - 3 auxiliares de cocina (mañana) → Angelina e Ipís
+// - 3 auxiliares de cocina (tarde)  → Angelina e Ipís
+// - 5 picadores (cualquier congregación)
+
+const ROLES_SAB = [
+  { id:"aux_des", label:"🙌 Auxiliares — Desayuno", hora:"6:00–9:00", color:"accent", tipo:"aux", slots:3 },
+  { id:"aux_alm", label:"🙌 Auxiliares — Almuerzo", hora:"11:00–14:00", color:"accent", tipo:"aux", slots:3 },
+  { id:"aux_cen", label:"🙌 Auxiliares — Cena",    hora:"17:00–20:00", color:"accent", tipo:"aux", slots:3 },
+  { id:"pic",     label:"🔪 Picadores",             hora:"Fuera horario", color:"lav", tipo:"pic", slots:5 },
+];
+
+function buildOptsSab(tipo, keySelected){
+  let opts = `<option value="">— Sin asignar —</option>`;
+  const congs = tipo === "pic" ? TODAS_CONG : ["Angelina","Ipís"];
+  congs.forEach(cong => {
+    const miembros = PARTICIPANTES[cong] || [];
+    opts += `<optgroup label="📍 ${cong}">`;
+    miembros.forEach(p => {
+      const val = `${p.nombre}__${cong}`;
+      opts += `<option value="${val}"${keySelected===val?" selected":""}>${p.nombre}</option>`;
+    });
+    opts += `</optgroup>`;
+  });
+  return opts;
+}
+
+function renderSabadoHTML(){
+  const editar = puedeEditar();
+  const congsLabel = "Angelina & Ipís";
+
+  // Propuesta automática banner
+  const hayPropuesta = Object.keys(asignSab).some(k=>asignSab[k]);
+  const bannerHTML = hayPropuesta
+    ? `<div class="propuesta-banner">
+        <div class="propuesta-txt">✅ <strong>Equipo asignado.</strong> Podés modificar cualquier slot abajo.</div>
+        ${editar?`<button class="btn-cancel" onclick="limpiarSab()" style="font-size:12px;padding:5px 12px">↩ Limpiar todo</button>`:""}
+       </div>`
+    : (editar
+        ? `<div class="propuesta-banner" style="background:rgba(62,207,184,.06);border-color:rgba(62,207,184,.2)">
+            <div class="propuesta-txt" style="color:var(--accent)">💡 Generá una propuesta automática de equipo para el sábado y editala a tu gusto.</div>
+            <button class="btn-green" onclick="generarPropuestaSab()">⚡ Propuesta automática</button>
+           </div>`
+        : "");
+
+  const rolesHTML = ROLES_SAB.map(rol => {
+    const color = rol.color === "lav" ? "var(--lav)" : "var(--accent)";
+    const borderCol = rol.color === "lav" ? "rgba(139,127,232,.3)" : "rgba(62,207,184,.2)";
+    const tagStyle = rol.color === "lav"
+      ? "background:rgba(139,127,232,.1);color:var(--lav);border-color:rgba(139,127,232,.25)"
+      : "background:rgba(62,207,184,.1);color:var(--accent);border-color:rgba(62,207,184,.25)";
+    const slotsHTML = Array.from({length:rol.slots},(_,i)=>{
+      const k = `sab_${rol.id}_${i}`;
+      const asig = asignSab[k] || "";
+      if(editar){
+        const opts = buildOptsSab(rol.tipo, asig);
+        return `<div class="slot-row">
+          <span class="slot-num">${i+1}</span>
+          <select class="sel-ayudante" style="border-color:${borderCol}" onchange="asignarSab('${k}',this.value)">${opts}</select>
+        </div>`;
+      } else {
+        const nombre = asig ? asig.split("__")[0] : "";
+        const cong   = asig ? asig.split("__")[1] : "";
+        return `<div class="slot-row">
+          <span class="slot-num">${i+1}</span>
+          <span style="font-size:13px;${asig?'font-weight:600':'color:var(--muted);font-style:italic'}">${nombre||"Sin asignar"}${cong?` <span class="badge-cong" style="${tagStyle}">${cong}</span>`:""}</span>
+        </div>`;
+      }
+    }).join("");
+    return `<div class="turno-card" style="border-color:${borderCol}">
+      <div class="turno-header">
+        <span class="turno-label" style="color:${color}">${rol.label}</span>
+        <span class="turno-tag" style="${tagStyle}">${rol.hora}</span>
+      </div>
+      ${slotsHTML}
+    </div>`;
+  }).join("");
+
+  // Tabla resumen equipo sábado
+  const asignados = [];
+  ROLES_SAB.forEach(rol => {
+    for(let i=0;i<rol.slots;i++){
+      const k = `sab_${rol.id}_${i}`;
+      const v = asignSab[k];
+      if(v){
+        const nombre = v.split("__")[0];
+        const cong   = v.split("__")[1];
+        // agrupar turnos por persona
+        const ex = asignados.find(a=>a.nombre===nombre&&a.cong===cong);
+        if(ex) ex.roles.push(rol.label.split("—")[1]||rol.label);
+        else asignados.push({nombre,cong,roles:[rol.label.split("—")[1]||rol.label],tipo:rol.tipo});
+      }
+    }
+  });
+
+  const tablaHTML = asignados.length ? `
+    <div class="card" style="margin-top:16px">
+      <div class="section-title">👥 Equipo del Sábado — Resumen</div>
+      <div style="overflow:auto">
+        <table>
+          <thead><tr><th>#</th><th>Nombre</th><th>Congregación</th><th>Rol(es)</th></tr></thead>
+          <tbody>${asignados.map((a,i)=>`<tr>
+            <td style="color:var(--muted)">${i+1}</td>
+            <td style="font-weight:600">${a.nombre}</td>
+            <td><span class="badge-cong">${a.cong}</span></td>
+            <td style="font-size:11px">${a.roles.map(r=>`<span class="tag-rol ${a.tipo==='pic'?'tag-pic':'tag-aux'}">${r.trim()}</span>`).join(" ")}</td>
+          </tr>`).join("")}</tbody>
+        </table>
+      </div>
+    </div>` : "";
+
+  return `<div class="card" style="border-color:rgba(94,207,122,.2)">
+    <div class="section-title" style="color:var(--green)">
+      <span>🗓️ Equipo de Cocina — Sábado 4 Abr</span>
+      <small style="font-family:'DM Sans',sans-serif;font-size:11px;color:var(--muted);font-weight:400">Auxiliares: ${congsLabel} · Picadores: cualquier congregación</small>
+    </div>
+    ${bannerHTML}
+    <div class="turno-grid">${rolesHTML}</div>
+  </div>${tablaHTML}`;
+}
+
+function asignarSab(k,v){ asignSab[k]=v; guardar(); renderSeccionDia(); mostrarAlerta(v?`✅ ${v.split("__")[0]} asignado`:"↩ Slot liberado"); }
+window.asignarSab=asignarSab;
+
+function limpiarSab(){
+  if(!confirm("¿Limpiar todos los slots del sábado?")) return;
+  asignSab={};
+  guardar(); renderSeccionDia(); mostrarAlerta("↩ Equipo del sábado limpiado");
+}
+window.limpiarSab=limpiarSab;
+
+// Propuesta automática: repartir participantes balanceadamente
+function generarPropuestaSab(){
+  const auxCong = ["Angelina","Ipís"];
+  // Recoger todos los adultos/jóvenes de Angelina e Ipís
+  let pool = [];
+  auxCong.forEach(cong => {
+    PARTICIPANTES[cong]
+      .filter(p => p.cat !== "N")
+      .forEach(p => pool.push({nombre:p.nombre,cong}));
+  });
+  // Shuffle
+  pool = pool.sort(()=>Math.random()-.5);
+
+  // Pool picadores: todos los adultos/jóvenes
+  let poolPic = [];
+  TODAS_CONG.forEach(cong => {
+    PARTICIPANTES[cong]
+      .filter(p=>p.cat!=="N")
+      .forEach(p=>poolPic.push({nombre:p.nombre,cong}));
+  });
+  poolPic = poolPic.sort(()=>Math.random()-.5);
+
+  const nuevo = {};
+  let idx = 0;
+  let idxPic = 0;
+  ROLES_SAB.forEach(rol=>{
+    for(let i=0;i<rol.slots;i++){
+      const k=`sab_${rol.id}_${i}`;
+      if(rol.tipo==="aux"){
+        const p = pool[idx % pool.length];
+        nuevo[k] = `${p.nombre}__${p.cong}`;
+        idx++;
+      } else {
+        const p = poolPic[idxPic % poolPic.length];
+        nuevo[k] = `${p.nombre}__${p.cong}`;
+        idxPic++;
+      }
+    }
+  });
+  asignSab = nuevo;
+  guardar();
+  renderSeccionDia();
+  mostrarAlerta("⚡ Propuesta generada. Podés editarla libremente.");
+}
+window.generarPropuestaSab=generarPropuestaSab;
 
 // ── TABS ──────────────────────────────────────────────────────
 function renderTabs(){
@@ -384,23 +772,23 @@ function renderTabs(){
     `<button class="dtab${d.id===diaActivo?" on":""}" onclick="selDia('${d.id}')">${d.label}${d.picado?" 🔪":""}</button>`
   ).join("");
 }
-function selDia(id){ diaActivo=id; renderTabs(); renderAyudantes(); renderPicadores(); renderEquipo(); }
+function selDia(id){ diaActivo=id; renderTabs(); renderSeccionDia(); renderEquipo(); }
 window.selDia=selDia;
 
-// ── EQUIPO ────────────────────────────────────────────────────
+// ── EQUIPO (tabla general) ────────────────────────────────────
 function turnosDePersona(nombre){
   const lista=[];
   DIAS.forEach(d=>{
     COMIDAS.forEach(c=>{
       for(let i=0;i<4;i++){
-        if(asignaciones[`ay_${d.id}_${c.id}_${i}`]===nombre)
-          lista.push(`${d.label} ${c.label}`);
+        const v=asignaciones[`ay_${d.id}_${c.id}_${i}`]||"";
+        if(v.split("__")[0]===nombre) lista.push(`${d.label} ${c.label}`);
       }
     });
     if(d.picado){
       for(let i=0;i<5;i++){
-        if(asignaciones[`pic_${d.id}_${i}`]===nombre)
-          lista.push(`${d.label} 🔪 Picado`);
+        const v=asignaciones[`pic_${d.id}_${i}`]||"";
+        if(v.split("__")[0]===nombre) lista.push(`${d.label} 🔪 Picado`);
       }
     }
   });
@@ -408,10 +796,16 @@ function turnosDePersona(nombre){
 }
 
 function renderEquipo(){
+  if(diaActivo==="sab") return;
   const todas=todosLosAyudantes();
-  document.getElementById("contador").textContent=`${todas.length} ayudantes`;
+  const cEl=document.getElementById("contador");
+  if(cEl) cEl.textContent=`${todas.length} ayudantes`;
   const editar=puedeEditar();
-  document.getElementById("tbody-equipo").innerHTML=todas.map((p,i)=>{
+  const thDel=document.getElementById("th-del");
+  if(thDel) thDel.textContent="";
+  const tb=document.getElementById("tbody-equipo");
+  if(!tb) return;
+  tb.innerHTML=todas.map((p,i)=>{
     const tps=turnosDePersona(p.nombre);
     return `<tr>
       <td style="color:var(--muted)">${i+1}</td>
@@ -478,7 +872,7 @@ function mostrarAlerta(msg,err=false){
 }
 
 // ── INIT ──────────────────────────────────────────────────────
-function renderTodo(){ renderTabs(); renderAyudantes(); renderPicadores(); renderEquipo(); renderNotas(); }
+function renderTodo(){ renderTabs(); renderSeccionDia(); renderEquipo(); renderNotas(); }
 actualizarBtn();
 renderTodo();
 </script>

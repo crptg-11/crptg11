@@ -484,36 +484,90 @@ function generarPropuesta(){
   if(!confirm("¿Generar una propuesta de asignaciones? Esto reemplazará las asignaciones actuales.")) return;
 
   asignaciones={};
-  const h=[...hombres()];
-  const m=[...mujeres()];
-  let hi=0, mi=0;
-  const nextH=()=>{ if(!h.length) return null; const p=h[hi%h.length]; hi++; return p.nombre; };
-  const nextM=()=>{ if(!m.length) return null; const p=m[mi%m.length]; mi++; return p.nombre; };
-  const nextAny=()=>{ const all=[...equipoAseo]; return all.length? all[(hi+mi)%all.length].nombre: null; };
+
+  // Rastrea cuántas veces cada persona ha sido asignada a cada tipo de actividad
+  // Tipos: cocina, banos, salon, basura
+  const conteoArea = {}; // nombre -> { cocina:0, banos:0, salon:0, basura:0 }
+  const conteoTotal = {}; // nombre -> total de turnos asignados
+  equipoAseo.forEach(p => {
+    conteoArea[p.nombre] = { cocina:0, banos:0, salon:0, basura:0 };
+    conteoTotal[p.nombre] = 0;
+  });
+
+  // Devuelve la persona del pool con MENOS veces asignada en esa área,
+  // desempatando por el total de turnos asignados. Excluye a los ya usados en este slot.
+  function elegir(pool, area, excluidos=new Set()){
+    const candidatos = pool.filter(p => !excluidos.has(p.nombre));
+    if(!candidatos.length) return null;
+    candidatos.sort((a,b) => {
+      const diffArea = (conteoArea[a.nombre]?.[area]||0) - (conteoArea[b.nombre]?.[area]||0);
+      if(diffArea !== 0) return diffArea;
+      return (conteoTotal[a.nombre]||0) - (conteoTotal[b.nombre]||0);
+    });
+    const elegido = candidatos[0].nombre;
+    conteoArea[elegido][area]++;
+    conteoTotal[elegido]++;
+    return elegido;
+  }
 
   DIAS.forEach(d=>{
     const comidas = d.comidas.map(id=>COMIDAS_MAP[id]);
-    // Cocina: 4 personas mixtas por comida
+    const h = hombres();
+    const m = mujeres();
+    const todos = [...equipoAseo];
+
+    // Cocina: 4 personas mixtas por comida (sin repetir persona en el mismo turno)
     comidas.forEach(c=>{
+      const usados = new Set();
       for(let i=0;i<4;i++){
-        const p = i%2===0? nextH()||nextM() : nextM()||nextH();
-        if(p) asignaciones[`cocina_${d.id}_${c.id}_mix_${i}`]=p;
+        const pool = i%2===0 ? [...h,...m] : [...m,...h];
+        const p = elegir(pool.filter(x=>!usados.has(x.nombre)), "cocina", usados)
+               || elegir(todos.filter(x=>!usados.has(x.nombre)), "cocina", usados);
+        if(p){ asignaciones[`cocina_${d.id}_${c.id}_mix_${i}`]=p; usados.add(p); }
       }
     });
-    // Baños H: 3 turnos × 1 hombre
-    TURNOS_BANOS.forEach(t=>{ const p=nextH(); if(p) asignaciones[`banosh_${d.id}_${t.id}_h_0`]=p; });
-    // Baños M: 3 turnos × 1 mujer
-    TURNOS_BANOS.forEach(t=>{ const p=nextM(); if(p) asignaciones[`banoosm_${d.id}_${t.id}_m_0`]=p; });
-    // Salón: antes y después × (3M + 2H)
+
+    // Baños H: 3 turnos × 1 hombre (sin repetir en el mismo día)
+    const usadosBanosH = new Set();
+    TURNOS_BANOS.forEach(t=>{
+      const p = elegir(h.filter(x=>!usadosBanosH.has(x.nombre)), "banos", usadosBanosH)
+             || elegir(h, "banos");
+      if(p){ asignaciones[`banosh_${d.id}_${t.id}_h_0`]=p; usadosBanosH.add(p); }
+    });
+
+    // Baños M: 3 turnos × 1 mujer (sin repetir en el mismo día)
+    const usadosBanosM = new Set();
+    TURNOS_BANOS.forEach(t=>{
+      const p = elegir(m.filter(x=>!usadosBanosM.has(x.nombre)), "banos", usadosBanosM)
+             || elegir(m, "banos");
+      if(p){ asignaciones[`banoosm_${d.id}_${t.id}_m_0`]=p; usadosBanosM.add(p); }
+    });
+
+    // Salón: antes y después × (3M + 2H) — sin repetir persona en el mismo turno
     comidas.forEach(c=>{
       ["antes","desp"].forEach(mo=>{
-        for(let i=0;i<3;i++){ const p=nextM()||nextH(); if(p) asignaciones[`salon_${d.id}_${c.id}_${mo}_m_${i}`]=p; }
-        for(let i=0;i<2;i++){ const p=nextH()||nextM(); if(p) asignaciones[`salon_${d.id}_${c.id}_${mo}_h_${i}`]=p; }
+        const usados = new Set();
+        for(let i=0;i<3;i++){
+          const p = elegir(m.filter(x=>!usados.has(x.nombre)), "salon", usados)
+                 || elegir(todos.filter(x=>!usados.has(x.nombre)), "salon", usados);
+          if(p){ asignaciones[`salon_${d.id}_${c.id}_${mo}_m_${i}`]=p; usados.add(p); }
+        }
+        for(let i=0;i<2;i++){
+          const p = elegir(h.filter(x=>!usados.has(x.nombre)), "salon", usados)
+                 || elegir(todos.filter(x=>!usados.has(x.nombre)), "salon", usados);
+          if(p){ asignaciones[`salon_${d.id}_${c.id}_${mo}_h_${i}`]=p; usados.add(p); }
+        }
       });
     });
-    // Basura: 2 hombres por comida
+
+    // Basura: 2 hombres por comida (sin repetir en el mismo turno)
     comidas.forEach(c=>{
-      for(let i=0;i<2;i++){ const p=nextH()||nextM(); if(p) asignaciones[`basura_${d.id}_${c.id}_h_${i}`]=p; }
+      const usados = new Set();
+      for(let i=0;i<2;i++){
+        const p = elegir(h.filter(x=>!usados.has(x.nombre)), "basura", usados)
+               || elegir(todos.filter(x=>!usados.has(x.nombre)), "basura", usados);
+        if(p){ asignaciones[`basura_${d.id}_${c.id}_h_${i}`]=p; usados.add(p); }
+      }
     });
   });
 
