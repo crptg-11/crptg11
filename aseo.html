@@ -168,6 +168,33 @@ tr:last-child td{border-bottom:none}tr:hover td{background:rgba(232,168,56,.03)}
       </div>
     </div>
     <div id="form-agregar" style="display:none">
+
+      <!-- Agregar desde el registro por congregación -->
+      <div class="form-box">
+        <div style="font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;margin-bottom:12px">Agregar desde el registro</div>
+        <!-- Paso 1: Seleccionar congregación -->
+        <div style="margin-bottom:12px">
+          <div style="font-size:11px;color:var(--muted);margin-bottom:8px;font-weight:600">① Selecciona una congregación:</div>
+          <div id="cong-tabs" style="display:flex;gap:6px;flex-wrap:wrap"></div>
+        </div>
+        <!-- Paso 2: Lista de personas de esa congregación -->
+        <div id="cong-personas-wrap" style="display:none">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;flex-wrap:wrap;gap:8px">
+            <div style="font-size:11px;color:var(--muted);font-weight:600">② Marca las personas a agregar:</div>
+            <div style="display:flex;gap:6px">
+              <button onclick="seleccionarTodosCong()" style="padding:3px 10px;border-radius:6px;border:1px solid rgba(232,168,56,.3);background:transparent;color:var(--accent);font-size:11px;cursor:pointer">Todos</button>
+              <button onclick="deseleccionarTodosCong()" style="padding:3px 10px;border-radius:6px;border:1px solid var(--border);background:transparent;color:var(--muted);font-size:11px;cursor:pointer">Ninguno</button>
+            </div>
+          </div>
+          <div id="cong-personas-lista" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:6px;max-height:260px;overflow-y:auto;margin-bottom:12px"></div>
+          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+            <button class="btn-gold" onclick="agregarSeleccionados()">+ Agregar seleccionados</button>
+            <span id="cong-conteo" style="font-size:12px;color:var(--muted)"></span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Agregar persona externa -->
       <div class="form-box">
         <div style="font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;margin-bottom:10px">Agregar colaborador externo</div>
         <div class="form-row">
@@ -186,21 +213,6 @@ tr:last-child td{border-bottom:none}tr:hover td{background:rgba(232,168,56,.03)}
           </div>
         </div>
         <div style="font-size:11px;color:var(--muted);margin-top:8px">💡 Usa esto para personas que colaboran pero no están en el registro del evento.</div>
-      </div>
-
-      <!-- Buscar del registro -->
-      <div class="form-box">
-        <div style="font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;margin-bottom:10px">Agregar desde el registro</div>
-        <div class="form-row">
-          <div class="search-select-wrap" id="registro-wrap">
-            <input type="text" class="search-select-input" id="registro-search" placeholder="Buscar por nombre..." autocomplete="off" oninput="filtrarRegistro()" onfocus="abrirRegistro()" onblur="cerrarRegistroDelay()">
-            <div class="search-select-dropdown" id="registro-dropdown"></div>
-          </div>
-          <div style="display:flex;gap:6px;align-items:flex-end">
-            <button class="btn-gold" onclick="agregarDesdeRegistro()">Agregar</button>
-          </div>
-        </div>
-        <div id="registro-seleccionado" style="font-size:12px;color:var(--teal);margin-top:6px;min-height:16px"></div>
       </div>
     </div>
     <div style="overflow:auto">
@@ -291,7 +303,7 @@ let equipoAseo    = JSON.parse(localStorage.getItem("crptg11-aseo-equipo") || "[
 let asignaciones  = JSON.parse(localStorage.getItem("crptg11-aseo-asig")  || "{}");
 let notas         = JSON.parse(localStorage.getItem("crptg11-aseo-notas") || "[]");
 let diaActivo     = "mie";
-let registroSeleccionado = null;
+
 
 const equipoNombres = () => new Set(equipoAseo.map(p=>p.nombre));
 const hombres = () => equipoAseo.filter(p=>p.sexo==="H");
@@ -336,58 +348,110 @@ function verificarClave(){
 }
 window.verificarClave=verificarClave;
 
-// ── BÚSQUEDA DEL REGISTRO ─────────────────────────────────────
-function filtrarRegistro(){
-  const q = document.getElementById("registro-search").value.toLowerCase().trim();
-  const dd = document.getElementById("registro-dropdown");
+// ── SELECCIÓN POR CONGREGACIÓN ────────────────────────────────
+const CONGREGACIONES = [...new Set(PERSONAS_REGISTRO.map(p=>p.cong))].sort();
+let congActiva = null;
+let seleccionCong = new Set();
+
+function renderCongTabs(){
+  document.getElementById("cong-tabs").innerHTML = CONGREGACIONES.map(c=>{
+    const total = PERSONAS_REGISTRO.filter(p=>p.cong===c).length;
+    const yaEnEquipo = equipoNombres();
+    const disponibles = PERSONAS_REGISTRO.filter(p=>p.cong===c && !yaEnEquipo.has(p.nombre)).length;
+    const activa = c===congActiva;
+    return `<button onclick="seleccionarCong('${c}')"
+      style="padding:5px 13px;border-radius:100px;border:1px solid ${activa?'var(--accent)':'var(--border)'};
+      background:${activa?'rgba(232,168,56,.15)':'transparent'};
+      color:${activa?'var(--accent)':disponibles===0?'var(--muted)':'var(--text)'};
+      font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .15s;
+      opacity:${disponibles===0?'.45':'1'}">
+      ${c} <span style="font-size:10px;opacity:.6">${disponibles}/${total}</span>
+    </button>`;
+  }).join("");
+}
+
+function seleccionarCong(cong){
+  congActiva = cong;
+  seleccionCong = new Set();
+  renderCongTabs();
+  renderPersonasCong();
+  document.getElementById("cong-personas-wrap").style.display="block";
+}
+window.seleccionarCong=seleccionarCong;
+
+function renderPersonasCong(){
+  if(!congActiva) return;
   const yaEnEquipo = equipoNombres();
-  const filtradas = PERSONAS_REGISTRO.filter(p=>
-    !yaEnEquipo.has(p.nombre) &&
-    (p.nombre.toLowerCase().includes(q) || p.cong.toLowerCase().includes(q))
-  ).slice(0,20);
-
-  if(!filtradas.length){ dd.innerHTML=`<div class="search-select-option" style="color:var(--muted)">Sin resultados</div>`; dd.classList.add("open"); return; }
-  dd.innerHTML = filtradas.map(p=>`
-    <div class="search-select-option" onclick="seleccionarDelRegistro(${JSON.stringify(p).replace(/"/g,'&quot;')})">
-      <span>${p.nombre}</span>
-      <span class="opt-cong">${p.cong}</span>
-    </div>`).join("");
-  dd.classList.add("open");
+  const personas = PERSONAS_REGISTRO.filter(p=>p.cong===congActiva);
+  document.getElementById("cong-personas-lista").innerHTML = personas.map(p=>{
+    const yaEsta = yaEnEquipo.has(p.nombre);
+    const marcada = seleccionCong.has(p.nombre);
+    return `<label style="display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:8px;
+      background:${marcada?'rgba(232,168,56,.08)':'#1a1d2a'};
+      border:1px solid ${marcada?'rgba(232,168,56,.3)':'var(--border)'};
+      cursor:${yaEsta?'default':'pointer'};
+      opacity:${yaEsta?'.4':'1'};transition:all .15s">
+      <input type="checkbox" ${marcada?"checked":""} ${yaEsta?"disabled":""}
+        onchange="togglePersonaCong('${p.nombre.replace(/'/g,"\\'")}',this.checked)"
+        style="accent-color:var(--accent);width:14px;height:14px;cursor:pointer">
+      <div style="flex:1;min-width:0">
+        <div style="font-size:13px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${p.nombre}</div>
+        <div style="font-size:10px;color:var(--muted)">${p.sexo==="H"?"🔵 Hombre":"🔴 Mujer"}${yaEsta?' · <span style="color:var(--teal)">Ya en equipo</span>':''}</div>
+      </div>
+    </label>`;
+  }).join("");
+  actualizarConteoCong();
 }
 
-function abrirRegistro(){
-  filtrarRegistro();
+function togglePersonaCong(nombre, checked){
+  if(checked) seleccionCong.add(nombre);
+  else seleccionCong.delete(nombre);
+  renderPersonasCong();
+}
+window.togglePersonaCong=togglePersonaCong;
+
+function actualizarConteoCong(){
+  document.getElementById("cong-conteo").textContent = seleccionCong.size
+    ? `${seleccionCong.size} seleccionada${seleccionCong.size>1?"s":""}`
+    : "";
 }
 
-function cerrarRegistroDelay(){
-  setTimeout(()=>document.getElementById("registro-dropdown").classList.remove("open"),200);
+function seleccionarTodosCong(){
+  const yaEnEquipo = equipoNombres();
+  PERSONAS_REGISTRO.filter(p=>p.cong===congActiva && !yaEnEquipo.has(p.nombre))
+    .forEach(p=>seleccionCong.add(p.nombre));
+  renderPersonasCong();
 }
-
-function seleccionarDelRegistro(p){
-  registroSeleccionado = p;
-  document.getElementById("registro-search").value = p.nombre;
-  document.getElementById("registro-dropdown").classList.remove("open");
-  document.getElementById("registro-seleccionado").textContent = `✔ ${p.nombre} · ${p.cong} · ${p.sexo==="H"?"Hombre":"Mujer"}`;
+function deseleccionarTodosCong(){
+  seleccionCong.clear();
+  renderPersonasCong();
 }
+window.seleccionarTodosCong=seleccionarTodosCong;
+window.deseleccionarTodosCong=deseleccionarTodosCong;
 
-function agregarDesdeRegistro(){
-  if(!registroSeleccionado){ mostrarAlerta("⚠️ Selecciona a alguien primero",true); return; }
-  if(equipoNombres().has(registroSeleccionado.nombre)){ mostrarAlerta("⚠️ Ya está en el equipo",true); return; }
-  equipoAseo.push({...registroSeleccionado, esExtra:false});
+function agregarSeleccionados(){
+  if(!seleccionCong.size){ mostrarAlerta("⚠️ Selecciona al menos una persona",true); return; }
+  const yaEnEquipo = equipoNombres();
+  let agregados=0;
+  seleccionCong.forEach(nombre=>{
+    if(yaEnEquipo.has(nombre)) return;
+    const p = PERSONAS_REGISTRO.find(x=>x.nombre===nombre);
+    if(p){ equipoAseo.push({...p, esExtra:false}); agregados++; }
+  });
+  seleccionCong.clear();
   guardar();
-  registroSeleccionado=null;
-  document.getElementById("registro-search").value="";
-  document.getElementById("registro-seleccionado").textContent="";
-  renderTodo(); mostrarAlerta(`✅ ${registroSeleccionado ? registroSeleccionado.nombre : ""} agregado al equipo`);
+  renderCongTabs();
+  renderPersonasCong();
+  renderTodo();
+  mostrarAlerta(`✅ ${agregados} persona${agregados>1?"s":""} agregada${agregados>1?"s":""} al equipo`);
 }
-window.agregarDesdeRegistro=agregarDesdeRegistro;
-window.seleccionarDelRegistro=seleccionarDelRegistro;
-window.filtrarRegistro=filtrarRegistro;
-window.abrirRegistro=abrirRegistro;
-window.cerrarRegistroDelay=cerrarRegistroDelay;
+window.agregarSeleccionados=agregarSeleccionados;
 
 // ── AGREGAR PERSONA EXTERNA ────────────────────────────────────
-function mostrarFormAgregar(){ document.getElementById("form-agregar").style.display="block"; }
+function mostrarFormAgregar(){
+  document.getElementById("form-agregar").style.display="block";
+  renderCongTabs();
+}
 window.mostrarFormAgregar=mostrarFormAgregar;
 
 function agregarPersona(){
