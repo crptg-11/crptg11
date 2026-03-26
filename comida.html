@@ -936,7 +936,25 @@ window.cerrarCamara = function(){
 
 function procesarScan(id){
   const p = DATA_ALL.find(d=>d.id===id);
-  if(!p){mostrarAlerta('ID no encontrado: '+id.substring(0,40),true);return;}
+  if(!p){
+    // Participante no encontrado en memoria — puede ser extra aún no cargado desde Firebase
+    // Intentar leerlo directamente
+    const keyFb = id.replace(/-/g,'_');
+    import("https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js").then(({get,ref:dbRef})=>{
+      get(dbRef(db,`participantes_extra/${keyFb}`)).then(snap=>{
+        if(snap.exists()){
+          const extra = snap.val();
+          // Agregar a DATA_ALL y reintentar
+          if(!DATA_EXTRA.find(d=>d.id===id)) DATA_EXTRA.push(extra);
+          DATA_ALL = [...DATA_BASE, ...DATA_EXTRA];
+          procesarScan(id);
+        } else {
+          mostrarAlerta('ID no encontrado: '+id.substring(0,40),true);
+        }
+      }).catch(()=>mostrarAlerta('ID no encontrado: '+id.substring(0,40),true));
+    });
+    return;
+  }
   scanId=id;
   const r=estaRetirado(id);
   const hasMeal=tieneComidasEsteTime(p);
@@ -1102,7 +1120,9 @@ window.mostrarAlerta = function(msg, err=false){
 // ── URL SCAN ─────────────────────────────────────────────
 function checkURLScan(){
   const id = new URLSearchParams(window.location.search).get('scan');
-  if(id && DATA_ALL.length) procesarScan(id);
+  if(!id) return;
+  // procesarScan maneja el caso de ID no encontrado buscando en Firebase directamente
+  procesarScan(id);
 }
 
 // ── INIT ──────────────────────────────────────────────────
@@ -1112,7 +1132,7 @@ populateFilters();
 DATA_ALL = [...DATA_BASE];
 actualizarStats(); renderLista(); renderQR();
 generarNextId();
-setTimeout(checkURLScan, 800);
+checkURLScan();
 
 // Acceso overlay
 (function(){
