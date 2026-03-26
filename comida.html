@@ -6,6 +6,8 @@
 <title>CRPTG 11 — Control de Alimentación</title>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<!-- qr-creator for high-quality canvas QRs -->
+<script src="https://cdn.jsdelivr.net/npm/qr-creator@1.0.0/dist/qr-creator.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
 <!-- jsPDF for PDF export -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -642,7 +644,39 @@ window.deshacerRetiro = async function(id){
   mostrarAlerta('↩ Retiro deshecho', true);
 };
 
-// ── QR ─────────────────────────────────────────────────────
+// ── QR — generación de alta calidad ──────────────────────────
+// Genera un QR en canvas con nivel de corrección H (30%), quiet zone amplia
+// y módulos grandes — compatible con todos los dispositivos.
+function makeQRCanvas(text, size){
+  return new Promise(resolve=>{
+    const canvas = document.createElement('canvas');
+    canvas.width = size; canvas.height = size;
+    // qr-creator dibuja directamente en el canvas con nivel H
+    if(window.QrCreator){
+      QrCreator.render({
+        text, radius:0.0,          // módulos cuadrados, máxima legibilidad
+        ecLevel:'H',               // corrección de errores máxima (30%)
+        fill:'#000000',
+        background:'#ffffff',
+        size
+      }, canvas);
+      resolve(canvas);
+    } else {
+      // Fallback a qrcodejs si qr-creator no carga
+      const tmp = document.createElement('div');
+      tmp.style.cssText='position:absolute;visibility:hidden;left:-9999px';
+      document.body.appendChild(tmp);
+      new QRCode(tmp,{text,width:size,height:size,colorDark:'#000',colorLight:'#fff',correctLevel:QRCode.CorrectLevel.H});
+      setTimeout(()=>{
+        const c2=tmp.querySelector('canvas'); const i2=tmp.querySelector('img');
+        if(c2){canvas.width=c2.width;canvas.height=c2.height;canvas.getContext('2d').drawImage(c2,0,0);}
+        else if(i2){const img=new Image();img.onload=()=>{canvas.width=img.width;canvas.height=img.height;canvas.getContext('2d').drawImage(img,0,0);resolve(canvas);};img.src=i2.src;return;}
+        document.body.removeChild(tmp); resolve(canvas);
+      }, 120);
+    }
+  });
+}
+
 window.renderQR = function(){
   const q = (document.getElementById('search-qr')?.value||'').toLowerCase();
   const cFilt = document.getElementById('qr-filter-cong')?.value||'';
@@ -671,13 +705,16 @@ window.renderQR = function(){
     card.setAttribute('data-qrcong', p.congregacion||'');
     card.setAttribute('data-qrcat', p.cat||'');
 
-    const qrDiv = document.createElement('div');
+    // Canvas placeholder (se llena async)
+    const qrWrap = document.createElement('div');
+    qrWrap.style.cssText='width:160px;height:160px;margin:0 auto 4px;background:#f0f0f0;border-radius:6px;display:flex;align-items:center;justify-content:center;';
+    qrWrap.innerHTML='<span style="font-size:10px;color:#999">⏳</span>';
+
     const nm = document.createElement('div'); nm.className='qr-name'; nm.textContent=p.nombre;
     const meta = document.createElement('div'); meta.className='qr-meta'; meta.textContent=p.id;
     const cg = document.createElement('div'); cg.className='qr-cong'; cg.textContent=p.congregacion||'';
     const ct = document.createElement('div'); ct.className='qr-cat'; ct.textContent=catLabel(p.cat||'');
 
-    // Meals summary
     const meals = document.createElement('div'); meals.className='qr-meals-badge';
     const mealCount = p.comidas ? Object.values(p.comidas).filter(Boolean).length : 0;
     meals.textContent = `${mealCount}/10 comidas`;
@@ -687,54 +724,104 @@ window.renderQR = function(){
     btnDl.textContent='⬇️ Descargar PNG';
     btnDl.onclick=()=>descargarQRIndividual(p);
 
-    card.append(qrDiv,nm,meta,cg,ct,meals,btnDl);
+    card.append(qrWrap,nm,meta,cg,ct,meals,btnDl);
     grid.appendChild(card);
-    new QRCode(qrDiv,{text:`${QR_BASE}?scan=${p.id}`,width:148,height:148,colorDark:'#000',colorLight:'#fff',correctLevel:QRCode.CorrectLevel.M});
+
+    // Generar QR de alta calidad y mostrar en la tarjeta
+    makeQRCanvas(`${QR_BASE}?scan=${p.id}`, 200).then(canvas=>{
+      canvas.style.cssText='width:100%;height:100%;border-radius:4px;';
+      qrWrap.innerHTML='';
+      qrWrap.style.background='transparent';
+      qrWrap.appendChild(canvas);
+      // Guardamos referencia para descarga
+      card._qrCanvas = canvas;
+    });
   });
   document.getElementById('qr-info').textContent=`${data.length} participantes con QR generado`;
 };
 
-// ── INDIVIDUAL QR DOWNLOAD ────────────────────────────────
-function getQRDataURL(id){
-  const card = document.querySelector(`[data-qrid="${id}"]`);
-  if(!card) return null;
-  const canvas = card.querySelector('canvas');
-  const img = card.querySelector('img');
-  if(canvas) return canvas.toDataURL('image/png');
-  if(img) return img.src;
-  return null;
-}
-
+// ── INDIVIDUAL QR DOWNLOAD ────────────────────────────────────
+// El gafete PNG usa 400×500px con QR de 300×300 — grande, limpio y escaneable
 function buildQRCanvas(nombre, id, cong, cat){
-  return new Promise(resolve=>{
-    const qrURL = getQRDataURL(id);
-    if(!qrURL){resolve(null);return;}
-    const W=300, H=370;
-    const c=document.createElement('canvas'); c.width=W; c.height=H;
-    const ctx=c.getContext('2d');
-    ctx.fillStyle='#ffffff'; ctx.fillRect(0,0,W,H);
-    // Border
-    ctx.strokeStyle='#e0e0e0'; ctx.lineWidth=2;
-    ctx.roundRect(2,2,W-4,H-4,12); ctx.stroke();
-    const img=new Image();
-    img.onload=()=>{
-      ctx.drawImage(img,(W-256)/2,18,256,256);
-      ctx.strokeStyle='#e8e8e8'; ctx.lineWidth=1;
-      ctx.beginPath(); ctx.moveTo(16,284); ctx.lineTo(W-16,284); ctx.stroke();
-      ctx.textAlign='center';
-      ctx.fillStyle='#111111'; ctx.font='bold 13px sans-serif';
-      ctx.fillText(nombre.length>36?nombre.substring(0,35)+'…':nombre, W/2, 302);
-      ctx.fillStyle='#666666'; ctx.font='11px sans-serif';
-      ctx.fillText(id, W/2, 318);
-      ctx.fillStyle='#c07000'; ctx.font='bold 11px sans-serif';
-      ctx.fillText(cong, W/2, 333);
-      ctx.fillStyle='#777777'; ctx.font='10px sans-serif';
-      ctx.fillText(catLabel(cat), W/2, 348);
-      ctx.fillStyle='#cccccc'; ctx.font='9px sans-serif';
-      ctx.fillText('CRPTG 11 · 2026', W/2, 362);
-      resolve(c);
-    };
-    img.src=qrURL;
+  return new Promise(async resolve=>{
+    const QR_SIZE = 320;     // QR interno grande
+    const W = 420, H = 510; // tarjeta final
+    const MARGIN = 16;
+    const QR_X = (W - QR_SIZE) / 2;
+    const QR_Y = 24;
+
+    const qrC = await makeQRCanvas(`${QR_BASE}?scan=${id}`, QR_SIZE);
+
+    const c = document.createElement('canvas');
+    c.width = W; c.height = H;
+    const ctx = c.getContext('2d');
+
+    // Fondo blanco puro
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, W, H);
+
+    // Borde suave
+    ctx.strokeStyle = '#cccccc';
+    ctx.lineWidth = 2;
+    if(ctx.roundRect){ ctx.roundRect(2,2,W-4,H-4,14); }
+    else { ctx.rect(2,2,W-4,H-4); }
+    ctx.stroke();
+
+    // Franja superior con color
+    ctx.fillStyle = '#1a1a2e';
+    if(ctx.roundRect){ ctx.beginPath(); ctx.roundRect(2,2,W-4,46,{upperLeft:12,upperRight:12,lowerLeft:0,lowerRight:0}); ctx.fill(); }
+    else { ctx.fillRect(2,2,W-4,46); }
+
+    // Logo / título evento en franja
+    ctx.textAlign = 'center';
+    ctx.fillStyle = '#e8a838';
+    ctx.font = 'bold 13px sans-serif';
+    ctx.fillText('CRPTG 11 · 2026', W/2, 22);
+    ctx.fillStyle = '#ffffff';
+    ctx.font = '10px sans-serif';
+    ctx.fillText('Control de Alimentación', W/2, 38);
+
+    // QR — dibujado con quiet zone adicional de 10px cada lado
+    const qzPad = 10;
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(QR_X - qzPad, QR_Y + 46 - qzPad, QR_SIZE + qzPad*2, QR_SIZE + qzPad*2);
+    ctx.drawImage(qrC, QR_X, QR_Y + 46, QR_SIZE, QR_SIZE);
+
+    // Línea separadora
+    const sepY = QR_Y + 46 + QR_SIZE + qzPad + 10;
+    ctx.strokeStyle = '#eeeeee';
+    ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(MARGIN*2, sepY); ctx.lineTo(W-MARGIN*2, sepY); ctx.stroke();
+
+    // Nombre — fuente grande
+    ctx.fillStyle = '#111111';
+    ctx.font = 'bold 15px sans-serif';
+    ctx.textAlign = 'center';
+    const maxW = W - MARGIN*4;
+    const nombreDisplay = nombre.length > 40 ? nombre.substring(0,39)+'…' : nombre;
+    ctx.fillText(nombreDisplay, W/2, sepY + 22);
+
+    // ID
+    ctx.fillStyle = '#888888';
+    ctx.font = '11px sans-serif';
+    ctx.fillText(id, W/2, sepY + 40);
+
+    // Congregación
+    ctx.fillStyle = '#b07000';
+    ctx.font = 'bold 11px sans-serif';
+    ctx.fillText(cong, W/2, sepY + 57);
+
+    // Categoría
+    ctx.fillStyle = '#8b7fe8';
+    ctx.font = '10px sans-serif';
+    ctx.fillText(catLabel(cat), W/2, sepY + 72);
+
+    // Instrucción de escaneo
+    ctx.fillStyle = '#bbbbbb';
+    ctx.font = '9px sans-serif';
+    ctx.fillText('Presenta este código en cada comida', W/2, H - 12);
+
+    resolve(c);
   });
 }
 
