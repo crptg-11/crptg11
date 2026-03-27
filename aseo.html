@@ -97,6 +97,7 @@ tr:last-child td{border-bottom:none}tr:hover td{background:rgba(232,168,56,.03)}
     </div>
   </div>
   <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+    <span id="sync-indicator" style="font-size:11px;color:var(--muted);font-weight:500">☁️ Conectando…</span>
     <button id="btn-propuesta-global" onclick="generarPropuesta()" class="btn-propuesta" style="display:none">✨ Generar propuesta</button>
     <button id="btn-editar" onclick="toggleEdicion()"
       style="padding:6px 18px;border-radius:100px;border:1px solid rgba(232,107,139,.4);background:transparent;color:var(--rose);font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .15s">
@@ -270,7 +271,32 @@ tr:last-child td{border-bottom:none}tr:hover td{background:rgba(232,168,56,.03)}
 </div>
 <div class="alert" id="alert"></div>
 
-<script>
+<script type="module">
+// ── FIREBASE ──────────────────────────────────────────────────
+import { initializeApp }                       from "https://www.gstatic.com/firebasejs/11.6.0/firebase-app.js";
+import { getDatabase, ref, onValue, set, get } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-database.js";
+
+const firebaseConfig = {
+  apiKey:            "AIzaSyAcW5Gr3CrBofcwp4ir_J9RRldEx4aNjNs",
+  authDomain:        "crptg-11.firebaseapp.com",
+  databaseURL:       "https://crptg-11-default-rtdb.firebaseio.com",
+  projectId:         "crptg-11",
+  storageBucket:     "crptg-11.firebasestorage.app",
+  messagingSenderId: "101435991351",
+  appId:             "1:101435991351:web:f645559a5a68a235f2e6b2"
+};
+const fbApp = initializeApp(firebaseConfig);
+const db    = getDatabase(fbApp);
+const DB_PATH = "aseo";
+
+function _syncUI(estado){
+  const el = document.getElementById("sync-indicator");
+  if(!el) return;
+  if(estado==="ok")      { el.textContent="☁️ Sincronizado";  el.style.color="var(--accent)"; }
+  else if(estado==="saving") { el.textContent="⏳ Guardando…";   el.style.color="var(--gold)";   }
+  else if(estado==="err")    { el.textContent="⚠️ Sin conexión"; el.style.color="var(--rose)";   }
+}
+
 // ── CONSTANTES ────────────────────────────────────────────────
 const CLAVE    = "IglesiaRestaurada2026";
 const AUTH_KEY = "crptg11-aseo-edit";
@@ -299,10 +325,36 @@ const TURNOS_BANOS = [
 const PERSONAS_REGISTRO = [{"nombre":"Alison Arias Ugalde","cong":"Angelina","cat":"J","sexo":"M"},{"nombre":"April Yuliana","cong":"Angelina","cat":"N","sexo":"M"},{"nombre":"Ashley Arias Ugalde","cong":"Angelina","cat":"J","sexo":"M"},{"nombre":"Carlos Eduardo Espinoza Calderón","cong":"Angelina","cat":"A","sexo":"H"},{"nombre":"Carlos José García Quiroz","cong":"Angelina","cat":"A","sexo":"H"},{"nombre":"Carlos Sebastián Ríos Bonilla","cong":"Angelina","cat":"A","sexo":"H"},{"nombre":"Hilda Cecelia Casasola","cong":"Angelina","cat":"A","sexo":"M"},{"nombre":"Ivonne Noelia Ríos Bonilla","cong":"Angelina","cat":"A","sexo":"M"},{"nombre":"Jackeline Monge Graham","cong":"Angelina","cat":"A","sexo":"M"},{"nombre":"Jeffry David López Hernández","cong":"Angelina","cat":"J","sexo":"H"},{"nombre":"Josué Gómez Barrientos","cong":"Angelina","cat":"A","sexo":"H"},{"nombre":"Mildred Esther Vargas Coronado","cong":"Angelina","cat":"A","sexo":"M"},{"nombre":"Mirna Graham McHayle","cong":"Angelina","cat":"A","sexo":"M"},{"nombre":"Vera Carranza Graham","cong":"Angelina","cat":"A","sexo":"M"},{"nombre":"Adita mata","cong":"Angelina","cat":"","sexo":"M"},{"nombre":"Betsabé Naari García Villalobos","cong":"Angelina","cat":"","sexo":"M"},{"nombre":"Cristian León Aguero","cong":"Angelina","cat":"","sexo":"H"},{"nombre":"Douglas Alvarez Graham","cong":"Angelina","cat":"","sexo":"H"},{"nombre":"Ebony Alondra Zamora Monge","cong":"Angelina","cat":"","sexo":"M"},{"nombre":"Elizabeth Gómez Barrientos","cong":"Angelina","cat":"","sexo":"M"},{"nombre":"Eser Jeriel García Villalobos","cong":"Angelina","cat":"","sexo":"H"},{"nombre":"Esteban Rodríguez Gómez","cong":"Angelina","cat":"","sexo":"H"},{"nombre":"Gerlly Hadassa García Villalobos","cong":"Angelina","cat":"","sexo":"M"},{"nombre":"Gerlly Vanessa Villalobos Rodríguez","cong":"Angelina","cat":"","sexo":"M"},{"nombre":"Ismael Santiago Leon Ureña","cong":"Angelina","cat":"","sexo":"H"},{"nombre":"Javier Joel Rodriguez","cong":"Angelina","cat":"","sexo":"H"},{"nombre":"JOAQUINA QUIROS ORDOÑEZ","cong":"Angelina","cat":"","sexo":"M"},{"nombre":"Jonathan Zabdiel García Villalobos","cong":"Angelina","cat":"","sexo":"H"},{"nombre":"Josabeth Naara García Villalobos","cong":"Angelina","cat":"","sexo":"M"},{"nombre":"Juan Luis mata Solano","cong":"Angelina","cat":"","sexo":"H"},{"nombre":"Judith Reyes Soto","cong":"Angelina","cat":"","sexo":"M"},{"nombre":"Keitlyn Mata Pérez","cong":"Angelina","cat":"","sexo":"M"},{"nombre":"Margot Rodriguez Acuña","cong":"Angelina","cat":"","sexo":"M"},{"nombre":"Mauricio Villachica bravo","cong":"Angelina","cat":"","sexo":"H"},{"nombre":"Michael Gómez Vargas","cong":"Angelina","cat":"","sexo":"H"},{"nombre":"Orlando Jiménez","cong":"Angelina","cat":"","sexo":"H"},{"nombre":"Rebeca García Vasquez","cong":"Angelina","cat":"","sexo":"M"},{"nombre":"Sandra Graham McHayle","cong":"Angelina","cat":"","sexo":"M"},{"nombre":"Mamá de Gerlly","cong":"Angelina","cat":"","sexo":"M"},{"nombre":"Irislay Menocal","cong":"Bataan","cat":"A","sexo":"M"},{"nombre":"Lucas Samuel Martínez Menocal","cong":"Bataan","cat":"N","sexo":"H"},{"nombre":"Mateo Samuel Martínez Menocal","cong":"Bataan","cat":"N","sexo":"H"},{"nombre":"Yoislán Martínez Aranda","cong":"Bataan","cat":"A","sexo":"H"},{"nombre":"Andrew Bustos García","cong":"Bataan","cat":"J","sexo":"H"},{"nombre":"Catalina Mayorga Arias","cong":"Bataan","cat":"A","sexo":"M"},{"nombre":"Eunice García Muñoz","cong":"Bataan","cat":"A","sexo":"M"},{"nombre":"Jacqueline Mariel trejos gaitan","cong":"Bataan","cat":"A","sexo":"M"},{"nombre":"Johel Jiménez Mata","cong":"Bataan","cat":"A","sexo":"H"},{"nombre":"Marcos Mata Solano","cong":"Bataan","cat":"A","sexo":"H"},{"nombre":"Sofi Samara Bustos García","cong":"Bataan","cat":"A","sexo":"M"},{"nombre":"Angela Zapata Zúñiga","cong":"Bribrí","cat":"A","sexo":"M"},{"nombre":"Barbara Fonseca Méndez","cong":"Bribrí","cat":"J","sexo":"M"},{"nombre":"Brígida Miranda Blanco","cong":"Bribrí","cat":"A","sexo":"M"},{"nombre":"Carla Blanco Blanco","cong":"Bribrí","cat":"A","sexo":"M"},{"nombre":"Damaris Arias Zapata","cong":"Bribrí","cat":"A","sexo":"M"},{"nombre":"Eliseo Mata Miranda","cong":"Bribrí","cat":"A","sexo":"H"},{"nombre":"Jennifer Viviana Zúñiga Tapia","cong":"Bribrí","cat":"A","sexo":"M"},{"nombre":"Jeyrel Arturo Méndez Zúñiga","cong":"Bribrí","cat":"N","sexo":"H"},{"nombre":"Jeyrelin Jearí Méndez Zúñiga","cong":"Bribrí","cat":"N","sexo":"M"},{"nombre":"Joel Blanco Pereira","cong":"Bribrí","cat":"A","sexo":"H"},{"nombre":"Karla Blanco Blanco","cong":"Bribrí","cat":"A","sexo":"M"},{"nombre":"Karla Sulay Montiel Blanco","cong":"Bribrí","cat":"J","sexo":"M"},{"nombre":"Lidia Price Blanco","cong":"Bribrí","cat":"A","sexo":"M"},{"nombre":"Luis Madriz Abarca","cong":"Bribrí","cat":"A","sexo":"H"},{"nombre":"Mariangel Pereira Arias","cong":"Bribrí","cat":"J","sexo":"M"},{"nombre":"Marianni Pereira Arias","cong":"Bribrí","cat":"N","sexo":"M"},{"nombre":"Martina Miranda Blanco","cong":"Bribrí","cat":"A","sexo":"M"},{"nombre":"Mercedes Blanco Blanco","cong":"Bribrí","cat":"A","sexo":"M"},{"nombre":"Nícole Fonseca Méndez","cong":"Bribrí","cat":"J","sexo":"M"},{"nombre":"Rodolfo Rojas Brenes","cong":"Bribrí","cat":"A","sexo":"H"},{"nombre":"Sandra Mancía Mancía","cong":"Bribrí","cat":"A","sexo":"M"},{"nombre":"Sulay Montiel Blanco","cong":"Bribrí","cat":"J","sexo":"M"},{"nombre":"Dayana Cruz Chavarría","cong":"Bribrí","cat":"A","sexo":"M"},{"nombre":"Dina Mata Miranda","cong":"Bribrí","cat":"A","sexo":"M"},{"nombre":"Eliam Rodríguez Mata","cong":"Bribrí","cat":"J","sexo":"H"},{"nombre":"Elisua Rodríguez Mata","cong":"Bribrí","cat":"A","sexo":"H"},{"nombre":"Heidan Rodríguez Mata","cong":"Bribrí","cat":"J","sexo":"H"},{"nombre":"Moisés Rodríguez Rojas","cong":"Bribrí","cat":"A","sexo":"H"},{"nombre":"Arturo M. Garriga López","cong":"Extranjero","cat":"A","sexo":"H"},{"nombre":"Elka Barroso","cong":"Extranjero","cat":"A","sexo":"M"},{"nombre":"Enith Barroso","cong":"Extranjero","cat":"A","sexo":"M"},{"nombre":"Erik Israel Áreas Lopez","cong":"Extranjero","cat":"A","sexo":"H"},{"nombre":"Eyver Alexis Cisne Gutierrez","cong":"Extranjero","cat":"J","sexo":"H"},{"nombre":"Manuel Aragón Lacayo","cong":"Extranjero","cat":"A","sexo":"H"},{"nombre":"Oriana Aguado","cong":"Extranjero","cat":"A","sexo":"M"},{"nombre":"Raquel López","cong":"Extranjero","cat":"A","sexo":"M"},{"nombre":"Rosa Iris Gutierrez Sotelo","cong":"Extranjero","cat":"A","sexo":"M"},{"nombre":"Shirley Anahí Ibarra Torres","cong":"Extranjero","cat":"A","sexo":"M"},{"nombre":"Santiago Mata","cong":"Extranjero","cat":"","sexo":"H"},{"nombre":"Nuris Barroso","cong":"Extranjero","cat":"","sexo":"M"},{"nombre":"Omar Garcia","cong":"Extranjero","cat":"","sexo":"H"},{"nombre":"Job Castañeda","cong":"Extranjero","cat":"","sexo":"H"},{"nombre":"Isabel Cruz","cong":"Extranjero","cat":"","sexo":"M"},{"nombre":"Jeslynne Vargas Gomez","cong":"Extranjero","cat":"","sexo":"M"},{"nombre":"Kim García","cong":"Extranjero","cat":"","sexo":"M"},{"nombre":"Lino Gualberto mata","cong":"Extranjero","cat":"","sexo":"H"},{"nombre":"Marcos Mata Ortiz","cong":"Extranjero","cat":"","sexo":"H"},{"nombre":"Susany Gomez Vargas","cong":"Extranjero","cat":"","sexo":"M"},{"nombre":"Thiago Villalta Gomez","cong":"Extranjero","cat":"","sexo":"H"},{"nombre":"Aurora Soto","cong":"Extranjero","cat":"","sexo":"M"},{"nombre":"Trudis Castañeda","cong":"Extranjero","cat":"","sexo":"M"},{"nombre":"Audrey Tatiana Jaubert Vargas","cong":"Ipís","cat":"A","sexo":"M"},{"nombre":"Carmen Villarreal Torres","cong":"Ipís","cat":"A","sexo":"M"},{"nombre":"Damaris Elizabeth Vargas Coronado","cong":"Ipís","cat":"A","sexo":"M"},{"nombre":"Emilly Alahana Aguilar Araya","cong":"Ipís","cat":"N","sexo":"M"},{"nombre":"Eyber Degracia Mata","cong":"Ipís","cat":"A","sexo":"H"},{"nombre":"Gerardo Vargas","cong":"Ipís","cat":"A","sexo":"H"},{"nombre":"Horacio Aragón Lacayo","cong":"Ipís","cat":"A","sexo":"H"},{"nombre":"Juan Rafael Sánchez Aguilar","cong":"Ipís","cat":"A","sexo":"H"},{"nombre":"Luis Mauricio Mora Jara","cong":"Ipís","cat":"A","sexo":"H"},{"nombre":"Maritza Vargas Coronado","cong":"Ipís","cat":"A","sexo":"M"},{"nombre":"Nadia De Gracia Núñez","cong":"Ipís","cat":"A","sexo":"M"},{"nombre":"Raquel Gómez Vargas","cong":"Ipís","cat":"A","sexo":"M"},{"nombre":"Rayham Degracia De Gracia","cong":"Ipís","cat":"N","sexo":"H"},{"nombre":"Rouss Degracia De Gracia","cong":"Ipís","cat":"N","sexo":"M"},{"nombre":"Samuel Sánchez Gomez","cong":"Ipís","cat":"N","sexo":"H"},{"nombre":"Sandra Vargas Coronado","cong":"Ipís","cat":"A","sexo":"M"},{"nombre":"Sebastiana Del Carmen López Chevez","cong":"Ipís","cat":"A","sexo":"M"},{"nombre":"Yazid Degracia De Gracia","cong":"Ipís","cat":"N","sexo":"H"},{"nombre":"Zeidy Valverde Valverde","cong":"Ipís","cat":"A","sexo":"M"},{"nombre":"Bradley Terrence Campos Johnson","cong":"Limoncito","cat":"N","sexo":"H"},{"nombre":"Juan Carlos Campos Muñoz","cong":"Limoncito","cat":"A","sexo":"H"},{"nombre":"Lois Annette Johnson West","cong":"Limoncito","cat":"A","sexo":"M"},{"nombre":"Annette Campos","cong":"Limoncito","cat":"","sexo":"M"},{"nombre":"Alicia","cong":"Limoncito","cat":"","sexo":"M"},{"nombre":"Airys Sandoval Jiménez","cong":"Río Banano","cat":"N","sexo":"M"},{"nombre":"Arnold Sandoval Monge","cong":"Río Banano","cat":"A","sexo":"H"},{"nombre":"Axa Milipsa Jiménez Rodríguez","cong":"Río Banano","cat":"A","sexo":"M"},{"nombre":"Axel Sandoval Jiménez","cong":"Río Banano","cat":"N","sexo":"H"},{"nombre":"Fonseca Jiménez Cintia","cong":"Río Banano","cat":"A","sexo":"M"},{"nombre":"Hugo González","cong":"Río Banano","cat":"A","sexo":"H"},{"nombre":"Jahbiel Ordoñez Briones","cong":"Río Banano","cat":"N","sexo":"H"},{"nombre":"Luis Guillermo Jiménez Mata","cong":"Río Banano","cat":"A","sexo":"H"},{"nombre":"Ordoñez Chevez José Joaquín","cong":"Río Banano","cat":"A","sexo":"H"},{"nombre":"Yisbell Ordoñez Briones","cong":"Río Banano","cat":"N","sexo":"M"},{"nombre":"Amira Richards mayorga","cong":"Río Banano","cat":"","sexo":"M"},{"nombre":"Derek villafuerte mayorga","cong":"Río Banano","cat":"","sexo":"H"},{"nombre":"Eduardo villafuerte mongarez","cong":"Río Banano","cat":"","sexo":"H"},{"nombre":"Judith jimenez Mata","cong":"Río Banano","cat":"","sexo":"M"},{"nombre":"Lisseth Mayorga Jiménez","cong":"Río Banano","cat":"","sexo":"M"},{"nombre":"AURORA RÍO BANANO","cong":"Río Banano","cat":"","sexo":"M"},{"nombre":"Lilliam Jiménez Mata","cong":"Río Banano","cat":"","sexo":"M"},{"nombre":"Abimael Stevens García Montes De Oca","cong":"Santa Marta","cat":"N","sexo":"H"},{"nombre":"Ana Marys Montes De Oca Díaz","cong":"Santa Marta","cat":"A","sexo":"M"},{"nombre":"Kaytlyn Gutiérrez Picado","cong":"Santa Marta","cat":"A","sexo":"M"},{"nombre":"Laira Ismary García Montes De Oca","cong":"Santa Marta","cat":"N","sexo":"M"},{"nombre":"Abiezer D'Gracia Mata","cong":"Tucurrique","cat":"A","sexo":"H"},{"nombre":"Emma D'Gracia Macloud","cong":"Tucurrique","cat":"N","sexo":"M"},{"nombre":"Eneida Vargas Mata","cong":"Tucurrique","cat":"A","sexo":"M"},{"nombre":"José Luis Mata Ortiz","cong":"Tucurrique","cat":"A","sexo":"H"},{"nombre":"Kathya Vanesa Mora Burgos","cong":"Tucurrique","cat":"A","sexo":"M"},{"nombre":"Kimberly Macloud Manzanares","cong":"Tucurrique","cat":"A","sexo":"M"},{"nombre":"María Eugenia Mata Nuñez","cong":"Tucurrique","cat":"A","sexo":"M"},{"nombre":"Oziel D'Gracia Macloud","cong":"Tucurrique","cat":"N","sexo":"H"},{"nombre":"Sara Sofía Sánchez Cordero","cong":"Tucurrique","cat":"N","sexo":"M"},{"nombre":"Sebastián Murillo Macloud","cong":"Tucurrique","cat":"J","sexo":"H"},{"nombre":"Meri Mata","cong":"Tucurrique","cat":"","sexo":"M"},{"nombre":"Jose Lino Mata Núñez","cong":"Tucurrique","cat":"","sexo":"H"},{"nombre":"Maritza Ortiz","cong":"Tucurrique","cat":"","sexo":"M"},{"nombre":"Adriel Salazar","cong":"Valle la estrella","cat":"J","sexo":"H"},{"nombre":"Axel Salazar","cong":"Valle la estrella","cat":"N","sexo":"H"},{"nombre":"Azeneth Chaves Cárdenas","cong":"Valle la estrella","cat":"N","sexo":"M"},{"nombre":"Hilary Salazar","cong":"Valle la estrella","cat":"J","sexo":"M"},{"nombre":"Irene Chavarría Salgado","cong":"Valle la estrella","cat":"A","sexo":"M"},{"nombre":"Joel Isaac Chaves Chavarría","cong":"Valle la estrella","cat":"A","sexo":"H"},{"nombre":"Johalis Pinzón Ayala","cong":"Valle la estrella","cat":"A","sexo":"M"},{"nombre":"Josiel Soto Pinzon","cong":"Valle la estrella","cat":"N","sexo":"H"},{"nombre":"Leonel Soto Gomez","cong":"Valle la estrella","cat":"A","sexo":"H"},{"nombre":"Marcia Golding Narathan","cong":"Valle la estrella","cat":"A","sexo":"M"},{"nombre":"María Elisabeth Reyes Castillo","cong":"Valle la estrella","cat":"A","sexo":"M"},{"nombre":"Minor Rodríguez Acuña","cong":"Valle la estrella","cat":"A","sexo":"H"},{"nombre":"Naily Chaves Cárdenas","cong":"Valle la estrella","cat":"N","sexo":"M"},{"nombre":"Naiya Cuff Golding","cong":"Valle la estrella","cat":"N","sexo":"M"},{"nombre":"Neigel Cuff Golding","cong":"Valle la estrella","cat":"J","sexo":"H"},{"nombre":"Neimark Cuff Golding","cong":"Valle la estrella","cat":"N","sexo":"H"},{"nombre":"Oriel Salazar","cong":"Valle la estrella","cat":"J","sexo":"H"},{"nombre":"Ruby Golding Narathan","cong":"Valle la estrella","cat":"A","sexo":"M"},{"nombre":"Samir Soto Pinzón","cong":"Valle la estrella","cat":"J","sexo":"H"},{"nombre":"Steven Soto Pinzon","cong":"Valle la estrella","cat":"J","sexo":"H"},{"nombre":"Yarisel Cardenas Martinez","cong":"Valle la estrella","cat":"A","sexo":"M"},{"nombre":"Zoe Chaves Cárdenas","cong":"Valle la estrella","cat":"N","sexo":"M"},{"nombre":"Agnes Molano Rodríguez","cong":"Valle la estrella","cat":"","sexo":"M"},{"nombre":"Alexis Guerrero olmos","cong":"Valle la estrella","cat":"","sexo":"H"},{"nombre":"Bienvenido chaves","cong":"Valle la estrella","cat":"","sexo":"H"},{"nombre":"Leah Molano Rodríguez","cong":"Valle la estrella","cat":"","sexo":"M"},{"nombre":"Marisela Rodríguez Chavarría","cong":"Valle la estrella","cat":"","sexo":"M"},{"nombre":"Marisol  Chavarria Salgado","cong":"Valle la estrella","cat":"","sexo":"M"},{"nombre":"Reynel Molano Ruíz","cong":"Valle la estrella","cat":"","sexo":"H"},{"nombre":"Yamileth chavarria salgado","cong":"Valle la estrella","cat":"","sexo":"M"}];
 
 // ── ESTADO ────────────────────────────────────────────────────
-let equipoAseo    = JSON.parse(localStorage.getItem("crptg11-aseo-equipo") || "[]");
-let asignaciones  = JSON.parse(localStorage.getItem("crptg11-aseo-asig")  || "{}");
-let notas         = JSON.parse(localStorage.getItem("crptg11-aseo-notas") || "[]");
-let diaActivo     = "mie";
+let equipoAseo   = JSON.parse(localStorage.getItem("crptg11-aseo-equipo") || "[]");
+let asignaciones = JSON.parse(localStorage.getItem("crptg11-aseo-asig")  || "{}");
+let notas        = JSON.parse(localStorage.getItem("crptg11-aseo-notas") || "[]");
+let diaActivo    = "mie";
+let _fbIgnore    = false;
+
+// Escuchar cambios en tiempo real
+onValue(ref(db, DB_PATH), snap => {
+  if(_fbIgnore) return;
+  const data = snap.val();
+  if(!data) return;
+  equipoAseo   = data.equipo || [];
+  asignaciones = data.asig   || {};
+  notas        = data.notas  || [];
+  localStorage.setItem("crptg11-aseo-equipo", JSON.stringify(equipoAseo));
+  localStorage.setItem("crptg11-aseo-asig",   JSON.stringify(asignaciones));
+  localStorage.setItem("crptg11-aseo-notas",  JSON.stringify(notas));
+  renderTodo();
+  _syncUI("ok");
+}, () => _syncUI("err"));
+
+// Migrar datos locales a Firebase si está vacío
+(async () => {
+  try {
+    const snap = await get(ref(db, DB_PATH));
+    if(!snap.exists()){
+      await set(ref(db, DB_PATH), { equipo:equipoAseo, asig:asignaciones, notas });
+    }
+  } catch(e){ console.warn("Migración aseo:", e); }
+})();
 
 
 const equipoNombres = () => new Set(equipoAseo.map(p=>p.nombre));
@@ -313,8 +365,13 @@ const puedeEditar = () => localStorage.getItem(AUTH_KEY) === "ok";
 
 function guardar(){
   localStorage.setItem("crptg11-aseo-equipo", JSON.stringify(equipoAseo));
-  localStorage.setItem("crptg11-aseo-asig",  JSON.stringify(asignaciones));
-  localStorage.setItem("crptg11-aseo-notas", JSON.stringify(notas));
+  localStorage.setItem("crptg11-aseo-asig",   JSON.stringify(asignaciones));
+  localStorage.setItem("crptg11-aseo-notas",  JSON.stringify(notas));
+  _syncUI("saving");
+  _fbIgnore = true;
+  set(ref(db, DB_PATH), { equipo:equipoAseo, asig:asignaciones, notas })
+    .then(()=>{ _syncUI("ok"); setTimeout(()=>{ _fbIgnore=false; }, 1000); })
+    .catch(err=>{ console.error("Firebase aseo:", err); _syncUI("err"); _fbIgnore=false; });
 }
 
 // ── AUTH ──────────────────────────────────────────────────────
@@ -339,14 +396,12 @@ function toggleEdicion(){
     setTimeout(()=>document.getElementById("auth-input").focus(),100);
   }
 }
-window.toggleEdicion=toggleEdicion;
 
 function verificarClave(){
   const v=document.getElementById("auth-input").value;
   if(v===CLAVE){ localStorage.setItem(AUTH_KEY,"ok"); document.getElementById("auth-overlay").style.display="none"; actualizarBtn(); renderTodo(); }
   else{ document.getElementById("auth-error").textContent="Clave incorrecta"; document.getElementById("auth-input").value=""; document.getElementById("auth-input").focus(); }
 }
-window.verificarClave=verificarClave;
 
 // ── SELECCIÓN POR CONGREGACIÓN ────────────────────────────────
 const CONGREGACIONES = [...new Set(PERSONAS_REGISTRO.map(p=>p.cong))].sort();
@@ -377,7 +432,6 @@ function seleccionarCong(cong){
   renderPersonasCong();
   document.getElementById("cong-personas-wrap").style.display="block";
 }
-window.seleccionarCong=seleccionarCong;
 
 function renderPersonasCong(){
   if(!congActiva) return;
@@ -408,7 +462,6 @@ function togglePersonaCong(nombre, checked){
   else seleccionCong.delete(nombre);
   renderPersonasCong();
 }
-window.togglePersonaCong=togglePersonaCong;
 
 function actualizarConteoCong(){
   document.getElementById("cong-conteo").textContent = seleccionCong.size
@@ -426,8 +479,6 @@ function deseleccionarTodosCong(){
   seleccionCong.clear();
   renderPersonasCong();
 }
-window.seleccionarTodosCong=seleccionarTodosCong;
-window.deseleccionarTodosCong=deseleccionarTodosCong;
 
 function agregarSeleccionados(){
   if(!seleccionCong.size){ mostrarAlerta("⚠️ Selecciona al menos una persona",true); return; }
@@ -445,14 +496,12 @@ function agregarSeleccionados(){
   renderTodo();
   mostrarAlerta(`✅ ${agregados} persona${agregados>1?"s":""} agregada${agregados>1?"s":""} al equipo`);
 }
-window.agregarSeleccionados=agregarSeleccionados;
 
 // ── AGREGAR PERSONA EXTERNA ────────────────────────────────────
 function mostrarFormAgregar(){
   document.getElementById("form-agregar").style.display="block";
   renderCongTabs();
 }
-window.mostrarFormAgregar=mostrarFormAgregar;
 
 function agregarPersona(){
   const nombre=document.getElementById("new-nombre").value.trim();
@@ -467,7 +516,6 @@ function agregarPersona(){
   document.getElementById("form-agregar").style.display="none";
   renderTodo(); mostrarAlerta(`✅ ${nombre} agregado como colaborador externo`);
 }
-window.agregarPersona=agregarPersona;
 
 function eliminarDelEquipo(nombre){
   if(!confirm(`¿Quitar a ${nombre} del equipo de aseo?`)) return;
@@ -476,7 +524,6 @@ function eliminarDelEquipo(nombre){
   for(const k in asignaciones){ if(asignaciones[k]===nombre) delete asignaciones[k]; }
   guardar(); renderTodo(); mostrarAlerta(`↩ ${nombre} removido del equipo`);
 }
-window.eliminarDelEquipo=eliminarDelEquipo;
 
 // ── PROPUESTA AUTOMÁTICA ──────────────────────────────────────
 function generarPropuesta(){
@@ -573,7 +620,6 @@ function generarPropuesta(){
 
   guardar(); renderTodo(); mostrarAlerta("✨ Propuesta generada — puedes ajustarla libremente");
 }
-window.generarPropuesta=generarPropuesta;
 
 // ── RENDER SLOTS ──────────────────────────────────────────────
 function renderSlots(baseKey, count, pool, badge, editar){
@@ -613,7 +659,6 @@ function turnoCard(titulo, hora, key, slots_spec, editar){
 }
 
 function asignar(k, v){ asignaciones[k]=v; guardar(); renderEquipo(); mostrarAlerta(v?`✅ ${v} asignado`:"↩ Slot liberado"); }
-window.asignar=asignar;
 
 // ── RENDER ÁREAS ──────────────────────────────────────────────
 function getComidasDia(){
@@ -675,7 +720,6 @@ function renderTabs(){
   }).join("");
 }
 function selDia(id){ diaActivo=id; renderTabs(); renderAreas(); }
-window.selDia=selDia;
 
 function renderAreas(){ renderCocina(); renderBanosH(); renderBanosM(); renderSalon(); renderBasura(); }
 
@@ -739,7 +783,6 @@ function agregarNota(){
   guardar();renderNotas();input.value="";mostrarAlerta("📝 Nota guardada");
 }
 function eliminarNota(i){notas.splice(i,1);guardar();renderNotas();}
-window.agregarNota=agregarNota;window.eliminarNota=eliminarNota;
 
 // ── ALERTA ────────────────────────────────────────────────────
 function mostrarAlerta(msg,err=false){
@@ -752,9 +795,16 @@ function mostrarAlerta(msg,err=false){
 function renderTodo(){ renderTabs(); renderAreas(); renderEquipo(); renderNotas(); actualizarBtn(); }
 actualizarBtn();
 renderTodo();
-</script>
 
-<script>
+// Exponer funciones al scope global
+Object.assign(window, {
+  toggleEdicion, verificarClave, seleccionarCong, togglePersonaCong,
+  seleccionarTodosCong, deseleccionarTodosCong, agregarSeleccionados,
+  mostrarFormAgregar, agregarPersona, eliminarDelEquipo,
+  generarPropuesta, asignar, selDia, agregarNota, eliminarNota, renderTodo,
+});
+
+// Acceso overlay
 (function(){
   const ok=localStorage.getItem("crptg11-auth")==="ok"||localStorage.getItem("crptg11-ver")==="ok";
   if(!ok) document.getElementById("acceso-overlay").style.display="flex";

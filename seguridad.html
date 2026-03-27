@@ -61,6 +61,7 @@ tr:last-child td{border-bottom:none}tr:hover td{background:rgba(232,107,139,.03)
       <div class="header-sub">Turno nocturno · 11:00 PM – 5:00 AM</div>
     </div>
   </div>
+  <span id="sync-indicator" style="font-size:11px;color:var(--muted);font-weight:500;margin-left:auto;margin-right:12px">☁️ Conectando…</span>
 </div>
 <div class="main">
 
@@ -137,7 +138,47 @@ tr:last-child td{border-bottom:none}tr:hover td{background:rgba(232,107,139,.03)
   </div>
 </div>
 <div class="alert" id="alert"></div>
-<script>
+<script type="module">
+// ── FIREBASE ──────────────────────────────────────────────────
+import { initializeApp }                       from "https://www.gstatic.com/firebasejs/11.6.0/firebase-app.js";
+import { getDatabase, ref, onValue, set, get } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-database.js";
+
+const firebaseConfig = {
+  apiKey:            "AIzaSyAcW5Gr3CrBofcwp4ir_J9RRldEx4aNjNs",
+  authDomain:        "crptg-11.firebaseapp.com",
+  databaseURL:       "https://crptg-11-default-rtdb.firebaseio.com",
+  projectId:         "crptg-11",
+  storageBucket:     "crptg-11.firebasestorage.app",
+  messagingSenderId: "101435991351",
+  appId:             "1:101435991351:web:f645559a5a68a235f2e6b2"
+};
+const fbApp = initializeApp(firebaseConfig);
+const db    = getDatabase(fbApp);
+const DB_PATH = "seguridad";
+
+function _syncUI(estado){
+  const el = document.getElementById("sync-indicator");
+  if(!el) return;
+  if(estado==="ok")      { el.textContent="☁️ Sincronizado";  el.style.color="var(--accent)"; }
+  else if(estado==="saving") { el.textContent="⏳ Guardando…";   el.style.color="var(--gold)";   }
+  else if(estado==="err")    { el.textContent="⚠️ Sin conexión"; el.style.color="var(--rose)";   }
+}
+
+function _guardarFirebase(){
+  _syncUI("saving");
+  _fbIgnore = true;
+  set(ref(db, DB_PATH), {
+    turnos,
+    asistencia,
+    notas,
+    personasExtra,
+    eliminados,
+  }).then(()=>{
+    _syncUI("ok");
+    setTimeout(()=>{ _fbIgnore=false; }, 1000);
+  }).catch(err=>{ console.error("Firebase seguridad:", err); _syncUI("err"); _fbIgnore=false; });
+}
+
 // ── DATOS ────────────────────────────────────────────────────
 const DIAS = [
   { id:"mie", label:"Mié 1 Abr", siguiente:"Jue" },
@@ -167,32 +208,66 @@ const PERSONAS = [
   { nombre:"Juan Andrés",         cong:"Bribrí"             },
 ];
 
-// Personas extra agregadas por el encargado
-const PERSONAS_EXTRA_KEY = "crptg11-seg-personas-extra";
-let personasExtra = JSON.parse(localStorage.getItem(PERSONAS_EXTRA_KEY) || "[]");
+// ── ESTADO ────────────────────────────────────────────────────
+let personasExtra = JSON.parse(localStorage.getItem("crptg11-seg-personas-extra") || "[]");
+let eliminados    = JSON.parse(localStorage.getItem("crptg11-seg-eliminados")      || "[]");
+let turnos        = JSON.parse(localStorage.getItem("crptg11-seg-turnos")          || "{}");
+let asistencia    = JSON.parse(localStorage.getItem("crptg11-check-seguridad")     || "{}");
+let notas         = JSON.parse(localStorage.getItem("crptg11-notas-seguridad")     || "[]");
+let diaActivo     = "mie";
+let _fbIgnore     = false;
+
 // Lista completa = base + extra
-const todasLasPersonas = () => {
-  const eliminados = JSON.parse(localStorage.getItem("crptg11-seg-eliminados")||"[]");
-  return [...PERSONAS.filter(p=>!eliminados.includes(p.nombre)), ...personasExtra];
-};
-function guardarPersonasExtra(){ localStorage.setItem(PERSONAS_EXTRA_KEY, JSON.stringify(personasExtra)); }
+const todasLasPersonas = () =>
+  [...PERSONAS.filter(p=>!eliminados.includes(p.nombre)), ...personasExtra];
+
+// Guardar en localStorage + Firebase (unificado)
+function guardar(){
+  localStorage.setItem("crptg11-seg-personas-extra", JSON.stringify(personasExtra));
+  localStorage.setItem("crptg11-seg-eliminados",      JSON.stringify(eliminados));
+  localStorage.setItem("crptg11-seg-turnos",          JSON.stringify(turnos));
+  localStorage.setItem("crptg11-check-seguridad",     JSON.stringify(asistencia));
+  localStorage.setItem("crptg11-notas-seguridad",     JSON.stringify(notas));
+  _guardarFirebase();
+}
+// Alias para compatibilidad con llamadas existentes
+const guardarPersonasExtra = guardar;
+const guardarTurnos        = guardar;
+const guardarCheck         = guardar;
+const guardarNotas         = guardar;
+
+// Escuchar cambios en tiempo real
+onValue(ref(db, DB_PATH), snap => {
+  if(_fbIgnore) return;
+  const data = snap.val();
+  if(!data) return;
+  turnos        = data.turnos       || {};
+  asistencia    = data.asistencia   || {};
+  notas         = data.notas        || [];
+  personasExtra = data.personasExtra|| [];
+  eliminados    = data.eliminados   || [];
+  localStorage.setItem("crptg11-seg-personas-extra", JSON.stringify(personasExtra));
+  localStorage.setItem("crptg11-seg-eliminados",      JSON.stringify(eliminados));
+  localStorage.setItem("crptg11-seg-turnos",          JSON.stringify(turnos));
+  localStorage.setItem("crptg11-check-seguridad",     JSON.stringify(asistencia));
+  localStorage.setItem("crptg11-notas-seguridad",     JSON.stringify(notas));
+  renderTabs(); renderTurnoDia(); renderTabla(); renderNotas();
+  _syncUI("ok");
+}, ()=> _syncUI("err"));
+
+// Migrar datos locales a Firebase si está vacío
+(async () => {
+  try {
+    const snap = await get(ref(db, DB_PATH));
+    if(!snap.exists()){
+      await set(ref(db, DB_PATH), { turnos, asistencia, notas, personasExtra, eliminados });
+    }
+  } catch(e){ console.warn("Migración seguridad:", e); }
+})();
 
 const CLAVE_TURNOS = "SeguridadRestaurada";
 const AUTH_TURNOS  = "crptg11-seg-edit";
 const puedeEditarTurnos = () => localStorage.getItem(AUTH_TURNOS) === "ok";
-
-// turnos guardados: { mie_t1_0:"Roberto Mejía", mie_t1_1:"...", mie_t1_2:"...",
-//                    mie_t2_0:"...", ... }
-let turnos = JSON.parse(localStorage.getItem("crptg11-seg-turnos") || "{}");
-function guardarTurnos(){ localStorage.setItem("crptg11-seg-turnos", JSON.stringify(turnos)); }
-// ─────────────────────────────────────────────────────────────
-
-let diaActivo = "mie";
-let asistencia = JSON.parse(localStorage.getItem("crptg11-check-seguridad") || "{}");
-let notas      = JSON.parse(localStorage.getItem("crptg11-notas-seguridad")  || "[]");
-
-function guardarCheck(){ localStorage.setItem("crptg11-check-seguridad", JSON.stringify(asistencia)); }
-function guardarNotas(){ localStorage.setItem("crptg11-notas-seguridad",  JSON.stringify(notas)); }
 
 function renderTabs(){
   document.getElementById("dia-tabs").innerHTML = DIAS.map(d =>
@@ -254,7 +329,6 @@ function asignarTurno(key, valor){
   renderTabla();
   mostrarAlerta(valor ? `✅ ${valor} asignado` : "↩ Turno liberado");
 }
-window.asignarTurno = asignarTurno;
 
 function actualizarBtnEdicion(){
   const btn = document.getElementById("btn-editar-turnos");
@@ -283,20 +357,17 @@ function toggleEdicionTurnos(){
     mostrarAuthTurnos();
   }
 }
-window.toggleEdicionTurnos = toggleEdicionTurnos;
 
 function mostrarAuthTurnos(){
   document.getElementById("auth-turnos-overlay").style.display="flex";
   setTimeout(()=>document.getElementById("auth-turnos-input").focus(),100);
 }
-window.mostrarAuthTurnos = mostrarAuthTurnos;
 
 function cerrarAuthTurnos(){
   if(confirm("¿Bloquear edición de turnos?")){
     localStorage.removeItem(AUTH_TURNOS); actualizarBtnEdicion(); renderTurnoDia(); renderTabla();
   }
 }
-window.cerrarAuthTurnos = cerrarAuthTurnos;
 
 function verificarClaveTurnos(){
   const v = document.getElementById("auth-turnos-input").value;
@@ -311,7 +382,6 @@ function verificarClaveTurnos(){
     document.getElementById("auth-turnos-input").value="";
   }
 }
-window.verificarClaveTurnos = verificarClaveTurnos;
 
 function selDia(id){ diaActivo=id; renderTabs(); renderTurnoDia(); }
 
@@ -388,7 +458,6 @@ function mostrarFormAgregar(){
   document.getElementById("form-agregar").style.display="block";
   document.getElementById("new-nombre").focus();
 }
-window.mostrarFormAgregar = mostrarFormAgregar;
 
 function agregarPersona(){
   const nombre  = document.getElementById("new-nombre").value.trim();
@@ -405,25 +474,16 @@ function agregarPersona(){
   renderTurnoDia(); renderTabla();
   mostrarAlerta(`✅ ${nombre} agregado al equipo`);
 }
-window.agregarPersona = agregarPersona;
 
 function eliminarPersona(nombre){
   if(!confirm(`¿Eliminar a ${nombre} del equipo de seguridad?`)) return;
-  // Intentar eliminar de extras primero
   const eraExtra = personasExtra.some(p=>p.nombre===nombre);
   personasExtra = personasExtra.filter(p=>p.nombre!==nombre);
-  guardarPersonasExtra();
-  // Si era de la lista base, guardarlo en una lista de "eliminados base"
-  if(!eraExtra){
-    const eliminadosKey = "crptg11-seg-eliminados";
-    const eliminados = JSON.parse(localStorage.getItem(eliminadosKey)||"[]");
-    if(!eliminados.includes(nombre)) eliminados.push(nombre);
-    localStorage.setItem(eliminadosKey, JSON.stringify(eliminados));
-  }
+  if(!eraExtra && !eliminados.includes(nombre)) eliminados.push(nombre);
+  guardar();
   renderTurnoDia(); renderTabla();
   mostrarAlerta(`↩ ${nombre} eliminado`);
 }
-window.eliminarPersona = eliminarPersona;
 
 function renderNotas(){
   const lista = document.getElementById("notas-lista");
@@ -450,6 +510,28 @@ function mostrarAlerta(msg){ const a=document.getElementById("alert"); a.textCon
 
 actualizarBtnEdicion();
 renderTabs(); renderTurnoDia(); renderTabla(); renderNotas();
+
+// Exponer funciones al scope global
+Object.assign(window, {
+  asignarTurno, toggleEdicionTurnos, mostrarAuthTurnos, cerrarAuthTurnos,
+  verificarClaveTurnos, selDia, toggleCheck,
+  mostrarFormAgregar, agregarPersona, eliminarPersona,
+  agregarNota, eliminarNota,
+});
+
+// Acceso overlay
+(function(){
+  const ok=localStorage.getItem("crptg11-auth")==="ok"||localStorage.getItem("crptg11-ver")==="ok";
+  if(!ok) document.getElementById("acceso-overlay").style.display="flex";
+  document.documentElement.style.visibility="visible";
+  window.verificarAcceso=function(){
+    const v=document.getElementById("acceso-input").value.trim();
+    const e=document.getElementById("acceso-error");
+    if(v==="IglesiaRestaurada2026"){localStorage.setItem("crptg11-auth","ok");document.getElementById("acceso-overlay").style.display="none";}
+    else if(v==="LogisticaCRPTG11"){localStorage.setItem("crptg11-ver","ok");document.getElementById("acceso-overlay").style.display="none";}
+    else{e.textContent="Clave incorrecta";document.getElementById("acceso-input").value="";document.getElementById("acceso-input").focus();}
+  };
+})();
 </script>
 <!-- OVERLAY DE ACCESO -->
 <div id="acceso-overlay" style="display:none;position:fixed;inset:0;background:rgba(11,13,19,.97);z-index:9999;align-items:center;justify-content:center;flex-direction:column">
@@ -469,20 +551,7 @@ renderTabs(); renderTurnoDia(); renderTabla(); renderNotas();
     </div>
   </div>
 </div>
-<script>
-(function(){
-  const ok=localStorage.getItem("crptg11-auth")==="ok"||localStorage.getItem("crptg11-ver")==="ok";
-  if(!ok) document.getElementById("acceso-overlay").style.display="flex";
-  document.documentElement.style.visibility="visible";
-  window.verificarAcceso=function(){
-    const v=document.getElementById("acceso-input").value.trim();
-    const e=document.getElementById("acceso-error");
-    if(v==="IglesiaRestaurada2026"){localStorage.setItem("crptg11-auth","ok");document.getElementById("acceso-overlay").style.display="none";}
-    else if(v==="LogisticaCRPTG11"){localStorage.setItem("crptg11-ver","ok");document.getElementById("acceso-overlay").style.display="none";}
-    else{e.textContent="Clave incorrecta";document.getElementById("acceso-input").value="";document.getElementById("acceso-input").focus();}
-  };
-})();
-</script>
+
 
 <!-- Auth overlay turnos -->
 <div id="auth-turnos-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:200;align-items:center;justify-content:center">

@@ -117,6 +117,7 @@ tr:last-child td{border-bottom:none}tr:hover td{background:rgba(62,207,184,.03)}
       <div class="header-sub">Cocineros · Ayudantes · Picadores</div>
     </div>
   </div>
+  <span id="sync-indicator" style="font-size:11px;color:var(--muted);font-weight:500">☁️ Conectando…</span>
   <button id="btn-editar" onclick="toggleEdicion()"
     style="padding:6px 18px;border-radius:100px;border:1px solid rgba(232,107,139,.4);background:transparent;color:var(--rose);font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .15s">
     🔒 Editar
@@ -230,7 +231,7 @@ tr:last-child td{border-bottom:none}tr:hover td{background:rgba(62,207,184,.03)}
 </div>
 <div class="alert" id="alert"></div>
 
-<script>
+<script type="module">
 // ── CONSTANTES ────────────────────────────────────────────────
 const CLAVE    = "IglesiaRestaurada2026";
 const AUTH_KEY = "crptg11-cocina-edit";
@@ -390,16 +391,83 @@ function todosParticipantes() {
   return lista;
 }
 
+// ── FIREBASE ──────────────────────────────────────────────────
+import { initializeApp }                        from "https://www.gstatic.com/firebasejs/11.6.0/firebase-app.js";
+import { getDatabase, ref, onValue, set, get }  from "https://www.gstatic.com/firebasejs/11.6.0/firebase-database.js";
+
+const firebaseConfig = {
+  apiKey:            "AIzaSyAcW5Gr3CrBofcwp4ir_J9RRldEx4aNjNs",
+  authDomain:        "crptg-11.firebaseapp.com",
+  databaseURL:       "https://crptg-11-default-rtdb.firebaseio.com",
+  projectId:         "crptg-11",
+  storageBucket:     "crptg-11.firebasestorage.app",
+  messagingSenderId: "101435991351",
+  appId:             "1:101435991351:web:f645559a5a68a235f2e6b2"
+};
+const fbApp = initializeApp(firebaseConfig);
+const db    = getDatabase(fbApp);
+const DB_PATH = "cocina";
+
 // ── ESTADO ────────────────────────────────────────────────────
-let asignaciones   = JSON.parse(localStorage.getItem("crptg11-cocina-asig")  || "{}");
-let asignSab       = JSON.parse(localStorage.getItem("crptg11-cocina-sab")   || "{}");
-let notas          = JSON.parse(localStorage.getItem("crptg11-cocina-notas") || "[]");
-// equipoDia: { mie:[nombre,...], jue:[...], vie:[...] } — personas seleccionadas del registro
-let equipoDia      = JSON.parse(localStorage.getItem("crptg11-cocina-equipo")|| "{}");
-// extras por día: { mie:[{nombre,cong},...], ... }
-let ayudantesExtra = JSON.parse(localStorage.getItem("crptg11-cocina-extra") || "{}");
-if(Array.isArray(ayudantesExtra)) ayudantesExtra = {}; // migración
-let diaActivo      = "mie";
+let asignaciones    = JSON.parse(localStorage.getItem("crptg11-cocina-asig")       || "{}");
+let asignSab        = JSON.parse(localStorage.getItem("crptg11-cocina-sab")        || "{}");
+let notas           = JSON.parse(localStorage.getItem("crptg11-cocina-notas")      || "[]");
+let equipoDia       = JSON.parse(localStorage.getItem("crptg11-cocina-equipo")     || "{}");
+let ayudantesExtra  = JSON.parse(localStorage.getItem("crptg11-cocina-extra")      || "{}");
+if(Array.isArray(ayudantesExtra)) ayudantesExtra = {};
+let picadoresEquipo = JSON.parse(localStorage.getItem("crptg11-cocina-picadores")  || "{}");
+let diaActivo       = "mie";
+let _fbIgnore       = false; // evita loop al recibir el propio cambio
+
+// Indicador de sync en el header
+function _syncUI(estado){
+  let el = document.getElementById("sync-indicator");
+  if(!el) return;
+  if(estado === "ok")      { el.textContent = "☁️ Sincronizado";  el.style.color = "var(--accent)"; }
+  else if(estado === "saving") { el.textContent = "⏳ Guardando…";   el.style.color = "var(--gold)";   }
+  else if(estado === "err")    { el.textContent = "⚠️ Sin conexión"; el.style.color = "var(--rose)";   }
+}
+
+// Escuchar cambios en Firebase en tiempo real (otros dispositivos)
+onValue(ref(db, DB_PATH), snap => {
+  if(_fbIgnore) return;
+  const data = snap.val();
+  if(!data) return;
+  asignaciones    = data.asig       || {};
+  asignSab        = data.sab        || {};
+  notas           = data.notas      || [];
+  equipoDia       = data.equipo     || {};
+  ayudantesExtra  = data.extra      || {};
+  picadoresEquipo = data.picadores  || {};
+  // Actualizar caché local
+  localStorage.setItem("crptg11-cocina-asig",      JSON.stringify(asignaciones));
+  localStorage.setItem("crptg11-cocina-sab",       JSON.stringify(asignSab));
+  localStorage.setItem("crptg11-cocina-notas",     JSON.stringify(notas));
+  localStorage.setItem("crptg11-cocina-equipo",    JSON.stringify(equipoDia));
+  localStorage.setItem("crptg11-cocina-extra",     JSON.stringify(ayudantesExtra));
+  localStorage.setItem("crptg11-cocina-picadores", JSON.stringify(picadoresEquipo));
+  renderTodo();
+  _syncUI("ok");
+}, err => { console.error(err); _syncUI("err"); });
+
+// Migrar datos existentes de localStorage a Firebase (primera vez)
+(async () => {
+  try {
+    const snap = await get(ref(db, DB_PATH));
+    if(!snap.exists()){
+      // No hay datos en Firebase → subir lo que hay en localStorage
+      const payload = {
+        asig:      asignaciones,
+        sab:       asignSab,
+        notas:     notas,
+        equipo:    equipoDia,
+        extra:     ayudantesExtra,
+        picadores: picadoresEquipo,
+      };
+      await set(ref(db, DB_PATH), payload);
+    }
+  } catch(e){ console.warn("Migración Firebase:", e); }
+})();
 
 // Devuelve el equipo de ayudantes activo para un día
 function getEquipoDia(dia){
@@ -410,16 +478,46 @@ function getEquipoDia(dia){
   return [...base, ...ext];
 }
 
+// Devuelve el equipo de picadores para el jueves (seleccionados por checkbox)
+function getEquipoPicadores(dia){
+  const sel = picadoresEquipo[dia] || [];
+  let lista = [];
+  TODAS_CONG.forEach(cong => {
+    PARTICIPANTES[cong].forEach(p => {
+      if(sel.includes(p.nombre)) lista.push({...p, cong});
+    });
+  });
+  return lista;
+}
+
 const todosLosAyudantes = () => getEquipoDia(diaActivo);
 
 const puedeEditar = () => localStorage.getItem(AUTH_KEY) === "ok";
 
 function guardar(){
-  localStorage.setItem("crptg11-cocina-asig",  JSON.stringify(asignaciones));
-  localStorage.setItem("crptg11-cocina-sab",   JSON.stringify(asignSab));
-  localStorage.setItem("crptg11-cocina-notas", JSON.stringify(notas));
-  localStorage.setItem("crptg11-cocina-equipo",JSON.stringify(equipoDia));
-  localStorage.setItem("crptg11-cocina-extra", JSON.stringify(ayudantesExtra));
+  localStorage.setItem("crptg11-cocina-asig",      JSON.stringify(asignaciones));
+  localStorage.setItem("crptg11-cocina-sab",       JSON.stringify(asignSab));
+  localStorage.setItem("crptg11-cocina-notas",     JSON.stringify(notas));
+  localStorage.setItem("crptg11-cocina-equipo",    JSON.stringify(equipoDia));
+  localStorage.setItem("crptg11-cocina-extra",     JSON.stringify(ayudantesExtra));
+  localStorage.setItem("crptg11-cocina-picadores", JSON.stringify(picadoresEquipo));
+  _syncUI("saving");
+  _fbIgnore = true;
+  set(ref(db, DB_PATH), {
+    asig:      asignaciones,
+    sab:       asignSab,
+    notas:     notas,
+    equipo:    equipoDia,
+    extra:     ayudantesExtra,
+    picadores: picadoresEquipo,
+  }).then(()=>{
+    _syncUI("ok");
+    setTimeout(()=>{ _fbIgnore = false; }, 1000);
+  }).catch(err=>{
+    console.error("Firebase guardar:", err);
+    _syncUI("err");
+    _fbIgnore = false;
+  });
 }
 
 // ── AUTH ──────────────────────────────────────────────────────
@@ -433,7 +531,6 @@ function toggleEdicion(){
     setTimeout(()=>document.getElementById("auth-input").focus(),100);
   }
 }
-window.toggleEdicion=toggleEdicion;
 
 function verificarClave(){
   const v=document.getElementById("auth-input").value;
@@ -448,7 +545,6 @@ function verificarClave(){
     document.getElementById("auth-input").value="";
   }
 }
-window.verificarClave=verificarClave;
 
 function actualizarBtn(){
   const btn=document.getElementById("btn-editar");
@@ -637,6 +733,128 @@ function renderPicadoresHTML(){
   if(!dia.picado) return "";
   const editar = puedeEditar();
   const key = `pic_${diaActivo}`;
+
+  // ── JUEVES: selección por checkbox de cualquier congregación ──
+  if(diaActivo === "jue"){
+    const selPic = new Set(picadoresEquipo["jue"] || []);
+    const equipoPic = getEquipoPicadores("jue");
+    const maxPic = 5;
+    const hayPropPic = equipoPic.length > 0 && Object.keys(asignaciones).some(k=>k.startsWith(`pic_jue`));
+
+    // Banner estado
+    const bannerPic = hayPropPic
+      ? `<div class="propuesta-banner" style="background:rgba(139,127,232,.08);border-color:rgba(139,127,232,.25);margin-bottom:14px">
+          <div class="propuesta-txt" style="color:var(--lav)">✅ <strong>Picadores asignados.</strong> Podés modificar los slots abajo.</div>
+          ${editar?`<button class="btn-cancel" onclick="limpiarPicadoresJue()" style="font-size:12px;padding:5px 12px">↩ Limpiar picadores</button>`:""}
+         </div>`
+      : equipoPic.length > 0 && editar
+        ? `<div class="propuesta-banner" style="background:rgba(139,127,232,.06);border-color:rgba(139,127,232,.2);margin-bottom:14px">
+            <div class="propuesta-txt" style="color:var(--lav)">💡 ${equipoPic.length} picador(es) seleccionado(s). Podés asignarlos a los slots.</div>
+           </div>`
+        : editar
+          ? `<div class="propuesta-banner" style="background:rgba(232,168,56,.06);border-color:rgba(232,168,56,.2);margin-bottom:14px">
+              <div class="propuesta-txt" style="color:var(--gold)">⚠️ Seleccioná hasta ${maxPic} picadores de cualquier congregación.</div>
+             </div>`
+          : "";
+
+    // Panel de selección de picadores por checkbox (todas las congregaciones)
+    const panelSelPic = editar ? `
+      <div style="background:#181b24;border:1px solid rgba(139,127,232,.2);border-radius:10px;padding:14px;margin-bottom:16px">
+        <div style="font-size:11px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:var(--lav);margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px">
+          <span>👥 Seleccionar Picadores <span style="color:var(--muted);font-weight:400">(máx. ${maxPic} · ${selPic.size} seleccionados)</span></span>
+          <div style="display:flex;gap:6px">
+            <button onclick="selTodosPicadores()" style="padding:2px 9px;border-radius:6px;border:1px solid rgba(139,127,232,.3);background:transparent;color:var(--lav);font-size:10px;cursor:pointer">Todos (${maxPic})</button>
+            <button onclick="deselTodosPicadores()" style="padding:2px 9px;border-radius:6px;border:1px solid var(--border);background:transparent;color:var(--muted);font-size:10px;cursor:pointer">Ninguno</button>
+          </div>
+        </div>
+        ${TODAS_CONG.map(cong => {
+          const miembros = (PARTICIPANTES[cong]||[]).filter(p=>p.cat!=="N");
+          if(!miembros.length) return "";
+          return `<div style="margin-bottom:12px">
+            <div style="font-size:10px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:var(--muted);margin-bottom:6px;display:flex;align-items:center;justify-content:space-between">
+              <span>📍 ${cong}</span>
+              <div style="display:flex;gap:6px">
+                <button onclick="selCongPicadores('${cong}')" style="padding:2px 9px;border-radius:6px;border:1px solid rgba(139,127,232,.3);background:transparent;color:var(--lav);font-size:10px;cursor:pointer">Todos</button>
+                <button onclick="deselCongPicadores('${cong}')" style="padding:2px 9px;border-radius:6px;border:1px solid var(--border);background:transparent;color:var(--muted);font-size:10px;cursor:pointer">Ninguno</button>
+              </div>
+            </div>
+            <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:5px">
+              ${miembros.map(p=>{
+                const marcado = selPic.has(p.nombre);
+                const disabled = !marcado && selPic.size >= maxPic;
+                return `<label style="display:flex;align-items:center;gap:7px;padding:6px 9px;border-radius:7px;
+                  background:${marcado?'rgba(139,127,232,.1)':'#1a1d2a'};
+                  border:1px solid ${marcado?'rgba(139,127,232,.35)':'var(--border)'};
+                  cursor:${disabled?'not-allowed':'pointer'};opacity:${disabled?'.45':'1'};transition:all .15s">
+                  <input type="checkbox" ${marcado?'checked':''} ${disabled?'disabled':''} 
+                    onchange="togglePicadorJue('${p.nombre.replace(/'/g,"\\'")}',this.checked)"
+                    style="accent-color:var(--lav);width:13px;height:13px">
+                  <div style="flex:1;min-width:0">
+                    <div style="font-size:12px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${p.nombre}</div>
+                    <div style="font-size:10px;color:var(--muted)">${p.sexo==="F"?"🔴 F":"🔵 M"} · ${p.cat==="J"?"Joven":"Adulto"} · ${cong}</div>
+                  </div>
+                </label>`;
+              }).join("")}
+            </div>
+          </div>`;
+        }).join("")}
+      </div>` : "";
+
+    // Slots de asignación de picadores
+    const slotsHTML = Array.from({length:5},(_,i)=>{
+      const k = `${key}_${i}`;
+      const asig = asignaciones[k] || "";
+      if(editar){
+        // Opciones: solo del equipo de picadores seleccionados por checkbox
+        let opts = `<option value="">— Sin asignar —</option>`;
+        const porCongPic = {};
+        equipoPic.forEach(p => {
+          const c = p.cong || "—";
+          if(!porCongPic[c]) porCongPic[c] = [];
+          porCongPic[c].push(p);
+        });
+        Object.keys(porCongPic).forEach(cong => {
+          opts += `<optgroup label="📍 ${cong}">`;
+          porCongPic[cong].forEach(p => {
+            const val = `${p.nombre}__${p.cong||cong}`;
+            opts += `<option value="${val}"${asig===val?" selected":""}>${p.nombre}</option>`;
+          });
+          opts += `</optgroup>`;
+        });
+        return `<div class="slot-row">
+          <span class="slot-num">${i+1}</span>
+          <select class="sel-ayudante" style="border-color:rgba(139,127,232,.3)" onchange="asignar('${k}',this.value)">${opts}</select>
+        </div>`;
+      } else {
+        const nombre = asig ? asig.split("__")[0] : "";
+        const cong   = asig ? asig.split("__")[1] : "";
+        return `<div class="slot-row">
+          <span class="slot-num">${i+1}</span>
+          <span style="font-size:13px;${asig?'font-weight:600':'color:var(--muted);font-style:italic'}">${nombre||"Sin asignar"}${cong?` <span class="badge-cong" style="background:rgba(139,127,232,.1);color:var(--lav);border-color:rgba(139,127,232,.2)">${cong}</span>`:""}</span>
+        </div>`;
+      }
+    }).join("");
+
+    return `<div class="card" id="card-picadores">
+      <div class="section-title" style="color:var(--lav)">
+        <span>🔪 Picadores — Jueves</span>
+        <small style="font-family:'DM Sans',sans-serif;font-size:11px;color:var(--muted);font-weight:400">Hasta 5 · Cualquier congregación</small>
+      </div>
+      ${bannerPic}
+      ${panelSelPic}
+      ${equipoPic.length || !editar ? `<div class="turno-grid">
+        <div class="turno-card" style="border-color:rgba(139,127,232,.3)">
+          <div class="turno-header">
+            <span class="turno-label" style="color:var(--lav)">🔪 Picado</span>
+            <span class="turno-tag" style="background:rgba(139,127,232,.1);color:var(--lav);border-color:rgba(139,127,232,.25)">Fuera de horario de comidas</span>
+          </div>
+          ${slotsHTML}
+        </div>
+      </div>` : ""}
+    </div>`;
+  }
+
+  // ── VIERNES: picadores con dropdown (cualquier congregación) ──
   const slotsHTML = Array.from({length:5},(_,i)=>{
     const k = `${key}_${i}`;
     const asig = asignaciones[k] || "";
@@ -674,7 +892,67 @@ function renderPicadoresHTML(){
 }
 
 function asignar(k,v){ asignaciones[k]=v; guardar(); renderSeccionDia(); renderEquipo(); mostrarAlerta(v?`✅ ${v.split("__")[0]} asignado`:"↩ Slot liberado"); }
-window.asignar=asignar;
+
+// ── GESTIÓN PICADORES JUEVES (checkbox) ──────────────────────
+function togglePicadorJue(nombre, checked){
+  if(!picadoresEquipo["jue"]) picadoresEquipo["jue"]=[];
+  const maxPic = 5;
+  if(checked){
+    if(picadoresEquipo["jue"].length >= maxPic){ mostrarAlerta(`⚠️ Máximo ${maxPic} picadores`,true); renderSeccionDia(); return; }
+    if(!picadoresEquipo["jue"].includes(nombre)) picadoresEquipo["jue"].push(nombre);
+  } else {
+    picadoresEquipo["jue"] = picadoresEquipo["jue"].filter(n=>n!==nombre);
+    // limpiar asignaciones de slots si ya no está en el equipo
+    for(let i=0;i<5;i++){
+      const k=`pic_jue_${i}`;
+      if(asignaciones[k]?.split("__")[0]===nombre) delete asignaciones[k];
+    }
+  }
+  guardar(); renderSeccionDia();
+}
+
+function selTodosPicadores(){
+  if(!picadoresEquipo["jue"]) picadoresEquipo["jue"]=[];
+  const todos = [];
+  TODAS_CONG.forEach(cong=>{
+    PARTICIPANTES[cong].filter(p=>p.cat!=="N").forEach(p=>{ if(!todos.includes(p.nombre)) todos.push(p.nombre); });
+  });
+  picadoresEquipo["jue"] = todos.slice(0,5);
+  guardar(); renderSeccionDia();
+}
+
+function deselTodosPicadores(){
+  picadoresEquipo["jue"]=[];
+  for(let i=0;i<5;i++){ const k=`pic_jue_${i}`; delete asignaciones[k]; }
+  guardar(); renderSeccionDia();
+}
+
+function selCongPicadores(cong){
+  if(!picadoresEquipo["jue"]) picadoresEquipo["jue"]=[];
+  const miembros = (PARTICIPANTES[cong]||[]).filter(p=>p.cat!=="N");
+  miembros.forEach(p=>{
+    if(picadoresEquipo["jue"].length < 5 && !picadoresEquipo["jue"].includes(p.nombre))
+      picadoresEquipo["jue"].push(p.nombre);
+  });
+  guardar(); renderSeccionDia();
+}
+
+function deselCongPicadores(cong){
+  const nombres = new Set((PARTICIPANTES[cong]||[]).map(p=>p.nombre));
+  picadoresEquipo["jue"] = (picadoresEquipo["jue"]||[]).filter(n=>!nombres.has(n));
+  for(let i=0;i<5;i++){
+    const k=`pic_jue_${i}`;
+    if(asignaciones[k] && nombres.has(asignaciones[k].split("__")[0])) delete asignaciones[k];
+  }
+  guardar(); renderSeccionDia();
+}
+
+function limpiarPicadoresJue(){
+  if(!confirm("¿Limpiar todos los picadores del jueves?")) return;
+  picadoresEquipo["jue"]=[];
+  for(let i=0;i<5;i++){ delete asignaciones[`pic_jue_${i}`]; }
+  guardar(); renderSeccionDia(); mostrarAlerta("↩ Picadores del jueves limpiados");
+}
 
 // ── SÁBADO ────────────────────────────────────────────────────
 // Roles del equipo de cocina para sábado:
@@ -799,14 +1077,12 @@ function renderSabadoHTML(){
 }
 
 function asignarSab(k,v){ asignSab[k]=v; guardar(); renderSeccionDia(); mostrarAlerta(v?`✅ ${v.split("__")[0]} asignado`:"↩ Slot liberado"); }
-window.asignarSab=asignarSab;
 
 function limpiarSab(){
   if(!confirm("¿Limpiar todos los slots del sábado?")) return;
   asignSab={};
   guardar(); renderSeccionDia(); mostrarAlerta("↩ Equipo del sábado limpiado");
 }
-window.limpiarSab=limpiarSab;
 
 // Propuesta automática: repartir participantes balanceadamente
 function generarPropuestaSab(){
@@ -852,7 +1128,6 @@ function generarPropuestaSab(){
   renderSeccionDia();
   mostrarAlerta("⚡ Propuesta generada. Podés editarla libremente.");
 }
-window.generarPropuestaSab=generarPropuestaSab;
 
 // ── TABS ──────────────────────────────────────────────────────
 function renderTabs(){
@@ -861,7 +1136,6 @@ function renderTabs(){
   ).join("");
 }
 function selDia(id){ diaActivo=id; renderTabs(); renderSeccionDia(); renderEquipo(); }
-window.selDia=selDia;
 
 // ── EQUIPO (tabla general) ────────────────────────────────────
 function turnosDePersona(nombre){
@@ -921,7 +1195,6 @@ function toggleEquipoDia(dia, nombre, checked){
   }
   guardar(); renderSeccionDia(); renderEquipo();
 }
-window.toggleEquipoDia=toggleEquipoDia;
 
 function selTodosCong(dia, cong){
   if(!equipoDia[dia]) equipoDia[dia]=[];
@@ -930,7 +1203,6 @@ function selTodosCong(dia, cong){
   });
   guardar(); renderSeccionDia(); renderEquipo();
 }
-window.selTodosCong=selTodosCong;
 
 function deselTodosCong(dia, cong){
   if(!equipoDia[dia]) return;
@@ -938,7 +1210,6 @@ function deselTodosCong(dia, cong){
   equipoDia[dia] = equipoDia[dia].filter(n=>!nombres.has(n));
   guardar(); renderSeccionDia(); renderEquipo();
 }
-window.deselTodosCong=deselTodosCong;
 
 function agregarExternoDia(dia){
   const nombre = document.getElementById(`ext-nombre-${dia}`)?.value.trim();
@@ -950,7 +1221,6 @@ function agregarExternoDia(dia){
   guardar(); renderSeccionDia(); renderEquipo();
   mostrarAlerta(`✅ ${nombre} agregado como externo`);
 }
-window.agregarExternoDia=agregarExternoDia;
 
 function eliminarAyudante(nombre){
   if(!confirm(`¿Quitar a ${nombre} del equipo?`)) return;
@@ -965,7 +1235,6 @@ function eliminarAyudante(nombre){
   }
   guardar(); renderTodo(); mostrarAlerta(`↩ ${nombre} eliminado`);
 }
-window.eliminarAyudante=eliminarAyudante;
 
 // ── PROPUESTA AUTOMÁTICA DÍA (Mié/Jue/Vie) ────────────────────
 function generarPropuestaDia(dia){
@@ -999,7 +1268,10 @@ function generarPropuestaDia(dia){
   // Picadores si aplica
   const diaObj = DIAS.find(d=>d.id===dia);
   if(diaObj?.picado){
-    const poolPic = todosParticipantes().filter(p=>p.cat!=="N");
+    // Para jueves: usar picadoresEquipo seleccionados; para viernes: todos
+    const poolPic = dia === "jue"
+      ? getEquipoPicadores("jue")
+      : todosParticipantes().filter(p=>p.cat!=="N");
     const usados = new Set();
     for(let i=0;i<5;i++){
       const sorted = poolPic.filter(p=>!usados.has(p.nombre));
@@ -1012,17 +1284,14 @@ function generarPropuestaDia(dia){
 
   guardar(); renderSeccionDia(); renderEquipo(); mostrarAlerta("⚡ Propuesta generada. Podés editarla libremente.");
 }
-window.generarPropuestaDia=generarPropuestaDia;
 
 function limpiarDia(dia){
   if(!confirm(`¿Limpiar todas las asignaciones de ${DIAS.find(d=>d.id===dia)?.label}?`)) return;
   for(const k in asignaciones){ if(k.startsWith(`ay_${dia}`) || k.startsWith(`pic_${dia}`)) delete asignaciones[k]; }
   guardar(); renderSeccionDia(); renderEquipo(); mostrarAlerta("↩ Asignaciones limpiadas");
 }
-window.limpiarDia=limpiarDia;
 
 function mostrarFormAgregar(){ document.getElementById("form-agregar").style.display="block"; document.getElementById("new-nombre").focus(); }
-window.mostrarFormAgregar=mostrarFormAgregar;
 
 function agregarAyudante(){
   const nombre=document.getElementById("new-nombre").value.trim();
@@ -1038,7 +1307,6 @@ function agregarAyudante(){
   document.getElementById("form-agregar").style.display="none";
   renderTodo(); mostrarAlerta(`✅ ${nombre} agregado`);
 }
-window.agregarAyudante=agregarAyudante;
 
 // ── NOTAS ─────────────────────────────────────────────────────
 function renderNotas(){
@@ -1059,7 +1327,6 @@ function agregarNota(){
   guardar();renderNotas();input.value="";mostrarAlerta("📝 Nota guardada");
 }
 function eliminarNota(i){notas.splice(i,1);guardar();renderNotas();}
-window.agregarNota=agregarNota;window.eliminarNota=eliminarNota;
 
 // ── ALERTA ────────────────────────────────────────────────────
 function mostrarAlerta(msg,err=false){
@@ -1072,9 +1339,19 @@ function mostrarAlerta(msg,err=false){
 function renderTodo(){ renderTabs(); renderSeccionDia(); renderEquipo(); renderNotas(); }
 actualizarBtn();
 renderTodo();
-</script>
 
-<script>
+// Exponer todas las funciones al scope global (necesario en type="module")
+Object.assign(window, {
+  toggleEdicion, verificarClave, selDia, asignar, asignarSab,
+  generarPropuestaDia, limpiarDia, generarPropuestaSab, limpiarSab,
+  toggleEquipoDia, selTodosCong, deselTodosCong, agregarExternoDia,
+  eliminarAyudante, mostrarFormAgregar, agregarAyudante,
+  togglePicadorJue, selTodosPicadores, deselTodosPicadores,
+  selCongPicadores, deselCongPicadores, limpiarPicadoresJue,
+  agregarNota, eliminarNota, renderTodo,
+});
+
+// Acceso overlay
 (function(){
   const ok=localStorage.getItem("crptg11-auth")==="ok"||localStorage.getItem("crptg11-ver")==="ok";
   if(!ok) document.getElementById("acceso-overlay").style.display="flex";
