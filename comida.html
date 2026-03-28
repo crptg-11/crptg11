@@ -282,7 +282,10 @@ tr:last-child td{border-bottom:none}tr:hover td{background:rgba(232,168,56,.025)
   <div class="table-wrap">
     <table>
       <thead><tr>
-        <th>ID</th><th>Nombre</th><th>Cat.</th><th>Congregación</th>
+        <th onclick="setSortLista('id')" style="cursor:pointer" title="Ordenar por ID">ID ↕</th>
+        <th onclick="setSortLista('nombre')" style="cursor:pointer" title="Ordenar por nombre">Nombre ↕</th>
+        <th onclick="setSortLista('cat')" style="cursor:pointer" title="Ordenar por categoría">Cat. ↕</th>
+        <th onclick="setSortLista('cong')" style="cursor:pointer" title="Ordenar por congregación">Congregación ↕</th>
         <th>Este tiempo</th><th>Estado</th><th>Acción</th><th>Editar</th>
       </tr></thead>
       <tbody id="tbody"></tbody>
@@ -322,7 +325,10 @@ tr:last-child td{border-bottom:none}tr:hover td{background:rgba(232,168,56,.025)
   <div class="table-wrap">
     <table>
       <thead><tr>
-        <th>ID</th><th>Nombre</th><th>Cat.</th><th>Congregación</th>
+        <th onclick="setSortNoOrg('id')" style="cursor:pointer">ID ↕</th>
+        <th onclick="setSortNoOrg('nombre')" style="cursor:pointer">Nombre ↕</th>
+        <th onclick="setSortNoOrg('cat')" style="cursor:pointer">Cat. ↕</th>
+        <th onclick="setSortNoOrg('cong')" style="cursor:pointer">Congregación ↕</th>
         <th>Este tiempo</th><th>Estado</th><th>Acción</th><th>Editar</th>
       </tr></thead>
       <tbody id="tbody-no-org"></tbody>
@@ -333,12 +339,15 @@ tr:last-child td{border-bottom:none}tr:hover td{background:rgba(232,168,56,.025)
 
 <!-- ══ PANEL SIN INSCRIPCIÓN ══ -->
 <div class="panel" id="tab-pendientes-inscr">
-  <div style="padding:20px 24px 8px">
-    <div style="font-family:'Playfair Display',serif;font-size:1.1rem;color:var(--rose);margin-bottom:6px">⚠️ Personas sin inscripción formal</div>
-    <div style="font-size:13px;color:var(--muted);line-height:1.6;max-width:600px">
-      Estas personas aparecen en las listas de trabajo (aseo, cocina, seguridad) pero <strong>no tienen registro como participantes</strong>. 
-      Es necesario inscribirlas para asignarles ID y gestionar sus comidas.
+  <div style="padding:20px 24px 8px;display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:10px">
+    <div>
+      <div style="font-family:'Playfair Display',serif;font-size:1.1rem;color:var(--rose);margin-bottom:6px">⚠️ Verificación de inscripciones</div>
+      <div style="font-size:13px;color:var(--muted);line-height:1.6;max-width:600px">
+        Compara automáticamente la lista de participantes del Google Sheet con el control de comidas.
+        Se actualiza cada vez que abres esta pestaña.
+      </div>
     </div>
+    <button onclick="renderNoInscr()" style="padding:7px 14px;border-radius:8px;border:1px solid rgba(62,207,184,.4);background:transparent;color:var(--teal);font-family:'DM Sans',sans-serif;font-size:12px;cursor:pointer;white-space:nowrap;margin-top:4px">🔄 Actualizar ahora</button>
   </div>
   <div class="table-wrap">
     <table>
@@ -545,7 +554,9 @@ const DATA_BASE = [{"id":"CR-11047","nombre":"Alison Arias Ugalde","edad":16,"ca
 
 // ── LISTAS ADICIONALES ───────────────────────────────────────
 const ORGANIZED_CONGS = ["Angelina","Ipís","Valle la estrella","Tucurrique","Bribrí","Santa Marta","Limoncito","Río Banano"];
-const NOT_IN_PARTICIPANTS = [{"nombre": "Santiago Mata", "cong": "Extranjero"}, {"nombre": "Nuris Barroso", "cong": "Extranjero"}, {"nombre": "Omar Garcia", "cong": "Extranjero"}, {"nombre": "Job Castañeda", "cong": "Extranjero"}, {"nombre": "Aurora Soto", "cong": "Extranjero"}, {"nombre": "Trudis Castañeda", "cong": "Extranjero"}, {"nombre": "Annette Campos", "cong": "Limoncito"}, {"nombre": "Alicia", "cong": "Limoncito"}, {"nombre": "Meri Mata", "cong": "Tucurrique"}, {"nombre": "Jose Lino Mata Núñez", "cong": "Tucurrique"}, {"nombre": "Maritza Ortiz", "cong": "Tucurrique"}];
+const NOT_IN_PARTICIPANTS = []; // legacy
+const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vS-FHGAAPJvj_dQEHyN09G1xVJWfblbjGrDgjCREmoi19ucjl1cuPLm5fR0ZHvcmZZ6PPdrEQ7g1pSV/pub?output=csv";
+let csvParticipantes = null;
 
 function isOrganized(cong) {
   const c = cong.trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
@@ -718,13 +729,31 @@ window.renderLista = function(){
 // ── SORT HELPER ──────────────────────────────────────────
 function sortPersonas(arr, by){
   const CAT_ORDER = {A:1,J:2,N:3,'':4};
+  const loc = (s) => (s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
   return [...arr].sort((a,b)=>{
-    if(by==='id') return (a.id||'').localeCompare(b.id||'', undefined, {numeric:true});
-    if(by==='cong') return (a.congregacion||'').localeCompare(b.congregacion||'','es') || (a.nombre||'').localeCompare(b.nombre||'','es');
-    if(by==='cat') return (CAT_ORDER[a.cat]||4)-(CAT_ORDER[b.cat]||4) || (a.nombre||'').localeCompare(b.nombre||'','es');
-    return (a.nombre||'').localeCompare(b.nombre||'','es');
+    if(by==='id'){
+      const na = parseInt((a.id||'').replace('CR-11',''))||0;
+      const nb = parseInt((b.id||'').replace('CR-11',''))||0;
+      return na - nb;
+    }
+    if(by==='cong') return loc(a.congregacion).localeCompare(loc(b.congregacion)) || loc(a.nombre).localeCompare(loc(b.nombre));
+    if(by==='cat') return (CAT_ORDER[a.cat]||4)-(CAT_ORDER[b.cat]||4) || loc(a.nombre).localeCompare(loc(b.nombre));
+    // default: nombre A→Z
+    return loc(a.nombre).localeCompare(loc(b.nombre));
   });
 }
+
+window.setSortLista = function(by){
+  const sel = document.getElementById('sort-by');
+  if(sel) sel.value = by;
+  renderLista();
+};
+
+window.setSortNoOrg = function(by){
+  const sel = document.getElementById('sort-no-org');
+  if(sel) sel.value = by;
+  renderNoOrg();
+};
 
 // ── NO ORGANIZADOS ────────────────────────────────────────
 let filtroNoOrg = 'todos';
@@ -767,14 +796,120 @@ window.renderNoOrg = function(){
 };
 
 // ── SIN INSCRIPCIÓN ───────────────────────────────────────
-window.renderNoInscr = function(){
-  const tbody=document.getElementById('tbody-no-inscr');
-  tbody.innerHTML = NOT_IN_PARTICIPANTS.map(p=>`
-    <tr>
-      <td><strong>${p.nombre}</strong></td>
-      <td style="color:var(--gold);font-size:12px">${p.cong}</td>
-      <td><span style="color:var(--rose);font-size:12px">⚠️ Necesita inscripción</span></td>
-    </tr>`).join('');
+// ── NORMALIZAR NOMBRE PARA COMPARAR ─────────────────────────
+function normNombre(n){
+  return (n||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9 ]/g,'').replace(/\s+/g,' ').trim();
+}
+
+// ── PARSEAR CSV SIMPLE ────────────────────────────────────────
+function parseCSVSimple(text){
+  const lines = text.split('\n').map(l=>l.trim()).filter(Boolean);
+  if(!lines.length) return [];
+  const headers = lines[0].split(',').map(h=>h.replace(/^"|"$/g,'').trim().toLowerCase());
+  const idx = {};
+  headers.forEach((h,i)=>idx[h]=i);
+  const rows = [];
+  for(let i=1;i<lines.length;i++){
+    // split respetando comillas
+    const cells = []; let cur='', inQ=false;
+    for(const ch of lines[i]+(',')){
+      if(ch==='"'){inQ=!inQ;}
+      else if(ch===','&&!inQ){cells.push(cur.trim());cur='';}
+      else cur+=ch;
+    }
+    const get = k => idx[k]!==undefined ? (cells[idx[k]]||'').replace(/^"|"$/g,'').trim() : '';
+    // intentar distintos nombres de columna para el nombre
+    const nombre = get('nombre completo')||get('nombre')||get('name')||get('nombre_completo')||cells[0]||'';
+    const cong   = get('congregacion')||get('congregación')||get('iglesia')||'';
+    const id     = get('id')||get('código')||get('codigo')||'';
+    if(nombre) rows.push({nombre, cong, id});
+  }
+  return rows;
+}
+
+window.renderNoInscr = async function(){
+  const tbody = document.getElementById('tbody-no-inscr');
+  tbody.innerHTML = `<tr><td colspan="3" style="text-align:center;padding:20px;color:var(--muted)">⏳ Verificando lista de participantes...</td></tr>`;
+
+  let sheetRows = [];
+  try {
+    // Intentar obtener el CSV actualizado
+    const resp = await fetch(CSV_URL + '&t=' + Date.now(), {cache:'no-store'});
+    if(resp.ok){
+      const text = await resp.text();
+      csvParticipantes = text;
+      sheetRows = parseCSVSimple(text);
+    }
+  } catch(e) {
+    // Sin conexión — mostrar aviso
+  }
+
+  if(!sheetRows.length){
+    tbody.innerHTML = `<tr><td colspan="3" style="text-align:center;padding:24px;color:var(--muted)">
+      ⚠️ No se pudo cargar la lista de participantes.<br>
+      <small style="font-size:11px">Verificá tu conexión a internet.</small>
+    </td></tr>`;
+    return;
+  }
+
+  // Nombres normalizados del Sheet
+  const sheetNorms = new Set(sheetRows.map(r=>normNombre(r.nombre)));
+
+  // Nombres normalizados del comida.html
+  const comidaNorms = new Set(DATA_ALL.map(p=>normNombre(p.nombre)));
+
+  // En comida pero NO en el sheet → "sobran" (inscritos manualmente sin pasar por el form)
+  const soloEnComida = DATA_ALL.filter(p=>{
+    const n = normNombre(p.nombre);
+    return n && !sheetNorms.has(n);
+  });
+
+  // En sheet pero NO en comida → "faltan" (se inscribieron pero no están en control de comida)
+  const soloEnSheet = sheetRows.filter(r=>{
+    const n = normNombre(r.nombre);
+    return n && !comidaNorms.has(n);
+  });
+
+  let rows = '';
+
+  if(soloEnSheet.length){
+    rows += `<tr><td colspan="3" style="background:rgba(232,107,139,.08);padding:6px 12px;font-size:11px;font-weight:700;color:var(--rose);text-transform:uppercase;letter-spacing:1px">
+      📋 En lista de participantes pero SIN registro en comida (${soloEnSheet.length})
+    </td></tr>`;
+    soloEnSheet.forEach(r=>{
+      rows += `<tr>
+        <td><strong>${r.nombre}</strong></td>
+        <td style="color:var(--gold);font-size:12px">${r.cong||'—'}</td>
+        <td><span style="color:var(--rose);font-size:12px">⚠️ Agregar a comida</span></td>
+      </tr>`;
+    });
+  }
+
+  if(soloEnComida.length){
+    rows += `<tr><td colspan="3" style="background:rgba(139,127,232,.08);padding:6px 12px;font-size:11px;font-weight:700;color:var(--lav);text-transform:uppercase;letter-spacing:1px">
+      🔍 En control de comida pero NO en lista de participantes (${soloEnComida.length})
+    </td></tr>`;
+    soloEnComida.forEach(p=>{
+      rows += `<tr>
+        <td><strong>${p.nombre}</strong> <span style="font-size:10px;color:var(--muted)">${p.id}</span></td>
+        <td style="color:var(--gold);font-size:12px">${p.congregacion||'—'}</td>
+        <td><span style="color:var(--lav);font-size:12px">🔍 Verificar</span></td>
+      </tr>`;
+    });
+  }
+
+  if(!rows){
+    rows = `<tr><td colspan="3" style="text-align:center;padding:28px;color:var(--teal)">
+      ✅ Todo en orden — todos los participantes del sheet están en control de comida y viceversa.<br>
+      <small style="font-size:11px;color:var(--muted)">${sheetRows.length} participantes verificados · Actualizado ahora</small>
+    </td></tr>`;
+  } else {
+    rows += `<tr><td colspan="3" style="padding:6px 12px;font-size:11px;color:var(--muted)">
+      Sheet: ${sheetRows.length} participantes · Comida: ${DATA_ALL.length} registros · Verificado ahora
+    </td></tr>`;
+  }
+
+  tbody.innerHTML = rows;
 };
 
 
@@ -1343,7 +1478,10 @@ window.showTab = function(id, el){
   document.querySelectorAll('.tab').forEach(t=>t.classList.remove('on'));
   document.getElementById('tab-'+id).classList.add('on');
   el.classList.add('on');
+  if(id==='lista') renderLista();
   if(id==='qr') renderQR();
+  if(id==='no-org') renderNoOrg();
+  if(id==='pendientes-inscr') renderNoInscr();
 };
 
 // ── ALERT ─────────────────────────────────────────────────
