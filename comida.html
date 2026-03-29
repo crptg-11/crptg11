@@ -279,7 +279,7 @@ tr:last-child td{border-bottom:none}tr:hover td{background:rgba(232,168,56,.02)}
       <button onclick="closeGallery()" style="background:none;border:1px solid var(--border);color:var(--muted);padding:5px 14px;border-radius:8px;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:12px">✕ Cerrar</button>
     </div>
   </div>
-  <div id="gallery-grid" style="flex:1;overflow-y:auto;padding:12px;display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px;align-content:start"></div>
+  <div id="gallery-grid" style="flex:1;overflow-y:auto;padding:14px;display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px;align-content:start"></div>
 </div>
 
 <!-- RETIRO MODAL -->
@@ -1166,7 +1166,8 @@ function makeQRDataURL(text){
   return Promise.resolve(cv.toDataURL('image/png'));
 }
 
-// Draw a styled QR card onto a canvas and return it
+// Draw a styled QR card onto a canvas — same design as the PDF
+// W=400, H=520 mirrors the PDF card proportions (~60mm x 70mm at 96dpi equivalent)
 async function makeQRCardCanvas(p, W, H, qrUrl){
   const cat   = getCategoria(p.edad);
   const color = getCatColor(cat);
@@ -1174,89 +1175,91 @@ async function makeQRCardCanvas(p, W, H, qrUrl){
 
   const cv = document.createElement('canvas');
   cv.width=W; cv.height=H;
-  const ctx=cv.getContext('2d');
-  const r=16;
+  const ctx = cv.getContext('2d');
 
-  function rr(x,y,w,h,rad,fill){
-    ctx.beginPath();
-    ctx.moveTo(x+rad,y);ctx.lineTo(x+w-rad,y);ctx.quadraticCurveTo(x+w,y,x+w,y+rad);
-    ctx.lineTo(x+w,y+h-rad);ctx.quadraticCurveTo(x+w,y+h,x+w-rad,y+h);
-    ctx.lineTo(x+rad,y+h);ctx.quadraticCurveTo(x,y+h,x,y+h-rad);
-    ctx.lineTo(x,y+rad);ctx.quadraticCurveTo(x,y,x+rad,y);
-    ctx.closePath();
-    if(fill){ctx.fillStyle=fill;ctx.fill();}
-  }
+  // ── White card background ──
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(0, 0, W, H);
 
-  // ── Fixed layout zones (all in px, for W=600 H=820) ──
-  const scale = W / 600; // scale factor so it works at any W
-  const PAD        = Math.round(32 * scale);
-  const BAR_TOP    = Math.round(10 * scale);
-  const QR_SIZE    = Math.round(440 * scale);   // 73% of W — big, scannable
-  const QR_Y       = BAR_TOP + Math.round(20 * scale);
-  const INFO_Y     = QR_Y + QR_SIZE + Math.round(18 * scale);
-  const NOM_SZ     = Math.round(48 * scale);
-  const ID_SZ      = Math.round(38 * scale);
-  const CONG_SZ    = Math.round(28 * scale);
-  const LINE_GAP   = Math.round(10 * scale);
-  const BAR_BOT    = Math.round(10 * scale);
+  // ── Thin colored top stripe (like PDF: 2mm out of ~70mm = ~2.8%) ──
+  const stripeH = Math.round(H * 0.028);
+  ctx.fillStyle = color;
+  ctx.fillRect(0, 0, W, stripeH);
 
-  // Card background
-  rr(0,0,W,H,r,'#13161f');
+  // ── QR: CARD_W-14mm out of CARD_W, centered, starts right after stripe ──
+  // PDF: qrMM = CARD_W-14, margin each side = 7mm out of ~60mm = ~11.7%
+  const qrMargin = Math.round(W * 0.10);
+  const qrSize   = W - qrMargin * 2;
+  const qrX      = qrMargin;
+  const qrY      = stripeH + Math.round(H * 0.025);
 
-  // Top accent bar
-  ctx.fillStyle=color;
-  ctx.beginPath();
-  ctx.moveTo(r,0);ctx.lineTo(W-r,0);ctx.quadraticCurveTo(W,0,W,r);
-  ctx.lineTo(W,BAR_TOP);ctx.lineTo(0,BAR_TOP);ctx.lineTo(0,r);
-  ctx.quadraticCurveTo(0,0,r,0);ctx.closePath();ctx.fill();
-
-  // QR — centered
-  const qrX = Math.round((W - QR_SIZE) / 2);
-  rr(qrX-6, QR_Y-6, QR_SIZE+12, QR_SIZE+12, 8, '#ffffff');
   if(qrUrl){
-    const img=new Image();
-    await new Promise(res=>{img.onload=res;img.src=qrUrl;});
-    ctx.drawImage(img, qrX, QR_Y, QR_SIZE, QR_SIZE);
+    const img = new Image();
+    await new Promise(res => { img.onload = res; img.src = qrUrl; });
+    ctx.drawImage(img, qrX, qrY, qrSize, qrSize);
   }
 
-  // Nombre
-  ctx.textAlign='center'; ctx.textBaseline='top';
-  ctx.fillStyle='#e8e8f0';
-  ctx.font=`700 ${NOM_SZ}px 'DM Sans',sans-serif`;
-  const maxTW = W - PAD*2;
-  let curY = INFO_Y;
-  const nombre = p.nombre || '';
-  if(ctx.measureText(nombre).width > maxTW){
-    const words=nombre.split(' '); let l1='',l2='';
-    for(const w of words){
-      if(ctx.measureText((l1?l1+' ':'')+w).width < maxTW) l1=(l1?l1+' ':'')+w;
-      else l2=(l2?l2+' ':'')+w;
-    }
-    ctx.fillText(l1.trim(), W/2, curY); curY += NOM_SZ + LINE_GAP;
-    ctx.fillText(l2.trim(), W/2, curY); curY += NOM_SZ + LINE_GAP*2;
-  } else {
-    ctx.fillText(nombre, W/2, curY); curY += NOM_SZ + LINE_GAP*2;
-  }
+  // ── Info block: same proportions as PDF ──
+  const infoY = qrY + qrSize + Math.round(H * 0.025);
 
-  // ID
-  ctx.fillStyle=color;
-  ctx.font=`700 ${ID_SZ}px 'DM Sans',sans-serif`;
-  ctx.fillText(p.id, W/2, curY); curY += ID_SZ + LINE_GAP;
+  // Nombre — dark, bold, small (PDF: 7.5pt on ~70mm card)
+  const nomSz = Math.round(H * 0.058);
+  ctx.fillStyle = '#0a0a0a';
+  ctx.font = `700 ${nomSz}px Arial,sans-serif`;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'top';
+  const maxW = W - qrMargin * 2;
+  const nombre = (p.nombre || '').toUpperCase();
+  // Split into lines if needed
+  const nomLines = wrapText(ctx, nombre, maxW);
+  nomLines.forEach((line, i) => {
+    ctx.fillText(line, W/2, infoY + i * (nomSz * 1.2));
+  });
 
-  // Congregación
-  ctx.fillStyle='#7a7d95';
-  ctx.font=`${CONG_SZ}px 'DM Sans',sans-serif`;
-  ctx.fillText(p.congregacion||'—', W/2, curY);
+  // ID — colored, bold (PDF: 6.5pt)
+  const idSz = Math.round(H * 0.050);
+  ctx.fillStyle = color;
+  ctx.font = `700 ${idSz}px Arial,sans-serif`;
+  const idY = infoY + nomLines.length * (nomSz * 1.2) + Math.round(H * 0.01);
+  ctx.fillText(p.id, W/2, idY);
 
-  // Bottom accent bar
-  ctx.fillStyle=color;
-  ctx.beginPath();
-  ctx.moveTo(0,H-BAR_BOT);ctx.lineTo(W,H-BAR_BOT);ctx.lineTo(W,H-r);
-  ctx.quadraticCurveTo(W,H,W-r,H);ctx.lineTo(r,H);
-  ctx.quadraticCurveTo(0,H,0,H-r);ctx.lineTo(0,H-BAR_BOT);
-  ctx.closePath();ctx.fill();
+  // Congregación — grey, normal (PDF: 5pt)
+  const congSz = Math.round(H * 0.038);
+  ctx.fillStyle = '#646478';
+  ctx.font = `${congSz}px Arial,sans-serif`;
+  const congY = idY + idSz + Math.round(H * 0.008);
+  const congLines = wrapText(ctx, p.congregacion || '', maxW);
+  congLines.forEach((line, i) => {
+    ctx.fillText(line, W/2, congY + i * (congSz * 1.2));
+  });
+
+  // ── Dashed border (like PDF cut lines) ──
+  ctx.strokeStyle = '#b4b4b4';
+  ctx.lineWidth = 1;
+  ctx.setLineDash([4, 4]);
+  ctx.strokeRect(0.5, 0.5, W-1, H-1);
+  ctx.setLineDash([]);
 
   return cv;
+}
+
+// Helper: wrap text into lines that fit maxWidth
+function wrapText(ctx, text, maxWidth){
+  if(!text) return [''];
+  const words = text.split(' ');
+  const lines = [];
+  let cur = '';
+  for(const w of words){
+    const test = cur ? cur + ' ' + w : w;
+    if(ctx.measureText(test).width > maxWidth && cur){
+      lines.push(cur);
+      cur = w;
+    } else {
+      cur = test;
+    }
+  }
+  if(cur) lines.push(cur);
+  return lines;
 }
 
 
@@ -1279,26 +1282,28 @@ async function buildGallery(){
     const cat=getCategoria(p.edad);
     const color=getCatColor(cat);
     const qrUrl=await makeQRDataURL(buildQRUrl(p.id));
-    const dlCanvas=await makeQRCardCanvas(p,600,820,qrUrl);
+    // 400x520 matches PDF card proportions (~60mm x 78mm)
+    const dlCanvas=await makeQRCardCanvas(p,400,520,qrUrl);
 
     const wrapper=document.createElement('div');
     wrapper.dataset.name=(p.nombre||'').toLowerCase();
     wrapper.dataset.id=(p.id||'').toLowerCase();
     wrapper.dataset.cong=(p.congregacion||'').toLowerCase();
     wrapper.dataset.cat=cat;
-    wrapper.style.cssText=`border-radius:10px;overflow:hidden;border:2px solid ${color}55;background:#13161f;display:flex;flex-direction:column;transition:transform .15s,border-color .15s`;
-    wrapper.onmouseenter=()=>{wrapper.style.transform='scale(1.02)';wrapper.style.borderColor=color;};
-    wrapper.onmouseleave=()=>{wrapper.style.transform='';wrapper.style.borderColor=color+'55';};
+    // Fixed width card — never squish
+    wrapper.style.cssText=`border-radius:6px;overflow:hidden;border:1px solid ${color}66;background:#fff;display:flex;flex-direction:column;width:100%;box-shadow:0 2px 8px rgba(0,0,0,.25);transition:transform .15s,box-shadow .15s`;
+    wrapper.onmouseenter=()=>{wrapper.style.transform='translateY(-3px)';wrapper.style.boxShadow='0 6px 18px rgba(0,0,0,.35)';};
+    wrapper.onmouseleave=()=>{wrapper.style.transform='';wrapper.style.boxShadow='0 2px 8px rgba(0,0,0,.25)';};
 
-    // Full card preview — uses the same canvas as download, correct aspect ratio guaranteed
+    // Preview image — let it define its own height via natural aspect ratio
     const preview=document.createElement('img');
     preview.src=dlCanvas.toDataURL('image/png');
     preview.style.cssText='display:block;width:100%;height:auto';
 
     // Download button
     const dlBtn=document.createElement('button');
-    dlBtn.textContent='⬇ Descargar';
-    dlBtn.style.cssText=`background:${color};color:#000;border:none;padding:9px 0;font-weight:700;font-size:11px;cursor:pointer;font-family:'DM Sans',sans-serif;display:block;width:100%`;
+    dlBtn.textContent='⬇ Descargar PNG';
+    dlBtn.style.cssText=`background:${color};color:#000;border:none;padding:8px 0;font-weight:700;font-size:11px;cursor:pointer;font-family:'DM Sans',sans-serif;display:block;width:100%;letter-spacing:.3px`;
     dlBtn.onclick=(e)=>{
       e.stopPropagation();
       const a=document.createElement('a');
