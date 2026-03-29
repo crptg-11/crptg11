@@ -227,7 +227,7 @@ tr:last-child td{border-bottom:none}tr:hover td{background:rgba(232,168,56,.02)}
   .rbox{max-width:100%;width:100%;border-radius:14px;padding:20px 14px}
 
   /* Gallery: 2 cols on mobile — big enough to see QR and text */
-  #gallery-grid{grid-template-columns:repeat(2,1fr)!important;gap:10px!important;padding:10px!important}
+  #gallery-grid{grid-template-columns:repeat(2,1fr)!important;gap:8px!important;padding:8px!important}
 
   /* scan overlay input */
   #scan-inp{width:90%}
@@ -279,7 +279,7 @@ tr:last-child td{border-bottom:none}tr:hover td{background:rgba(232,168,56,.02)}
       <button onclick="closeGallery()" style="background:none;border:1px solid var(--border);color:var(--muted);padding:5px 14px;border-radius:8px;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:12px">✕ Cerrar</button>
     </div>
   </div>
-  <div id="gallery-grid" style="flex:1;overflow-y:auto;padding:12px;display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;align-content:start"></div>
+  <div id="gallery-grid" style="flex:1;overflow-y:auto;padding:12px;display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px;align-content:start"></div>
 </div>
 
 <!-- RETIRO MODAL -->
@@ -1175,7 +1175,7 @@ async function makeQRCardCanvas(p, W, H, qrUrl){
   const cv = document.createElement('canvas');
   cv.width=W; cv.height=H;
   const ctx=cv.getContext('2d');
-  const r=18;
+  const r=16;
 
   function rr(x,y,w,h,rad,fill){
     ctx.beginPath();
@@ -1187,82 +1187,78 @@ async function makeQRCardCanvas(p, W, H, qrUrl){
     if(fill){ctx.fillStyle=fill;ctx.fill();}
   }
 
+  // ── Fixed layout zones (all in px, for W=600 H=820) ──
+  const scale = W / 600; // scale factor so it works at any W
+  const PAD        = Math.round(32 * scale);
+  const BAR_TOP    = Math.round(10 * scale);
+  const QR_SIZE    = Math.round(440 * scale);   // 73% of W — big, scannable
+  const QR_Y       = BAR_TOP + Math.round(20 * scale);
+  const INFO_Y     = QR_Y + QR_SIZE + Math.round(18 * scale);
+  const NOM_SZ     = Math.round(48 * scale);
+  const ID_SZ      = Math.round(38 * scale);
+  const CONG_SZ    = Math.round(28 * scale);
+  const LINE_GAP   = Math.round(10 * scale);
+  const BAR_BOT    = Math.round(10 * scale);
+
   // Card background
   rr(0,0,W,H,r,'#13161f');
 
-  // Thin top accent bar (no label)
-  const barH = Math.round(H*0.022);
+  // Top accent bar
   ctx.fillStyle=color;
   ctx.beginPath();
   ctx.moveTo(r,0);ctx.lineTo(W-r,0);ctx.quadraticCurveTo(W,0,W,r);
-  ctx.lineTo(W,barH);ctx.lineTo(0,barH);ctx.lineTo(0,r);
+  ctx.lineTo(W,BAR_TOP);ctx.lineTo(0,BAR_TOP);ctx.lineTo(0,r);
   ctx.quadraticCurveTo(0,0,r,0);ctx.closePath();ctx.fill();
 
-  // QR: 62% of card height, centered horizontally
-  const pad    = Math.round(W*0.07);
-  const qrSize = Math.min(W - pad*2, Math.round(H*0.60));
-  const qrX    = Math.round((W - qrSize)/2);
-  const qrY    = barH + Math.round(H*0.025);
-
-  const qrPad=6;
-  rr(qrX-qrPad, qrY-qrPad, qrSize+qrPad*2, qrSize+qrPad*2, 8, '#ffffff');
-
+  // QR — centered
+  const qrX = Math.round((W - QR_SIZE) / 2);
+  rr(qrX-6, QR_Y-6, QR_SIZE+12, QR_SIZE+12, 8, '#ffffff');
   if(qrUrl){
     const img=new Image();
     await new Promise(res=>{img.onload=res;img.src=qrUrl;});
-    ctx.drawImage(img, qrX, qrY, qrSize, qrSize);
+    ctx.drawImage(img, qrX, QR_Y, QR_SIZE, QR_SIZE);
   }
 
-  // Info area: space between bottom of QR and bottom of card
-  const infoTop  = qrY + qrSize + Math.round(H*0.028);
-  const botBarH  = Math.round(H*0.022);
-  const infoAvail= H - infoTop - botBarH - Math.round(H*0.02);
-
   // Nombre
-  const nombreSz = Math.max(18, Math.round(infoAvail*0.32));
-  ctx.font=`700 ${nombreSz}px 'DM Sans',sans-serif`;
+  ctx.textAlign='center'; ctx.textBaseline='top';
   ctx.fillStyle='#e8e8f0';
-  ctx.textAlign='center';ctx.textBaseline='top';
-  const maxW=W-pad*2;
-  let nombre=p.nombre;
-  let nombreEndY=infoTop;
-  if(ctx.measureText(nombre).width>maxW){
-    const words=nombre.split(' ');let l1='',l2='';
+  ctx.font=`700 ${NOM_SZ}px 'DM Sans',sans-serif`;
+  const maxTW = W - PAD*2;
+  let curY = INFO_Y;
+  const nombre = p.nombre || '';
+  if(ctx.measureText(nombre).width > maxTW){
+    const words=nombre.split(' '); let l1='',l2='';
     for(const w of words){
-      if(ctx.measureText((l1?l1+' ':'')+w).width<maxW) l1=(l1?l1+' ':'')+w;
+      if(ctx.measureText((l1?l1+' ':'')+w).width < maxTW) l1=(l1?l1+' ':'')+w;
       else l2=(l2?l2+' ':'')+w;
     }
-    ctx.fillText(l1.trim(), W/2, infoTop);
-    ctx.fillText(l2.trim(), W/2, infoTop+nombreSz*1.2);
-    nombreEndY=infoTop+nombreSz*1.2+nombreSz;
+    ctx.fillText(l1.trim(), W/2, curY); curY += NOM_SZ + LINE_GAP;
+    ctx.fillText(l2.trim(), W/2, curY); curY += NOM_SZ + LINE_GAP*2;
   } else {
-    ctx.fillText(nombre, W/2, infoTop);
-    nombreEndY=infoTop+nombreSz;
+    ctx.fillText(nombre, W/2, curY); curY += NOM_SZ + LINE_GAP*2;
   }
 
   // ID
-  const idSz = Math.max(14, Math.round(infoAvail*0.24));
-  ctx.font=`700 ${idSz}px 'DM Sans',sans-serif`;
   ctx.fillStyle=color;
-  const idY=nombreEndY+Math.round(infoAvail*0.06);
-  ctx.fillText(p.id, W/2, idY);
+  ctx.font=`700 ${ID_SZ}px 'DM Sans',sans-serif`;
+  ctx.fillText(p.id, W/2, curY); curY += ID_SZ + LINE_GAP;
 
   // Congregación
-  const congSz = Math.max(12, Math.round(infoAvail*0.18));
-  ctx.font=`${congSz}px 'DM Sans',sans-serif`;
   ctx.fillStyle='#7a7d95';
-  ctx.fillText(p.congregacion||'—', W/2, idY+idSz+Math.round(infoAvail*0.05));
+  ctx.font=`${CONG_SZ}px 'DM Sans',sans-serif`;
+  ctx.fillText(p.congregacion||'—', W/2, curY);
 
-  // Thin bottom accent bar
+  // Bottom accent bar
   ctx.fillStyle=color;
   ctx.beginPath();
-  ctx.moveTo(0,H-botBarH);ctx.lineTo(W,H-botBarH);ctx.lineTo(W,H-r);
+  ctx.moveTo(0,H-BAR_BOT);ctx.lineTo(W,H-BAR_BOT);ctx.lineTo(W,H-r);
   ctx.quadraticCurveTo(W,H,W-r,H);ctx.lineTo(r,H);
-  ctx.quadraticCurveTo(0,H,0,H-r);ctx.lineTo(0,H-botBarH);
+  ctx.quadraticCurveTo(0,H,0,H-r);ctx.lineTo(0,H-BAR_BOT);
   ctx.closePath();ctx.fill();
 
   return cv;
 }
+
 
 // ═══════════════════ GALLERY ═══════════════════
 let _galleryBuilt = false;
@@ -1283,7 +1279,7 @@ async function buildGallery(){
     const cat=getCategoria(p.edad);
     const color=getCatColor(cat);
     const qrUrl=await makeQRDataURL(buildQRUrl(p.id));
-    const dlCanvas=await makeQRCardCanvas(p,700,1050,qrUrl);
+    const dlCanvas=await makeQRCardCanvas(p,600,820,qrUrl);
 
     const wrapper=document.createElement('div');
     wrapper.dataset.name=(p.nombre||'').toLowerCase();
@@ -1297,7 +1293,7 @@ async function buildGallery(){
     // Full card preview — uses the same canvas as download, correct aspect ratio guaranteed
     const preview=document.createElement('img');
     preview.src=dlCanvas.toDataURL('image/png');
-    preview.style.cssText='display:block;width:100%;height:auto;aspect-ratio:700/1050';
+    preview.style.cssText='display:block;width:100%;height:auto';
 
     // Download button
     const dlBtn=document.createElement('button');
