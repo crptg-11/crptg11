@@ -6,27 +6,15 @@
 <title>CRPTG 11 — Hoja de Comidas</title>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 
-<!-- Firebase SDK -->
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-  import { getDatabase, ref, set, get, onValue, update } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
-
-  const firebaseConfig = {
-    databaseURL: "https://crptg-11-default-rtdb.firebaseio.com/"
-  };
-  const app = initializeApp(firebaseConfig);
+  import { getDatabase, ref, get, onValue, update } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+  const app = initializeApp({ databaseURL: "https://crptg-11-default-rtdb.firebaseio.com/" });
   const db = getDatabase(app);
-  window._db = db;
-  window._ref = ref;
-  window._set = set;
-  window._get = get;
-  window._onValue = onValue;
-  window._update = update;
-  window._firebaseReady = true;
+  window._db=db; window._ref=ref; window._get=get; window._onValue=onValue; window._update=update;
+  window._firebaseReady=true;
   window.dispatchEvent(new Event('firebaseReady'));
 </script>
-
-<!-- QR Code library -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 
 <style>
@@ -34,206 +22,193 @@
 :root{
   --bg:#0f1117;--surface:#181b24;--surface2:#1f2333;
   --border:#2a2d40;--text:#e8e8f0;--muted:#7a7d95;
-  --gold:#e8a838;--teal:#3ecfb8;--rose:#e86b8b;
-  --lav:#8b7fe8;--orange:#d4773e;
+  --gold:#e8a838;--teal:#3ecfb8;--rose:#e86b8b;--lav:#8b7fe8;
 }
 body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min-height:100vh}
 
-/* ===== OVERLAY ===== */
+/* OVERLAY */
 #overlay{position:fixed;inset:0;background:rgba(11,13,19,.97);z-index:9999;display:flex;align-items:center;justify-content:center}
-.overlay-box{background:#13161f;border:1px solid #22263a;border-radius:24px;padding:40px 42px;text-align:center;max-width:360px;width:90%;box-shadow:0 24px 64px rgba(0,0,0,.6)}
-.overlay-box h2{font-family:'Playfair Display',serif;font-size:1.3rem;margin-bottom:8px}
-.overlay-box p{color:var(--muted);font-size:13px;margin-bottom:22px;line-height:1.5}
-.overlay-input{width:100%;background:#0b0d13;border:1px solid #22263a;color:var(--text);font-family:'DM Sans',sans-serif;font-size:15px;padding:11px 16px;border-radius:12px;outline:none;text-align:center;letter-spacing:3px;margin-bottom:10px;transition:border-color .2s;box-sizing:border-box}
-.overlay-input:focus{border-color:var(--gold)}
-.overlay-btn{width:100%;padding:12px;border-radius:12px;border:none;background:var(--gold);color:#000;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:700;cursor:pointer;transition:opacity .2s}
-.overlay-btn:hover{opacity:.85}
-.overlay-err{color:var(--rose);font-size:12px;margin-top:8px;min-height:16px}
+.obox{background:#13161f;border:1px solid #22263a;border-radius:24px;padding:36px 40px;text-align:center;max-width:360px;width:90%;box-shadow:0 24px 64px rgba(0,0,0,.6)}
+.obox h2{font-family:'Playfair Display',serif;font-size:1.25rem;margin-bottom:6px}
+.obox p{color:var(--muted);font-size:13px;margin-bottom:20px;line-height:1.5}
+.oinput{width:100%;background:#0b0d13;border:1px solid #22263a;color:var(--text);font-family:'DM Sans',sans-serif;font-size:15px;padding:11px 16px;border-radius:12px;outline:none;text-align:center;letter-spacing:3px;margin-bottom:10px;transition:border-color .2s}
+.oinput:focus{border-color:var(--gold)}
+.obtn{width:100%;padding:12px;border-radius:12px;border:none;background:var(--gold);color:#000;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:700;cursor:pointer}
+.obtn:hover{opacity:.85}
+.oerr{color:var(--rose);font-size:12px;margin-top:8px;min-height:16px}
+.olink{background:none;border:1px solid #22263a;color:var(--muted);padding:8px 18px;border-radius:8px;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:12px;margin-top:12px}
 
-/* ===== TOPBAR ===== */
-.topbar{background:var(--surface);border-bottom:1px solid var(--border);padding:10px 24px;display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
-.topbar-left{display:flex;align-items:center;gap:12px}
-.topbar a{color:var(--muted);font-size:13px;text-decoration:none}
-.topbar a:hover{color:var(--gold)}
-.auth-badge{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:20px;font-size:11px;font-weight:600}
-.auth-badge.admin{background:rgba(232,168,56,.15);color:var(--gold)}
-.auth-badge.viewer{background:rgba(122,125,149,.12);color:var(--muted)}
+/* TOPBAR */
+.topbar{background:var(--surface);border-bottom:1px solid var(--border);padding:10px 22px;display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}
+.topbar a{color:var(--muted);font-size:13px;text-decoration:none}.topbar a:hover{color:var(--gold)}
+.badge{display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600}
+.badge.admin{background:rgba(232,168,56,.15);color:var(--gold)}.badge.viewer{background:rgba(122,125,149,.12);color:var(--muted)}
+.tbtn{background:none;border:1px solid var(--border);color:var(--muted);padding:5px 12px;border-radius:8px;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:11px}
+.tbtn:hover{border-color:var(--gold);color:var(--gold)}.tbtn.scan{background:rgba(232,168,56,.1);border-color:rgba(232,168,56,.3);color:var(--gold)}
 
-/* ===== HEADER ===== */
-.page-header{padding:28px 24px 0;max-width:1400px;margin:0 auto}
-.page-title{font-family:'Playfair Display',serif;font-size:1.8rem;margin-bottom:4px}
-.page-sub{color:var(--muted);font-size:13px}
+/* PAGE HEADER */
+.ph{padding:24px 22px 0;max-width:1440px;margin:0 auto}
+.ph h1{font-family:'Playfair Display',serif;font-size:1.7rem}
+.ph p{color:var(--muted);font-size:13px;margin-top:2px}
 
-/* ===== STATS BAR ===== */
-.stats-bar{max-width:1400px;margin:20px auto 0;padding:0 24px;display:flex;flex-wrap:wrap;gap:10px}
-.stat-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px 18px;text-align:center;flex:1;min-width:120px}
-.stat-num{font-family:'Playfair Display',serif;font-size:2rem;font-weight:900;line-height:1}
-.stat-lbl{font-size:11px;color:var(--muted);margin-top:3px;font-weight:500}
-.stat-card.gold .stat-num{color:var(--gold)}
-.stat-card.teal .stat-num{color:var(--teal)}
-.stat-card.rose .stat-num{color:var(--rose)}
-.stat-card.lav .stat-num{color:var(--lav)}
+/* STATS */
+.stats{max-width:1440px;margin:18px auto 0;padding:0 22px;display:flex;flex-wrap:wrap;gap:8px}
+.sc{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:13px 16px;text-align:center;flex:1;min-width:110px}
+.sn{font-family:'Playfair Display',serif;font-size:1.9rem;font-weight:900;line-height:1}
+.sl{font-size:10px;color:var(--muted);margin-top:2px;font-weight:500}
+.sc.gold .sn{color:var(--gold)}.sc.teal .sn{color:var(--teal)}.sc.rose .sn{color:var(--rose)}.sc.lav .sn{color:var(--lav)}
 
-/* ===== CONTROLS ===== */
-.controls{max-width:1400px;margin:18px auto 0;padding:0 24px;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
-.search-wrap{position:relative;flex:1;min-width:200px}
-.search-wrap input{width:100%;background:var(--surface);border:1px solid var(--border);color:var(--text);font-family:'DM Sans',sans-serif;font-size:13px;padding:8px 12px 8px 32px;border-radius:8px;outline:none;transition:border-color .2s}
-.search-wrap input:focus{border-color:var(--gold)}
-.search-wrap::before{content:'🔍';position:absolute;left:9px;top:50%;transform:translateY(-50%);font-size:12px;opacity:.38}
-.filter-btn{background:var(--surface);border:1px solid var(--border);color:var(--muted);padding:8px 14px;border-radius:8px;cursor:pointer;font-size:12px;font-family:'DM Sans',sans-serif;transition:all .15s;white-space:nowrap}
-.filter-btn:hover,.filter-btn.on{border-color:var(--gold);color:var(--gold)}
-.filter-btn.on{background:rgba(232,168,56,.08)}
+/* DAY TABS */
+.day-tabs-wrap{max-width:1440px;margin:20px auto 0;padding:0 22px}
+.day-tabs{display:flex;gap:6px;flex-wrap:wrap}
+.day-tab{display:flex;flex-direction:column;align-items:center;background:var(--surface);border:2px solid var(--border);border-radius:12px;padding:12px 16px;cursor:pointer;transition:all .18s;min-width:100px;flex:1;user-select:none}
+.day-tab:hover{border-color:rgba(232,168,56,.35);transform:translateY(-2px)}
+.day-tab.on{border-color:var(--gold);background:rgba(232,168,56,.07);transform:translateY(-2px)}
+.day-tab.nf-tab{border-color:rgba(232,107,139,.2)}
+.day-tab.nf-tab.on{border-color:var(--rose);background:rgba(232,107,139,.07)}
+.dt-lbl{font-size:10px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:var(--muted);margin-bottom:4px}
+.day-tab.on .dt-lbl{color:var(--gold)}.day-tab.nf-tab.on .dt-lbl{color:var(--rose)}
+.dt-count{font-family:'Playfair Display',serif;font-size:1.5rem;font-weight:900;color:var(--text);line-height:1;margin-bottom:3px}
+.day-tab.on .dt-count{color:var(--gold)}.day-tab.nf-tab .dt-count,.day-tab.nf-tab.on .dt-count{color:var(--rose)}
+.dt-pills{display:flex;gap:4px;flex-wrap:wrap;justify-content:center}
+.dt-pill{font-size:9px;font-weight:600;padding:1px 6px;border-radius:8px;background:var(--border);color:var(--muted)}
+.day-tab.on .dt-pill{background:rgba(232,168,56,.2);color:var(--gold)}
 
-/* ===== TABLE ===== */
-.table-wrap{max-width:1400px;margin:14px auto 60px;padding:0 24px}
-.table-box{background:var(--surface);border:1px solid var(--border);border-radius:13px;overflow:auto}
-table{width:100%;border-collapse:collapse;min-width:900px}
+/* MEAL SUB TABS */
+.mst-wrap{max-width:1440px;margin:10px auto 0;padding:0 22px;display:none}
+.mst-wrap.show{display:flex;gap:5px;flex-wrap:wrap}
+.mst{background:var(--surface);border:1px solid var(--border);color:var(--muted);padding:5px 14px;border-radius:20px;cursor:pointer;font-size:12px;font-family:'DM Sans',sans-serif;transition:all .15s}
+.mst:hover,.mst.on{border-color:var(--gold);color:var(--gold)}.mst.on{background:rgba(232,168,56,.08)}
+
+/* CONTROLS */
+.controls{max-width:1440px;margin:12px auto 0;padding:0 22px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.sw{position:relative;flex:1;min-width:180px}
+.sw input{width:100%;background:var(--surface);border:1px solid var(--border);color:var(--text);font-family:'DM Sans',sans-serif;font-size:13px;padding:8px 11px 8px 30px;border-radius:8px;outline:none;transition:border-color .2s}
+.sw input:focus{border-color:var(--gold)}.sw::before{content:'🔍';position:absolute;left:9px;top:50%;transform:translateY(-50%);font-size:11px;opacity:.38}
+.fbtn{background:var(--surface);border:1px solid var(--border);color:var(--muted);padding:7px 13px;border-radius:8px;cursor:pointer;font-size:11px;font-family:'DM Sans',sans-serif;transition:all .15s;white-space:nowrap}
+.fbtn:hover,.fbtn.on{border-color:var(--gold);color:var(--gold)}.fbtn.on{background:rgba(232,168,56,.07)}
+
+/* SECTION DIVIDER */
+.sdiv{max-width:1440px;margin:12px auto 8px;padding:0 22px;display:flex;align-items:center;gap:8px}
+.sdiv h2{font-family:'Playfair Display',serif;font-size:1rem}
+.sdiv .cnt{font-size:11px;color:var(--muted)}
+
+/* TABLE */
+.tw{max-width:1440px;margin:0 auto 24px;padding:0 22px}
+.tbox{background:var(--surface);border:1px solid var(--border);border-radius:13px;overflow:auto}
+table{width:100%;border-collapse:collapse;min-width:660px}
 thead{position:sticky;top:0;z-index:2}
-th{background:var(--surface2);color:var(--muted);font-size:10px;font-weight:600;letter-spacing:1px;text-transform:uppercase;padding:10px 12px;text-align:left;border-bottom:1px solid var(--border);white-space:nowrap;cursor:pointer;user-select:none;transition:color .15s}
-th:hover{color:var(--gold)}
-th.asc::after{content:' ↑';color:var(--gold)}
-th.desc::after{content:' ↓';color:var(--gold)}
-th.no-sort{cursor:default}
-th.no-sort:hover{color:var(--muted)}
-td{padding:8px 12px;font-size:12px;border-bottom:1px solid rgba(42,45,64,.5);vertical-align:middle}
-tr:last-child td{border-bottom:none}
-tr:hover td{background:rgba(232,168,56,.03)}
+th{background:var(--surface2);color:var(--muted);font-size:10px;font-weight:600;letter-spacing:.8px;text-transform:uppercase;padding:9px 12px;text-align:left;border-bottom:1px solid var(--border);white-space:nowrap;cursor:pointer;user-select:none;transition:color .15s}
+th:hover{color:var(--gold)}th.asc::after{content:' ↑';color:var(--gold)}th.desc::after{content:' ↓';color:var(--gold)}
+th.ns{cursor:default}th.ns:hover{color:var(--muted)}
+td{padding:8px 12px;font-size:12px;border-bottom:1px solid rgba(42,45,64,.45);vertical-align:middle}
+tr:last-child td{border-bottom:none}tr:hover td{background:rgba(232,168,56,.02)}
+.nm{font-weight:500}.cg{font-size:10px;color:var(--muted);margin-top:1px}
+.qbtn{background:none;border:1px solid var(--border);color:var(--muted);padding:3px 8px;border-radius:6px;cursor:pointer;font-size:11px;transition:all .15s}
+.qbtn:hover{border-color:var(--gold);color:var(--gold)}
+.mchk{accent-color:var(--gold);width:13px;height:13px;cursor:pointer}.mchk:disabled{cursor:not-allowed;opacity:.4}
+.rchk{accent-color:var(--teal);width:13px;height:13px;cursor:pointer}.rchk:disabled{cursor:not-allowed;opacity:.4}
+.chk-lbl{display:inline-flex;align-items:center;gap:4px;margin-right:8px;margin-bottom:2px}
+.chk-txt{font-size:10px}
+.day-grp{margin-bottom:4px}
+.day-grp-hd{font-size:9px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;margin-bottom:2px}
+.ret-summary{font-size:11px;color:var(--muted);margin-bottom:3px}
+.ret-summary b{color:var(--teal)}
 
-/* ===== MEAL CHECKBOXES ===== */
-.meal-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:2px;min-width:340px}
-.meal-col{display:flex;flex-direction:column;gap:2px}
-.meal-day{font-size:9px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:var(--muted);margin-bottom:3px;padding:0 2px}
-.meal-cell{display:flex;align-items:center;gap:4px;padding:3px 5px;border-radius:5px;cursor:pointer;transition:background .15s;white-space:nowrap}
-.meal-cell:hover{background:rgba(255,255,255,.04)}
-.meal-cell input[type=checkbox]{accent-color:var(--gold);width:13px;height:13px;cursor:pointer}
-.meal-cell input[type=checkbox]:disabled{cursor:not-allowed;opacity:.5}
-.meal-label{font-size:10px;color:var(--text)}
+/* NO FOOD SECTION */
+.nf-wrap{max-width:1440px;margin:0 auto 60px;padding:0 22px}
+.nf-hd{font-family:'Playfair Display',serif;font-size:1rem;color:var(--rose);margin-bottom:4px}
+.nf-sub{font-size:12px;color:var(--muted);margin-bottom:10px}
+.assign-all-btn{background:rgba(62,207,184,.1);border:1px solid var(--teal);color:var(--teal);padding:3px 10px;border-radius:6px;cursor:pointer;font-size:10px;font-family:'DM Sans',sans-serif;margin-bottom:5px;display:block}
+.assign-all-btn:hover{background:rgba(62,207,184,.2)}
 
-/* Retirado badge */
-.ret-check{width:14px;height:14px;cursor:pointer;accent-color:var(--teal)}
-.ret-dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--teal);box-shadow:0 0 6px rgba(62,207,184,.5)}
-.pend-dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--border)}
-
-/* QR cell */
-.qr-btn{background:none;border:1px solid var(--border);color:var(--muted);padding:4px 8px;border-radius:6px;cursor:pointer;font-size:11px;transition:all .15s;white-space:nowrap}
-.qr-btn:hover{border-color:var(--gold);color:var(--gold)}
-
-/* Name cell */
-.name-cell{font-weight:500;min-width:160px}
-.cong-cell{font-size:11px;color:var(--muted)}
-
-/* badge */
-.b{display:inline-block;padding:2px 7px;border-radius:100px;font-size:10px;font-weight:600}
-.b-si{background:rgba(62,207,184,.15);color:var(--teal)}
-.b-no{background:rgba(122,125,149,.12);color:var(--muted)}
-
-/* ===== MODAL QR ===== */
+/* QR MODAL */
 #qr-modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:8000;align-items:center;justify-content:center}
 #qr-modal.open{display:flex}
-.qr-box{background:#13161f;border:1px solid #22263a;border-radius:20px;padding:32px;text-align:center;max-width:420px;width:90%;max-height:90vh;overflow-y:auto}
-.qr-box h3{font-family:'Playfair Display',serif;font-size:1.1rem;margin-bottom:6px}
-.qr-box p{color:var(--muted);font-size:12px;margin-bottom:18px}
-#qr-canvas-wrap{display:flex;justify-content:center;margin-bottom:18px}
-#qr-canvas-wrap canvas,#qr-canvas-wrap img{border-radius:8px}
-.qr-meal-list{text-align:left;margin-bottom:18px}
-.qr-meal-item{display:flex;align-items:center;justify-content:space-between;padding:7px 10px;border-radius:8px;margin-bottom:5px;background:var(--surface)}
-.qr-meal-item .meal-name{font-size:12px;color:var(--text)}
-.qr-meal-status{font-size:11px;font-weight:600}
-.qr-meal-status.pend{color:var(--muted)}
-.qr-meal-status.ret{color:var(--teal)}
-.qr-scan-btn{width:100%;padding:12px;border-radius:10px;border:none;background:var(--gold);color:#000;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:700;cursor:pointer;margin-bottom:8px}
-.qr-scan-btn:hover{opacity:.85}
-.qr-close-btn{width:100%;padding:10px;border-radius:10px;border:1px solid var(--border);background:none;color:var(--muted);font-family:'DM Sans',sans-serif;font-size:13px;cursor:pointer}
-.qr-close-btn:hover{border-color:var(--gold);color:var(--gold)}
+.qbox{background:#13161f;border:1px solid #22263a;border-radius:20px;padding:28px;text-align:center;max-width:420px;width:90%;max-height:92vh;overflow-y:auto}
+.qbox h3{font-family:'Playfair Display',serif;font-size:1.1rem;margin-bottom:4px}
+.qbox .qsub{color:var(--muted);font-size:11px;margin-bottom:16px}
+#qr-wrap{display:flex;justify-content:center;margin-bottom:16px}
+#qr-wrap canvas,#qr-wrap img{border-radius:8px}
+.qmi{display:flex;align-items:center;justify-content:space-between;padding:6px 10px;border-radius:8px;margin-bottom:4px;background:var(--surface)}
+.qmn{font-size:11px}.qms{font-size:10px;font-weight:600}
+.qms.ret{color:var(--teal)}.qms.pend{color:var(--muted)}
+.qscn{width:100%;padding:11px;border-radius:10px;border:none;background:var(--gold);color:#000;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:700;cursor:pointer;margin-bottom:6px}
+.qcls{width:100%;padding:9px;border-radius:10px;border:1px solid var(--border);background:none;color:var(--muted);font-family:'DM Sans',sans-serif;font-size:12px;cursor:pointer}
+.qcls:hover{border-color:var(--gold);color:var(--gold)}
 
-/* ===== RETIRO MODAL ===== */
-#retiro-modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.9);z-index:9000;align-items:center;justify-content:center}
-#retiro-modal.open{display:flex}
-.retiro-box{background:#13161f;border:2px solid var(--gold);border-radius:20px;padding:32px;text-align:center;max-width:380px;width:90%}
-.retiro-box h3{font-family:'Playfair Display',serif;font-size:1.2rem;margin-bottom:6px}
-.retiro-box p{color:var(--muted);font-size:13px;margin-bottom:20px}
-.retiro-meal-btn{width:100%;padding:12px;border-radius:10px;border:1px solid var(--border);background:var(--surface);color:var(--text);font-family:'DM Sans',sans-serif;font-size:14px;cursor:pointer;margin-bottom:8px;text-align:left;display:flex;align-items:center;justify-content:space-between;transition:all .2s}
-.retiro-meal-btn:hover:not(:disabled){border-color:var(--teal);background:rgba(62,207,184,.07);color:var(--teal)}
-.retiro-meal-btn:disabled{opacity:.4;cursor:not-allowed}
-.retiro-meal-btn.done{border-color:var(--teal);color:var(--teal);background:rgba(62,207,184,.07)}
-.retiro-cancel{width:100%;padding:10px;border-radius:10px;border:1px solid var(--border);background:none;color:var(--muted);font-family:'DM Sans',sans-serif;font-size:13px;cursor:pointer;margin-top:8px}
+/* RETIRO MODAL */
+#ret-modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.9);z-index:9000;align-items:center;justify-content:center}
+#ret-modal.open{display:flex}
+.rbox{background:#13161f;border:2px solid var(--gold);border-radius:20px;padding:28px;text-align:center;max-width:370px;width:90%;max-height:92vh;overflow-y:auto}
+.rbox h3{font-family:'Playfair Display',serif;font-size:1.1rem;margin-bottom:4px}
+.rbox .rsub{color:var(--muted);font-size:12px;margin-bottom:18px}
+.rmb{width:100%;padding:11px 14px;border-radius:10px;border:1px solid var(--border);background:var(--surface);color:var(--text);font-family:'DM Sans',sans-serif;font-size:13px;cursor:pointer;margin-bottom:7px;display:flex;align-items:center;justify-content:space-between;transition:all .18s}
+.rmb:hover:not(:disabled){border-color:var(--teal);background:rgba(62,207,184,.06);color:var(--teal)}
+.rmb:disabled{opacity:.38;cursor:not-allowed}.rmb.done{border-color:var(--teal);color:var(--teal);background:rgba(62,207,184,.06)}
+.rcancel{width:100%;padding:9px;border-radius:10px;border:1px solid var(--border);background:none;color:var(--muted);font-family:'DM Sans',sans-serif;font-size:12px;cursor:pointer;margin-top:4px}
 
-/* ===== SCAN INPUT OVERLAY ===== */
-#scan-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:10000;flex-direction:column;align-items:center;justify-content:center;gap:16px}
-#scan-overlay.open{display:flex}
-#scan-overlay h3{font-family:'Playfair Display',serif;color:var(--gold);font-size:1.2rem}
-#scan-overlay p{color:var(--muted);font-size:13px;text-align:center;max-width:300px}
-#scan-input{background:#0b0d13;border:2px solid var(--gold);color:var(--text);font-family:'DM Sans',sans-serif;font-size:16px;padding:12px 18px;border-radius:12px;outline:none;width:280px;text-align:center}
-#scan-cancel{background:none;border:1px solid var(--border);color:var(--muted);padding:8px 20px;border-radius:8px;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:13px}
+/* SCAN OVERLAY */
+#scan-ov{display:none;position:fixed;inset:0;background:rgba(0,0,0,.93);z-index:10000;flex-direction:column;align-items:center;justify-content:center;gap:14px}
+#scan-ov.open{display:flex}
+#scan-ov h3{font-family:'Playfair Display',serif;color:var(--gold);font-size:1.2rem}
+#scan-ov p{color:var(--muted);font-size:13px;text-align:center;max-width:280px}
+#scan-inp{background:#0b0d13;border:2px solid var(--gold);color:var(--text);font-family:'DM Sans',sans-serif;font-size:16px;padding:11px 18px;border-radius:12px;outline:none;width:270px;text-align:center}
 
-/* ===== EMPTY / LOADING ===== */
-.empty{text-align:center;padding:48px;color:var(--muted);font-size:14px}
-.loading{display:flex;align-items:center;justify-content:center;padding:60px;gap:10px;color:var(--muted);font-size:13px}
-
-/* ===== TOTALS ROW ===== */
-.day-totals{display:flex;gap:16px;flex-wrap:wrap;margin-bottom:14px}
-.day-total-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:10px 14px;min-width:110px}
-.day-total-card .day-name{font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px}
-.day-total-card .day-meals{display:flex;flex-direction:column;gap:3px}
-.day-total-card .dm{font-size:11px;color:var(--text);display:flex;justify-content:space-between;gap:8px}
-.day-total-card .dm span:last-child{color:var(--gold);font-weight:600}
-
-@media(max-width:700px){
-  .stats-bar{padding:0 12px}.controls,.table-wrap,.page-header{padding-left:12px;padding-right:12px}
-  .meal-grid{min-width:300px;grid-template-columns:repeat(4,minmax(75px,1fr))}
-}
-
-/* Toast */
-.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--teal);color:#000;padding:10px 20px;border-radius:20px;font-weight:600;font-size:13px;z-index:20000;opacity:0;transition:opacity .3s;pointer-events:none}
+/* TOAST */
+.toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%);background:var(--teal);color:#000;padding:9px 20px;border-radius:20px;font-weight:600;font-size:13px;z-index:20000;opacity:0;transition:opacity .3s;pointer-events:none;white-space:nowrap}
 .toast.show{opacity:1}
+
+@media(max-width:680px){
+  .stats,.day-tabs-wrap,.mst-wrap,.controls,.tw,.nf-wrap,.sdiv,.ph{padding-left:12px;padding-right:12px}
+  .day-tab{min-width:80px;padding:10px 8px}.dt-count{font-size:1.2rem}
+}
 </style>
 </head>
 <body>
 
-<!-- ACCESS OVERLAY -->
+<!-- OVERLAY -->
 <div id="overlay">
-  <div class="overlay-box">
-    <div style="font-size:2.4rem;margin-bottom:12px">🍽️</div>
+  <div class="obox">
+    <div style="font-size:2.2rem;margin-bottom:10px">🍽️</div>
     <h2>Hoja de Comidas — CRPTG 11</h2>
-    <p>Esta página es pública en modo lectura.<br>Ingresa la contraseña para gestionar comidas.</p>
-    <input type="password" class="overlay-input" id="pw-input" placeholder="••••••••" onkeydown="if(event.key==='Enter')tryAuth()">
-    <button class="overlay-btn" onclick="tryAuth()">Ingresar</button>
-    <div class="overlay-err" id="pw-err"></div>
-    <div style="margin-top:16px">
-      <button onclick="viewOnly()" style="background:none;border:1px solid var(--border);color:var(--muted);padding:8px 18px;border-radius:8px;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:12px">Ver sin contraseña →</button>
-    </div>
+    <p>Visible para todos en modo lectura.<br>Ingresa la contraseña para gestionar comidas y retiros.</p>
+    <input type="password" class="oinput" id="pw-inp" placeholder="••••••••" onkeydown="if(event.key==='Enter')tryAuth()">
+    <button class="obtn" onclick="tryAuth()">Ingresar</button>
+    <div class="oerr" id="pw-err"></div>
+    <button class="olink" onclick="viewOnly()">Ver sin contraseña →</button>
   </div>
 </div>
 
 <!-- QR MODAL -->
 <div id="qr-modal">
-  <div class="qr-box">
-    <h3 id="qr-name">Participante</h3>
-    <p id="qr-sub">Presenta este QR para retirar tus comidas</p>
-    <div id="qr-canvas-wrap"></div>
-    <div class="qr-meal-list" id="qr-meal-list"></div>
-    <button class="qr-scan-btn" id="qr-scan-btn" style="display:none" onclick="openRetiroFromQR()">✅ Registrar Retiro (Admin)</button>
-    <button class="qr-close-btn" onclick="closeQR()">Cerrar</button>
+  <div class="qbox">
+    <h3 id="qr-name">—</h3>
+    <div class="qsub" id="qr-sub">—</div>
+    <div id="qr-wrap"></div>
+    <div id="qr-list" style="text-align:left;margin-bottom:14px"></div>
+    <button class="qscn" id="qr-retbtn" style="display:none" onclick="openRetiroFromQR()">✅ Registrar Retiro (Admin)</button>
+    <button class="qcls" onclick="closeQR()">Cerrar</button>
   </div>
 </div>
 
 <!-- RETIRO MODAL -->
-<div id="retiro-modal">
-  <div class="retiro-box">
-    <h3 id="retiro-name">Registrar Retiro</h3>
-    <p id="retiro-sub">Selecciona la comida a retirar</p>
-    <div id="retiro-meals"></div>
-    <button class="retiro-cancel" onclick="closeRetiro()">Cancelar</button>
+<div id="ret-modal">
+  <div class="rbox">
+    <h3 id="ret-name">—</h3>
+    <div class="rsub">Selecciona la comida a marcar como retirada</div>
+    <div id="ret-meals"></div>
+    <button class="rcancel" onclick="closeRetiro()">Cancelar</button>
   </div>
 </div>
 
-<!-- SCAN OVERLAY (for QR scanner redirect) -->
-<div id="scan-overlay">
-  <h3>📷 Modo Retiro</h3>
-  <p>Escanea el QR o ingresa el ID del participante</p>
-  <input type="text" id="scan-input" placeholder="ID del participante" onkeydown="if(event.key==='Enter')processScan()">
+<!-- SCAN OVERLAY -->
+<div id="scan-ov">
+  <h3>📷 Modo Escáner</h3>
+  <p>Escanea el QR o escribe el ID o nombre del participante</p>
+  <input type="text" id="scan-inp" placeholder="ID del participante" onkeydown="if(event.key==='Enter')processScan()">
   <button onclick="processScan()" style="background:var(--gold);color:#000;border:none;padding:10px 24px;border-radius:10px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif">Buscar</button>
-  <button id="scan-cancel" onclick="closeScan()">Cancelar</button>
+  <button onclick="closeScan()" style="background:none;border:1px solid var(--border);color:var(--muted);padding:8px 18px;border-radius:8px;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:12px">Cancelar</button>
 </div>
 
 <!-- TOAST -->
@@ -241,489 +216,446 @@ tr:hover td{background:rgba(232,168,56,.03)}
 
 <!-- TOPBAR -->
 <div class="topbar">
-  <div class="topbar-left">
+  <div style="display:flex;align-items:center;gap:12px">
     <a href="participantes.html">← Participantes</a>
-    <span id="auth-badge" class="auth-badge viewer">👁️ Solo lectura</span>
+    <span id="auth-badge" class="badge viewer">👁️ Solo lectura</span>
   </div>
-  <div style="display:flex;gap:8px;align-items:center">
-    <button id="scan-mode-btn" onclick="openScan()" style="display:none;background:rgba(232,168,56,.1);border:1px solid rgba(232,168,56,.3);color:var(--gold);padding:6px 14px;border-radius:8px;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:600">📷 Modo Escáner</button>
-    <button onclick="logout()" style="background:none;border:1px solid var(--border);color:var(--muted);padding:6px 12px;border-radius:8px;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:12px">Cerrar sesión</button>
+  <div style="display:flex;gap:6px;align-items:center">
+    <button id="scan-btn" class="tbtn scan" onclick="openScan()" style="display:none">📷 Modo Escáner</button>
+    <button class="tbtn" onclick="logout()">Cerrar sesión</button>
   </div>
 </div>
 
 <!-- PAGE HEADER -->
-<div class="page-header">
-  <div class="page-title">🍽️ Hoja de Comidas</div>
-  <div class="page-sub">CRPTG 11 — Retiro de Alimentación</div>
+<div class="ph"><h1>🍽️ Hoja de Comidas</h1><p>CRPTG 11 — Control de alimentación por día</p></div>
+
+<!-- GLOBAL STATS -->
+<div class="stats">
+  <div class="sc gold"><div class="sn" id="s-total">—</div><div class="sl">Comidas asignadas</div></div>
+  <div class="sc teal"><div class="sn" id="s-ret">—</div><div class="sl">Retiradas</div></div>
+  <div class="sc rose"><div class="sn" id="s-pend">—</div><div class="sl">Pendientes</div></div>
+  <div class="sc lav"><div class="sn" id="s-pers">—</div><div class="sl">Personas con comida</div></div>
 </div>
 
-<!-- STATS BAR -->
-<div class="stats-bar">
-  <div class="stat-card gold"><div class="stat-num" id="stat-total">—</div><div class="stat-lbl">Total comidas asignadas</div></div>
-  <div class="stat-card teal"><div class="stat-num" id="stat-retirado">—</div><div class="stat-lbl">Retiradas</div></div>
-  <div class="stat-card rose"><div class="stat-num" id="stat-pendiente">—</div><div class="stat-lbl">Pendientes</div></div>
-  <div class="stat-card lav"><div class="stat-num" id="stat-personas">—</div><div class="stat-lbl">Personas con comida</div></div>
-</div>
+<!-- DAY TABS -->
+<div class="day-tabs-wrap"><div class="day-tabs" id="day-tabs"></div></div>
 
-<!-- DAY TOTALS -->
-<div class="table-wrap" style="margin-bottom:0">
-  <div class="day-totals" id="day-totals" style="padding:16px 0 4px 0"></div>
-</div>
+<!-- MEAL SUB TABS -->
+<div class="mst-wrap" id="mst-wrap"></div>
 
 <!-- CONTROLS -->
 <div class="controls">
-  <div class="search-wrap">
-    <input type="text" id="search-input" placeholder="Buscar nombre, ID, congregación..." oninput="applyFilter()">
-  </div>
-  <button class="filter-btn on" id="btn-todos" onclick="setFilter('todos',this)">Todos</button>
-  <button class="filter-btn" id="btn-comida" onclick="setFilter('comida',this)">Con comida</button>
-  <button class="filter-btn" id="btn-pendiente" onclick="setFilter('pendiente',this)">Pendientes</button>
-  <button class="filter-btn" id="btn-completo" onclick="setFilter('completo',this)">Completados</button>
+  <div class="sw"><input type="text" id="srch" placeholder="Buscar nombre, ID, congregación..." oninput="renderMain()"></div>
+  <button class="fbtn on" onclick="setFilter('todos',this)">Todos</button>
+  <button class="fbtn"    onclick="setFilter('pend',this)">Pendientes</button>
+  <button class="fbtn"    onclick="setFilter('comp',this)">Completados</button>
 </div>
 
-<!-- TABLE -->
-<div class="table-wrap">
-  <div class="table-box">
-    <table id="main-table">
-      <thead id="thead"></thead>
-      <tbody id="tbody"><tr><td colspan="20" class="loading">⏳ Cargando datos...</td></tr></tbody>
-    </table>
-  </div>
+<!-- MAIN TABLE -->
+<div class="sdiv"><h2 id="sec-title">Todos los participantes</h2><span class="cnt" id="sec-cnt"></span></div>
+<div class="tw"><div class="tbox"><table><thead id="thead"></thead><tbody id="tbody"><tr><td colspan="10" style="text-align:center;padding:48px;color:var(--muted)">⏳ Cargando datos...</td></tr></tbody></table></div></div>
+
+<!-- NO FOOD SECTION -->
+<div class="nf-wrap" id="nf-wrap" style="display:none">
+  <div class="sdiv" style="padding:0;margin-bottom:10px"><h2 class="nf-hd">🚫 Sin comida asignada — <span id="nf-cnt">0</span> personas</h2></div>
+  <div class="nf-sub" id="nf-sub">Las siguientes personas no tienen comidas asignadas.</div>
+  <div class="tbox"><table><thead id="nf-thead"></thead><tbody id="nf-tbody"></tbody></table></div>
 </div>
 
 <script>
-// ===================== CONFIG =====================
-const SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vS-FHGAAPJvj_dQEHyN09G1xVJWfblbjGrDgjCREmoi19ucjl1cuPLm5fR0ZHvcmZZ6PPdrEQ7g1pSV/pub?gid=1479802457&single=true&output=csv";
+// ═══════════════════ CONFIG ═══════════════════
+const SHEET_CSV = "https://docs.google.com/spreadsheets/d/e/2PACX-1vS-FHGAAPJvj_dQEHyN09G1xVJWfblbjGrDgjCREmoi19ucjl1cuPLm5fR0ZHvcmZZ6PPdrEQ7g1pSV/pub?gid=1479802457&single=true&output=csv";
 const ADMIN_PASS = "AlimentosRestaurados";
 const FB_PATH = "comidas";
 
-// ===================== MEALS STRUCTURE =====================
+// ═══════════════════ MEALS STRUCTURE ═══════════════════
 const DAYS = [
-  { key:"mie", label:"Miércoles", meals:["cena"] },
-  { key:"jue", label:"Jueves",    meals:["desayuno","almuerzo","cena"] },
-  { key:"vie", label:"Viernes",   meals:["desayuno","almuerzo","cena"] },
-  { key:"sab", label:"Sábado",    meals:["desayuno","almuerzo","cena"] },
+  { key:"mie", label:"Miércoles", short:"Mié", meals:["cena"] },
+  { key:"jue", label:"Jueves",    short:"Jue", meals:["desayuno","almuerzo","cena"] },
+  { key:"vie", label:"Viernes",   short:"Vie", meals:["desayuno","almuerzo","cena"] },
+  { key:"sab", label:"Sábado",    short:"Sáb", meals:["desayuno","almuerzo","cena"] },
 ];
 const ALL_MEALS = [];
-DAYS.forEach(d => d.meals.forEach(m => ALL_MEALS.push({ day:d.key, dayLabel:d.label, meal:m })));
-const MEAL_KEY = (day,meal) => `${day}_${meal}`;
+DAYS.forEach(d => d.meals.forEach(m => ALL_MEALS.push({day:d.key, dayLabel:d.label, dayShort:d.short, meal:m})));
+const MK = (d,m) => `${d}_${m}`;
+function defaultMeals(){ const o={}; ALL_MEALS.forEach(({day,meal})=>o[MK(day,meal)]=true); return o; }
+function cap(s){ return s.charAt(0).toUpperCase()+s.slice(1); }
 
-// Comidas por defecto cuando quiere_comida = true
-function defaultMeals(){
-  const meals = {};
-  ALL_MEALS.forEach(({day,meal}) => { meals[MEAL_KEY(day,meal)] = true; });
-  return meals;
-}
-
-// ===================== STATE =====================
+// ═══════════════════ STATE ═══════════════════
 let isAdmin = false;
-let DATA = [];         // parsed from CSV
-let FB_DATA = {};      // from Firebase {id: {meals:{}, retirado:{}}}
-let currentFilter = 'todos';
+let DATA = [], FB_DATA = {};
+let activeDay = 'all';   // 'all' | day.key | 'nofood'
+let activeMeal = 'all';  // 'all' | meal name
+let curFilter = 'todos';
 let sortCol = -1, sortDir = 1;
 let currentQRId = null;
 
-// ===================== AUTH =====================
+// ═══════════════════ AUTH ═══════════════════
 (function(){
-  const stored = localStorage.getItem('crptg11-comidas-auth');
-  if(stored === 'admin'){ isAdmin = true; showApp(); }
-  else if(stored === 'viewer'){ isAdmin = false; showApp(); }
+  const s = localStorage.getItem('crptg11-comidas-auth');
+  if(s==='admin'||s==='viewer'){ isAdmin=(s==='admin'); showApp(); }
 })();
-
 function tryAuth(){
-  const v = document.getElementById('pw-input').value.trim();
-  if(v === ADMIN_PASS){
-    isAdmin = true;
-    localStorage.setItem('crptg11-comidas-auth','admin');
-    showApp();
-  } else {
-    document.getElementById('pw-err').textContent = 'Contraseña incorrecta';
-  }
+  const v=document.getElementById('pw-inp').value.trim();
+  if(v===ADMIN_PASS){ isAdmin=true; localStorage.setItem('crptg11-comidas-auth','admin'); showApp(); }
+  else { document.getElementById('pw-err').textContent='Contraseña incorrecta'; }
 }
-function viewOnly(){
-  isAdmin = false;
-  localStorage.setItem('crptg11-comidas-auth','viewer');
-  showApp();
-}
+function viewOnly(){ isAdmin=false; localStorage.setItem('crptg11-comidas-auth','viewer'); showApp(); }
 function showApp(){
   document.getElementById('overlay').style.display='none';
-  document.getElementById('auth-badge').textContent = isAdmin ? '🔑 Administrador' : '👁️ Solo lectura';
-  document.getElementById('auth-badge').className = 'auth-badge ' + (isAdmin ? 'admin' : 'viewer');
-  if(isAdmin) document.getElementById('scan-mode-btn').style.display='';
+  document.getElementById('auth-badge').textContent = isAdmin?'🔑 Administrador':'👁️ Solo lectura';
+  document.getElementById('auth-badge').className = 'badge '+(isAdmin?'admin':'viewer');
+  if(isAdmin){ document.getElementById('scan-btn').style.display=''; document.getElementById('nf-sub').textContent='Administradores pueden asignar comidas desde aquí.'; }
   init();
 }
-function logout(){
-  localStorage.removeItem('crptg11-comidas-auth');
-  location.reload();
-}
+function logout(){ localStorage.removeItem('crptg11-comidas-auth'); location.reload(); }
 
-// ===================== COL MAP =====================
-const COL_MAP = {
-  id:["ID","id","Código","codigo"],
-  nombre:["Nombre completo","nombre","Nombre"],
-  sexo:["Sexo","sexo","Género","genero"],
-  edad:["Edad","edad"],
-  congregacion:["Congregación","congregacion","Congregacion"],
-  alimentacion:["¿Necesita alimentación?","Alimentación","alimentacion","Comida"],
-};
-function findCol(headers,keys){for(const k of keys){const i=headers.findIndex(h=>h.trim()===k);if(i!==-1)return i;}return -1;}
+// ═══════════════════ FIREBASE ═══════════════════
+function waitFB(cb){ if(window._firebaseReady) cb(); else window.addEventListener('firebaseReady',cb,{once:true}); }
+function loadFB(){
+  waitFB(()=>{
+    window._onValue(window._ref(window._db, FB_PATH), snap=>{
+      FB_DATA = snap.val()||{};
+      if(DATA.length){ buildDayTabs(); renderMain(); renderNoFood(); updateStats(); }
+    });
+  });
+}
+async function saveMeal(id,key,val){ waitFB(async()=>{ await window._update(window._ref(window._db,`${FB_PATH}/${id}/meals`),{[key]:val}); }); }
+async function saveRetiro(id,key,val){ waitFB(async()=>{ await window._update(window._ref(window._db,`${FB_PATH}/${id}/retirado`),{[key]:val}); }); }
+
+// ═══════════════════ CSV PARSE ═══════════════════
+const COL_MAP={id:["ID","id","Código","codigo"],nombre:["Nombre completo","nombre","Nombre"],sexo:["Sexo","sexo"],edad:["Edad","edad"],congregacion:["Congregación","congregacion","Congregacion"],alimentacion:["¿Necesita alimentación?","Alimentación","alimentacion","Comida"]};
+function findCol(hdr,keys){ for(const k of keys){const i=hdr.findIndex(h=>h.trim()===k);if(i!==-1)return i;} return -1;}
 function parseCSV(text){
-  const allRows=[]; let cur="",inQ=false,row=[];
-  for(let i=0;i<text.length;i++){
-    const ch=text[i];
-    if(ch==='"'){if(inQ&&text[i+1]==='"'){cur+='"';i++;}else inQ=!inQ;}
-    else if(ch===','&&!inQ){row.push(cur);cur="";}
-    else if((ch==='\n'||ch==='\r')&&!inQ){if(ch==='\r'&&text[i+1]==='\n')i++;row.push(cur);cur="";if(row.some(c=>c!==""))allRows.push(row);row=[];}
-    else cur+=ch;
+  const rows=[];let cur="",inQ=false,row=[];
+  for(let i=0;i<text.length;i++){const c=text[i];
+    if(c==='"'){if(inQ&&text[i+1]==='"'){cur+='"';i++;}else inQ=!inQ;}
+    else if(c===','&&!inQ){row.push(cur);cur="";}
+    else if((c==='\n'||c==='\r')&&!inQ){if(c==='\r'&&text[i+1]==='\n')i++;row.push(cur);cur="";if(row.some(x=>x!==""))rows.push(row);row=[];}
+    else cur+=c;
   }
-  if(cur||row.length){row.push(cur);allRows.push(row);}
-  const headers=allRows[0].map(h=>h.replace(/^"|"$/g,"").trim());
-  const idx={};for(const [f,keys] of Object.entries(COL_MAP))idx[f]=findCol(headers,keys);
-  const rows=[];
-  for(let i=1;i<allRows.length;i++){
-    const cells=allRows[i];
-    const get=f=>idx[f]!==-1?(cells[idx[f]]||"").replace(/^"|"$/g,"").trim():"";
-    if(!get("nombre"))continue;
-    let idVal=get("id");
-    if(!idVal)idVal="CR-11"+String(1000+i).slice(1);
-    const quiereComida=/^s[ií]/i.test(get("alimentacion"));
-    rows.push({id:idVal,nombre:get("nombre"),sexo:get("sexo"),edad:parseInt(get("edad"))||0,congregacion:get("congregacion"),quiere_comida:quiereComida});
-  }
-  return rows;
+  if(cur||row.length){row.push(cur);rows.push(row);}
+  const hdr=rows[0].map(h=>h.replace(/^"|"$/g,"").trim());
+  const idx={};for(const [f,k] of Object.entries(COL_MAP))idx[f]=findCol(hdr,k);
+  const out=[];
+  for(let i=1;i<rows.length;i++){const cells=rows[i];const get=f=>idx[f]!==-1?(cells[idx[f]]||"").replace(/^"|"$/g,"").trim():"";if(!get("nombre"))continue;let id=get("id");if(!id)id="CR-11"+String(1000+i).slice(1);out.push({id,nombre:get("nombre"),sexo:get("sexo"),edad:parseInt(get("edad"))||0,congregacion:get("congregacion"),quiere_comida:/^s[ií]/i.test(get("alimentacion"))});}
+  return out;
 }
 
-// ===================== FIREBASE =====================
-function waitForFirebase(cb){
-  if(window._firebaseReady) cb();
-  else window.addEventListener('firebaseReady',cb,{once:true});
-}
-
-function fbPath(path){ return window._ref(window._db, path); }
-
-function loadFromFirebase(cb){
-  waitForFirebase(()=>{
-    window._onValue(fbPath(FB_PATH), snap=>{
-      FB_DATA = snap.val() || {};
-      if(DATA.length) renderTable();
-      cb && cb();
-    });
-  });
-}
-
-async function saveMealToFirebase(id, mealKey, value){
-  waitForFirebase(async ()=>{
-    await window._update(fbPath(`${FB_PATH}/${id}/meals`), {[mealKey]: value});
-  });
-}
-async function saveRetiroToFirebase(id, mealKey, value){
-  waitForFirebase(async ()=>{
-    await window._update(fbPath(`${FB_PATH}/${id}/retirado`), {[mealKey]: value});
-  });
-}
-
-// ===================== INIT =====================
+// ═══════════════════ INIT ═══════════════════
 async function init(){
-  loadFromFirebase();
+  loadFB();
   try{
-    const res = await fetch(SHEET_CSV_URL,{cache:"no-store"});
-    if(!res.ok) throw new Error("HTTP "+res.status);
-    const text = await res.text();
-    DATA = parseCSV(text);
-    // Apply default meals for new participants
-    waitForFirebase(async()=>{
-      const snap = await window._get(fbPath(FB_PATH));
-      const existing = snap.val() || {};
-      const updates = {};
-      DATA.forEach(p => {
-        if(p.quiere_comida && !existing[p.id]){
-          updates[`${FB_PATH}/${p.id}/meals`] = defaultMeals();
-          updates[`${FB_PATH}/${p.id}/retirado`] = {};
-        }
-      });
-      if(Object.keys(updates).length){
-        await window._update(window._ref(window._db), updates);
-      }
+    const res=await fetch(SHEET_CSV,{cache:"no-store"});
+    const text=await res.text();
+    DATA=parseCSV(text);
+    waitFB(async()=>{
+      const snap=await window._get(window._ref(window._db,FB_PATH));
+      const ex=snap.val()||{};
+      const upd={};
+      DATA.forEach(p=>{ if(p.quiere_comida&&!ex[p.id]){upd[`${FB_PATH}/${p.id}/meals`]=defaultMeals();upd[`${FB_PATH}/${p.id}/retirado`]={};} });
+      if(Object.keys(upd).length) await window._update(window._ref(window._db),upd);
     });
-    renderTable();
-  } catch(e){
-    document.getElementById('tbody').innerHTML=`<tr><td colspan="20" class="empty">⚠️ Error al cargar: ${e.message}</td></tr>`;
+    buildDayTabs(); renderMain(); renderNoFood(); updateStats();
+  }catch(e){
+    document.getElementById('tbody').innerHTML=`<tr><td colspan="10" style="text-align:center;padding:40px;color:var(--rose)">⚠️ Error: ${e.message}</td></tr>`;
   }
 }
 
-// ===================== RENDER TABLE =====================
-function buildHeader(){
-  const thead = document.getElementById('thead');
-  let html = '<tr>';
-  html += `<th onclick="doSort(0)" id="th0">Nombre</th>`;
-  html += `<th onclick="doSort(1)" id="th1">ID</th>`;
-  html += `<th onclick="doSort(2)" id="th2">Congregación</th>`;
-  html += `<th class="no-sort">Comidas asignadas</th>`;
-  html += `<th class="no-sort">Retirado</th>`;
-  html += `<th class="no-sort">QR</th>`;
-  html += '</tr>';
-  thead.innerHTML = html;
+// ═══════════════════ HELPERS ═══════════════════
+function getMeals(id){ const fb=FB_DATA[id]; if(!fb||!fb.meals)return []; return ALL_MEALS.filter(({day,meal})=>fb.meals[MK(day,meal)]); }
+function getRetirados(id){ const fb=FB_DATA[id]; if(!fb||!fb.retirado)return []; return ALL_MEALS.filter(({day,meal})=>fb.retirado[MK(day,meal)]); }
+function getPend(id){ return getMeals(id).length-getRetirados(id).length; }
+function hasDayMeal(id,dk,m){ const fb=FB_DATA[id]; return !!(fb&&fb.meals&&fb.meals[MK(dk,m)]); }
+function hasDay(id,dk){ const d=DAYS.find(x=>x.key===dk); return d&&d.meals.some(m=>hasDayMeal(id,dk,m)); }
+
+// ═══════════════════ STATS ═══════════════════
+function updateStats(){
+  let tot=0,ret=0,pers=0;
+  DATA.forEach(p=>{const m=getMeals(p.id).length;const r=getRetirados(p.id).length;tot+=m;ret+=r;if(m>0)pers++;});
+  document.getElementById('s-total').textContent=tot;
+  document.getElementById('s-ret').textContent=ret;
+  document.getElementById('s-pend').textContent=tot-ret;
+  document.getElementById('s-pers').textContent=pers;
 }
 
-function getVisible(){
-  let rows = [...DATA];
-  const q = document.getElementById('search-input').value.toLowerCase();
-  if(q) rows = rows.filter(p => p.nombre.toLowerCase().includes(q) || p.id.toLowerCase().includes(p.congregacion ? q : q) || p.congregacion.toLowerCase().includes(q));
-
-  if(currentFilter === 'comida') rows = rows.filter(p => p.quiere_comida || getMeals(p.id).length > 0);
-  if(currentFilter === 'pendiente') rows = rows.filter(p => getPendientes(p.id) > 0);
-  if(currentFilter === 'completo') rows = rows.filter(p => {
-    const meals = getMeals(p.id);
-    return meals.length > 0 && getPendientes(p.id) === 0;
+// ═══════════════════ DAY TABS ═══════════════════
+function buildDayTabs(){
+  const wrap=document.getElementById('day-tabs');
+  const withAny=DATA.filter(p=>getMeals(p.id).length>0).length;
+  let html=`<div class="day-tab ${activeDay==='all'?'on':''}" onclick="setDay('all')">
+    <div class="dt-lbl">Todos los días</div>
+    <div class="dt-count">${withAny}</div>
+    <div style="font-size:10px;color:var(--muted)">con comida</div>
+  </div>`;
+  DAYS.forEach(d=>{
+    const cnt=DATA.filter(p=>hasDay(p.id,d.key)).length;
+    const pills=d.meals.map(m=>{
+      const c=DATA.filter(p=>hasDayMeal(p.id,d.key,m)).length;
+      return `<span class="dt-pill">${cap(m).substring(0,3)} ${c}</span>`;
+    }).join('');
+    html+=`<div class="day-tab ${activeDay===d.key?'on':''}" onclick="setDay('${d.key}')">
+      <div class="dt-lbl">${d.short}</div>
+      <div class="dt-count">${cnt}</div>
+      <div class="dt-pills">${pills}</div>
+    </div>`;
   });
-
-  if(sortCol === 0) rows.sort((a,b) => a.nombre.localeCompare(b.nombre)*sortDir);
-  if(sortCol === 1) rows.sort((a,b) => a.id.localeCompare(b.id)*sortDir);
-  if(sortCol === 2) rows.sort((a,b) => a.congregacion.localeCompare(b.congregacion)*sortDir);
-  return rows;
+  const noFood=DATA.filter(p=>getMeals(p.id).length===0).length;
+  html+=`<div class="day-tab nf-tab ${activeDay==='nofood'?'on':''}" onclick="setDay('nofood')">
+    <div class="dt-lbl">Sin comida</div>
+    <div class="dt-count">${noFood}</div>
+    <div style="font-size:10px;color:var(--muted)">participantes</div>
+  </div>`;
+  wrap.innerHTML=html;
+  buildMealSubTabs();
 }
 
-function getMeals(id){
-  const fb = FB_DATA[id];
-  if(!fb || !fb.meals) return [];
-  return ALL_MEALS.filter(({day,meal}) => fb.meals[MEAL_KEY(day,meal)]);
-}
-function getRetirados(id){
-  const fb = FB_DATA[id];
-  if(!fb || !fb.retirado) return [];
-  return ALL_MEALS.filter(({day,meal}) => fb.retirado[MEAL_KEY(day,meal)]);
-}
-function getPendientes(id){
-  return getMeals(id).length - getRetirados(id).length;
+function buildMealSubTabs(){
+  const wrap=document.getElementById('mst-wrap');
+  if(activeDay==='all'||activeDay==='nofood'){wrap.className='mst-wrap';return;}
+  const d=DAYS.find(x=>x.key===activeDay);
+  if(!d){wrap.className='mst-wrap';return;}
+  wrap.className='mst-wrap show';
+  wrap.innerHTML=`<button class="mst ${activeMeal==='all'?'on':''}" onclick="setMeal('all')">Todas las comidas</button>`
+    +d.meals.map(m=>`<button class="mst ${activeMeal===m?'on':''}" onclick="setMeal('${m}')">${cap(m)}</button>`).join('');
 }
 
-function renderTable(){
-  buildHeader();
-  const rows = getVisible();
-  const tbody = document.getElementById('tbody');
-  if(!rows.length){ tbody.innerHTML='<tr><td colspan="6" class="empty">Sin resultados</td></tr>'; updateStats(); return; }
+function setDay(dk){
+  activeDay=dk; activeMeal='all';
+  buildDayTabs();
+  document.getElementById('sec-title').textContent = dk==='all'?'Todos los participantes':dk==='nofood'?'Sin comida asignada':(DAYS.find(x=>x.key===dk)||{label:''}).label;
+  // Hide no-food bottom section when viewing the nofood tab (it's shown in main table)
+  document.getElementById('nf-wrap').style.display = (dk==='nofood')?'none':'';
+  renderMain(); if(dk!=='nofood') renderNoFood();
+}
+function setMeal(m){ activeMeal=m; buildMealSubTabs(); renderMain(); }
 
-  tbody.innerHTML = rows.map(p => {
-    const pid = p.id;
-    const fbP = FB_DATA[pid] || {};
-    const meals = fbP.meals || {};
-    const retirado = fbP.retirado || {};
+// ═══════════════════ FILTER / SORT ═══════════════════
+function setFilter(f,btn){ curFilter=f; document.querySelectorAll('.fbtn').forEach(b=>b.classList.remove('on')); btn.classList.add('on'); renderMain(); }
+function doSort(col){
+  sortCol===col?sortDir=-sortDir:(sortCol=col,sortDir=1);
+  document.querySelectorAll('#thead th[data-s]').forEach(th=>{ const c=parseInt(th.dataset.s); th.className=c===sortCol?(sortDir===1?'asc':'desc'):''; });
+  renderMain();
+}
 
-    // Meals grid
-    let mealGrid = `<div class="meal-grid">`;
-    DAYS.forEach(d => {
-      mealGrid += `<div class="meal-col"><div class="meal-day">${d.label.substring(0,3)}</div>`;
-      d.meals.forEach(m => {
-        const key = MEAL_KEY(d.key, m);
-        const checked = meals[key] ? 'checked' : '';
-        const disabled = isAdmin ? '' : 'disabled';
-        const mLabel = m.charAt(0).toUpperCase()+m.slice(1);
-        mealGrid += `<label class="meal-cell"><input type="checkbox" ${checked} ${disabled} onchange="toggleMeal('${pid}','${key}',this.checked)"><span class="meal-label">${mLabel}</span></label>`;
-      });
-      mealGrid += `</div>`;
-    });
-    mealGrid += `</div>`;
+// ═══════════════════ RENDER MAIN TABLE ═══════════════════
+function renderMain(){
+  // HEADER
+  const thead=document.getElementById('thead');
+  const baseCols=[
+    {l:'Nombre',s:0},{l:'ID',s:1},{l:'Congregación',s:2},
+  ];
+  const showRetiro = activeDay!=='nofood';
+  const extraCols = activeDay==='nofood'
+    ? [{l:'Asignar comidas',ns:true}]
+    : [{l: activeDay==='all'?'Comidas asignadas':'Comidas del día', ns:true}, {l:'Retirado',ns:true}];
+  const allCols=[...baseCols,...extraCols,{l:'QR',ns:true}];
+  thead.innerHTML='<tr>'+allCols.map(c=>
+    c.ns?`<th class="ns">${c.l}</th>`
+        :`<th data-s="${c.s}" onclick="doSort(${c.s})">${c.l}</th>`
+  ).join('')+'</tr>';
+  // Restore sort indicators
+  document.querySelectorAll('#thead th[data-s]').forEach(th=>{ const c=parseInt(th.dataset.s); if(c===sortCol) th.className=sortDir===1?'asc':'desc'; });
 
-    // Retirado summary
-    const assignedList = ALL_MEALS.filter(({day,meal})=>meals[MEAL_KEY(day,meal)]);
-    let retHtml = '';
-    if(assignedList.length === 0){
-      retHtml = '<span style="color:var(--muted);font-size:11px">Sin comidas</span>';
-    } else {
-      const retCount = assignedList.filter(({day,meal})=>retirado[MEAL_KEY(day,meal)]).length;
-      const total = assignedList.length;
-      retHtml = `<div style="font-size:11px;margin-bottom:4px"><span style="color:var(--teal);font-weight:600">${retCount}</span>/<span style="color:var(--muted)">${total}</span> retiradas</div>`;
-      retHtml += assignedList.map(({day,meal,dayLabel})=>{
-        const key=MEAL_KEY(day,meal);
-        const done = retirado[key];
-        const disabled = (isAdmin ? '' : 'disabled');
-        const mLabel = meal.charAt(0).toUpperCase()+meal.slice(1);
-        return `<label style="display:flex;align-items:center;gap:5px;margin-bottom:2px;cursor:${isAdmin?'pointer':'default'}">
-          <input type="checkbox" class="ret-check" ${done?'checked':''} ${disabled} onchange="toggleRetiro('${pid}','${key}',this.checked)">
-          <span style="font-size:10px;color:${done?'var(--teal)':'var(--muted)'}">${dayLabel.substring(0,3)} ${mLabel}</span>
-        </label>`;
+  // FILTER DATA
+  const q=document.getElementById('srch').value.toLowerCase();
+  let rows=[...DATA];
+  if(activeDay==='nofood') rows=rows.filter(p=>getMeals(p.id).length===0);
+  else if(activeDay!=='all'){
+    rows = activeMeal==='all'
+      ? rows.filter(p=>hasDay(p.id,activeDay))
+      : rows.filter(p=>hasDayMeal(p.id,activeDay,activeMeal));
+  }
+  if(q) rows=rows.filter(p=>p.nombre.toLowerCase().includes(q)||p.id.toLowerCase().includes(q)||(p.congregacion||'').toLowerCase().includes(q));
+  if(curFilter==='pend') rows=rows.filter(p=>getPend(p.id)>0);
+  if(curFilter==='comp') rows=rows.filter(p=>{ const m=getMeals(p.id).length; return m>0&&getPend(p.id)===0; });
+  if(sortCol===0) rows.sort((a,b)=>a.nombre.localeCompare(b.nombre)*sortDir);
+  if(sortCol===1) rows.sort((a,b)=>a.id.localeCompare(b.id)*sortDir);
+  if(sortCol===2) rows.sort((a,b)=>(a.congregacion||'').localeCompare(b.congregacion||'')*sortDir);
+
+  document.getElementById('sec-cnt').textContent=`(${rows.length} persona${rows.length!==1?'s':''})`;
+
+  const tbody=document.getElementById('tbody');
+  if(!rows.length){ tbody.innerHTML='<tr><td colspan="10" style="text-align:center;padding:40px;color:var(--muted)">Sin resultados</td></tr>'; return; }
+
+  tbody.innerHTML=rows.map(p=>{
+    const pid=p.id;
+    const fb=FB_DATA[pid]||{};
+    const meals=fb.meals||{};
+    const ret=fb.retirado||{};
+    const dis=isAdmin?'':'disabled';
+    const ptr=isAdmin?'pointer':'default';
+
+    let mealCell='', retCell='';
+
+    if(activeDay==='all'){
+      // Show all days grouped
+      const dayGroups=DAYS.map(d=>{
+        const dayMeals=d.meals.filter(m=>meals[MK(d.key,m)]);
+        if(!dayMeals.length)return'';
+        const checks=dayMeals.map(m=>{const key=MK(d.key,m);return`<label class="chk-lbl" style="cursor:${ptr}"><input type="checkbox" class="mchk" checked ${dis} onchange="toggleMeal('${pid}','${key}',this.checked)"><span class="chk-txt">${cap(m).substring(0,3)}</span></label>`;}).join('');
+        return`<div class="day-grp"><div class="day-grp-hd">${d.short}</div>${checks}</div>`;
       }).join('');
+      mealCell=dayGroups||'<span style="color:var(--muted);font-size:11px">Sin comidas</span>';
+      // Retiro
+      const assigned=ALL_MEALS.filter(({day,meal})=>meals[MK(day,meal)]);
+      if(assigned.length){
+        const rc=assigned.filter(({day,meal})=>ret[MK(day,meal)]).length;
+        retCell=`<div class="ret-summary"><b>${rc}</b>/${assigned.length} retiradas</div>`;
+        // Group by day
+        DAYS.forEach(d=>{
+          const dm=d.meals.filter(m=>meals[MK(d.key,m)]);
+          if(!dm.length)return;
+          retCell+=`<div class="day-grp-hd">${d.short}</div>`;
+          dm.forEach(m=>{const key=MK(d.key,m);const done=ret[key];retCell+=`<label class="chk-lbl" style="cursor:${ptr}"><input type="checkbox" class="rchk" ${done?'checked':''} ${dis} onchange="toggleRetiro('${pid}','${key}',this.checked)"><span class="chk-txt" style="color:${done?'var(--teal)':'var(--muted)'}">${cap(m).substring(0,3)}</span></label>`;});
+        });
+      } else retCell='<span style="color:var(--muted);font-size:11px">—</span>';
+
+    } else if(activeDay==='nofood'){
+      // Assign checkboxes for admins
+      if(isAdmin){
+        mealCell=`<button class="assign-all-btn" onclick="assignAll('${pid}')">✓ Asignar todas las comidas</button>`
+          +DAYS.map(d=>`<div class="day-grp"><div class="day-grp-hd">${d.short}</div>`
+            +d.meals.map(m=>{const key=MK(d.key,m);return`<label class="chk-lbl" style="cursor:pointer"><input type="checkbox" class="mchk" ${meals[key]?'checked':''} onchange="toggleMeal('${pid}','${key}',this.checked)"><span class="chk-txt">${cap(m).substring(0,3)}</span></label>`;}).join('')+'</div>').join('');
+      } else {
+        mealCell='<span style="color:var(--muted);font-size:11px">Sin comidas asignadas</span>';
+      }
+
+    } else {
+      // Single day
+      const d=DAYS.find(x=>x.key===activeDay);
+      const mToShow=activeMeal==='all'?d.meals:[activeMeal];
+      mealCell=mToShow.filter(m=>meals[MK(d.key,m)]).map(m=>{const key=MK(d.key,m);return`<label class="chk-lbl" style="cursor:${ptr}"><input type="checkbox" class="mchk" checked ${dis} onchange="toggleMeal('${pid}','${key}',this.checked)"><span class="chk-txt">${cap(m)}</span></label>`;}).join('')||'<span style="color:var(--muted);font-size:11px">—</span>';
+      retCell=mToShow.filter(m=>meals[MK(d.key,m)]).map(m=>{const key=MK(d.key,m);const done=ret[key];return`<label class="chk-lbl" style="cursor:${ptr}"><input type="checkbox" class="rchk" ${done?'checked':''} ${dis} onchange="toggleRetiro('${pid}','${key}',this.checked)"><span class="chk-txt" style="color:${done?'var(--teal)':'var(--muted)'}">${done?'✅ Ret.':'⏳ Pend.'}</span></label>`;}).join('')||'<span style="color:var(--muted);font-size:11px">—</span>';
     }
 
-    return `<tr>
-      <td class="name-cell">${p.nombre}<div class="cong-cell">${p.congregacion||''}</div></td>
-      <td style="font-size:11px;color:var(--muted)">${pid}</td>
+    const extraTds = activeDay==='nofood'
+      ? `<td>${mealCell}</td>`
+      : `<td>${mealCell}</td><td>${retCell}</td>`;
+
+    return`<tr>
+      <td><div class="nm">${p.nombre}</div><div class="cg">${p.congregacion||''}</div></td>
+      <td style="font-size:10px;color:var(--muted)">${pid}</td>
       <td style="font-size:12px">${p.congregacion||'—'}</td>
-      <td>${mealGrid}</td>
-      <td>${retHtml}</td>
-      <td><button class="qr-btn" onclick="openQR('${pid}')">🔲 QR</button></td>
+      ${extraTds}
+      <td><button class="qbtn" onclick="openQR('${pid}')">🔲 QR</button></td>
     </tr>`;
   }).join('');
-
-  updateStats();
-  updateDayTotals();
 }
 
-// ===================== SORT & FILTER =====================
-function doSort(col){
-  if(sortCol===col) sortDir=-sortDir; else{sortCol=col;sortDir=1;}
-  document.querySelectorAll('th[id^=th]').forEach((th,i)=>{
-    th.className = i===col ? (sortDir===1?'asc':'desc') : '';
-  });
-  renderTable();
-}
-function setFilter(f, btn){
-  currentFilter=f;
-  document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('on'));
-  btn.classList.add('on');
-  renderTable();
-}
-function applyFilter(){ renderTable(); }
-
-// ===================== STATS =====================
-function updateStats(){
-  let totalMeals=0, totalRet=0, personas=0;
-  DATA.forEach(p=>{
-    const m=getMeals(p.id).length;
-    const r=getRetirados(p.id).length;
-    totalMeals+=m; totalRet+=r;
-    if(m>0)personas++;
-  });
-  document.getElementById('stat-total').textContent=totalMeals;
-  document.getElementById('stat-retirado').textContent=totalRet;
-  document.getElementById('stat-pendiente').textContent=totalMeals-totalRet;
-  document.getElementById('stat-personas').textContent=personas;
-}
-function updateDayTotals(){
-  const wrap = document.getElementById('day-totals');
-  wrap.innerHTML = DAYS.map(d=>{
-    const mealCounts = d.meals.map(m=>{
-      const key=MEAL_KEY(d.key,m);
-      const total=DATA.filter(p=>(FB_DATA[p.id]?.meals||{})[key]).length;
-      const ret=DATA.filter(p=>(FB_DATA[p.id]?.retirado||{})[key]).length;
-      return `<div class="dm"><span>${m.charAt(0).toUpperCase()+m.slice(1)}</span><span>${ret}/${total}</span></div>`;
-    }).join('');
-    return `<div class="day-total-card"><div class="day-name">${d.label}</div><div class="day-meals">${mealCounts}</div></div>`;
+// ═══════════════════ NO FOOD BOTTOM SECTION ═══════════════════
+function renderNoFood(){
+  const nf=DATA.filter(p=>getMeals(p.id).length===0);
+  document.getElementById('nf-cnt').textContent=nf.length;
+  if(!nf.length||activeDay==='nofood'){ document.getElementById('nf-wrap').style.display='none'; return; }
+  document.getElementById('nf-wrap').style.display='';
+  document.getElementById('nf-thead').innerHTML=`<tr>
+    <th data-nf="0" onclick="doSortNF(0)">Nombre</th>
+    <th data-nf="1" onclick="doSortNF(1)">ID</th>
+    <th data-nf="2" onclick="doSortNF(2)">Congregación</th>
+    <th class="ns">Asignar comidas</th>
+    <th class="ns">QR</th>
+  </tr>`;
+  document.getElementById('nf-tbody').innerHTML=nf.map(p=>{
+    const pid=p.id;const fb=FB_DATA[pid]||{};const meals=fb.meals||{};
+    let ac='';
+    if(isAdmin){
+      ac=`<button class="assign-all-btn" onclick="assignAll('${pid}')">✓ Asignar todas</button>`
+        +DAYS.map(d=>`<div class="day-grp"><div class="day-grp-hd">${d.short}</div>`
+          +d.meals.map(m=>{const key=MK(d.key,m);return`<label class="chk-lbl" style="cursor:pointer"><input type="checkbox" class="mchk" ${meals[key]?'checked':''} onchange="toggleMeal('${pid}','${key}',this.checked)"><span class="chk-txt">${cap(m).substring(0,3)}</span></label>`;}).join('')+'</div>').join('');
+    } else {
+      ac='<span style="color:var(--muted);font-size:11px">Solo administradores</span>';
+    }
+    return`<tr>
+      <td><div class="nm">${p.nombre}</div><div class="cg">${p.congregacion||''}</div></td>
+      <td style="font-size:10px;color:var(--muted)">${pid}</td>
+      <td style="font-size:12px">${p.congregacion||'—'}</td>
+      <td>${ac}</td>
+      <td><button class="qbtn" onclick="openQR('${pid}')">🔲 QR</button></td>
+    </tr>`;
   }).join('');
 }
-
-// ===================== MEAL TOGGLE =====================
-async function toggleMeal(id, mealKey, value){
-  if(!isAdmin){ showToast('Necesitas ser administrador'); return; }
-  await saveMealToFirebase(id, mealKey, value);
-  showToast(value?'Comida asignada':'Comida removida');
-}
-async function toggleRetiro(id, mealKey, value){
-  if(!isAdmin){ showToast('Solo admins pueden registrar retiros'); return; }
-  await saveRetiroToFirebase(id, mealKey, value);
-  showToast(value?'✅ Retiro registrado':'↩️ Retiro cancelado');
+let nfsc=-1,nfsd=1;
+function doSortNF(c){
+  nfsc===c?nfsd=-nfsd:(nfsc=c,nfsd=1);
+  renderNoFood();
 }
 
-// ===================== QR =====================
-function openQR(id){
-  const p = DATA.find(x=>x.id===id);
-  if(!p) return;
-  currentQRId = id;
-  document.getElementById('qr-name').textContent = p.nombre;
-  document.getElementById('qr-sub').textContent = `ID: ${id} — ${p.congregacion||''}`;
-
-  // Generate QR
-  const wrap = document.getElementById('qr-canvas-wrap');
-  wrap.innerHTML = '';
-  const qrData = JSON.stringify({id:id, app:'crptg11-comidas'});
-  new QRCode(wrap, {
-    text: qrData,
-    width: 280,
-    height: 280,
-    colorDark: '#000000',
-    colorLight: '#ffffff',
-    correctLevel: QRCode.CorrectLevel.H
+// ═══════════════════ TOGGLE MEALS / RETIRO ═══════════════════
+async function toggleMeal(id,key,val){
+  if(!isAdmin){showToast('Solo administradores');return;}
+  const fb=FB_DATA[id]||{};
+  if(!fb.retirado) await window._update(window._ref(window._db,`${FB_PATH}/${id}/retirado`),{});
+  await saveMeal(id,key,val);
+  showToast(val?'🍽️ Comida asignada':'Comida removida');
+}
+async function toggleRetiro(id,key,val){
+  if(!isAdmin){showToast('Solo administradores pueden marcar retiros');return;}
+  await saveRetiro(id,key,val);
+  showToast(val?'✅ Retiro registrado':'↩️ Cancelado');
+}
+async function assignAll(id){
+  if(!isAdmin)return;
+  waitFB(async()=>{
+    await window._update(window._ref(window._db,`${FB_PATH}/${id}`),{meals:defaultMeals(),retirado:{}});
+    showToast('🍽️ Todas las comidas asignadas');
   });
+}
 
-  // Meal list
-  const fbP = FB_DATA[id] || {};
-  const meals = fbP.meals || {};
-  const retirado = fbP.retirado || {};
-  const assigned = ALL_MEALS.filter(({day,meal})=>meals[MEAL_KEY(day,meal)]);
-  let listHtml = '';
-  if(assigned.length === 0){
-    listHtml = '<div style="text-align:center;color:var(--muted);font-size:12px;padding:10px">Sin comidas asignadas</div>';
-  } else {
-    listHtml = assigned.map(({day,meal,dayLabel})=>{
-      const key=MEAL_KEY(day,meal);
-      const done=retirado[key];
-      const mLabel=meal.charAt(0).toUpperCase()+meal.slice(1);
-      return `<div class="qr-meal-item">
-        <span class="meal-name">${dayLabel} — ${mLabel}</span>
-        <span class="qr-meal-status ${done?'ret':'pend'}">${done?'✅ Retirado':'⏳ Pendiente'}</span>
-      </div>`;
-    }).join('');
-  }
-  document.getElementById('qr-meal-list').innerHTML = listHtml;
-  document.getElementById('qr-scan-btn').style.display = isAdmin ? '' : 'none';
+// ═══════════════════ QR ═══════════════════
+function openQR(id){
+  const p=DATA.find(x=>x.id===id);if(!p)return;
+  currentQRId=id;
+  document.getElementById('qr-name').textContent=p.nombre;
+  document.getElementById('qr-sub').textContent=`ID: ${id}  •  ${p.congregacion||''}`;
+  const wrap=document.getElementById('qr-wrap');wrap.innerHTML='';
+  new QRCode(wrap,{text:JSON.stringify({id,app:'crptg11-comidas'}),width:260,height:260,colorDark:'#000',colorLight:'#fff',correctLevel:QRCode.CorrectLevel.H});
+  const fb=FB_DATA[id]||{};const meals=fb.meals||{};const ret=fb.retirado||{};
+  const assigned=ALL_MEALS.filter(({day,meal})=>meals[MK(day,meal)]);
+  document.getElementById('qr-list').innerHTML=assigned.length
+    ?assigned.map(({day,meal,dayLabel})=>{const key=MK(day,meal);const done=ret[key];return`<div class="qmi"><span class="qmn">${dayLabel} — ${cap(meal)}</span><span class="qms ${done?'ret':'pend'}">${done?'✅ Retirado':'⏳ Pendiente'}</span></div>`;}).join('')
+    :'<div style="text-align:center;color:var(--muted);font-size:12px;padding:8px">Sin comidas asignadas</div>';
+  document.getElementById('qr-retbtn').style.display=isAdmin?'':'none';
   document.getElementById('qr-modal').classList.add('open');
 }
-function closeQR(){ document.getElementById('qr-modal').classList.remove('open'); currentQRId=null; }
-function openRetiroFromQR(){ closeQR(); if(currentQRId) openRetiro(currentQRId); }
+function closeQR(){document.getElementById('qr-modal').classList.remove('open');currentQRId=null;}
+function openRetiroFromQR(){closeQR();if(currentQRId)openRetiro(currentQRId);}
 
-// ===================== RETIRO MODAL =====================
+// ═══════════════════ RETIRO MODAL ═══════════════════
 function openRetiro(id){
-  const p = DATA.find(x=>x.id===id);
-  if(!p || !isAdmin){ showToast('Solo admins pueden registrar retiros'); return; }
-  const fbP = FB_DATA[id] || {};
-  const meals = fbP.meals || {};
-  const retirado = fbP.retirado || {};
-  const assigned = ALL_MEALS.filter(({day,meal})=>meals[MEAL_KEY(day,meal)]);
-
-  document.getElementById('retiro-name').textContent = p.nombre;
-  document.getElementById('retiro-sub').textContent = `Selecciona la comida a retirar`;
-
-  if(assigned.length === 0){
-    document.getElementById('retiro-meals').innerHTML='<div style="color:var(--muted);font-size:13px;text-align:center;padding:16px">Sin comidas asignadas</div>';
-  } else {
-    document.getElementById('retiro-meals').innerHTML = assigned.map(({day,meal,dayLabel})=>{
-      const key=MEAL_KEY(day,meal);
-      const done=retirado[key];
-      const mLabel=meal.charAt(0).toUpperCase()+meal.slice(1);
-      return `<button class="retiro-meal-btn ${done?'done':''}" onclick="doRetiro('${id}','${key}',${!done},'${dayLabel}','${mLabel}')" ${done?'disabled':''}>
-        <span>${dayLabel} — ${mLabel}</span>
-        <span>${done?'✅ Retirado':'⏳ Pendiente'}</span>
-      </button>`;
-    }).join('');
-  }
-  document.getElementById('retiro-modal').classList.add('open');
+  const p=DATA.find(x=>x.id===id);if(!p||!isAdmin){showToast('Solo administradores');return;}
+  const fb=FB_DATA[id]||{};const meals=fb.meals||{};const ret=fb.retirado||{};
+  const assigned=ALL_MEALS.filter(({day,meal})=>meals[MK(day,meal)]);
+  document.getElementById('ret-name').textContent=p.nombre;
+  document.getElementById('ret-meals').innerHTML=assigned.length
+    ?assigned.map(({day,meal,dayLabel})=>{const key=MK(day,meal);const done=ret[key];return`<button class="rmb ${done?'done':''}" onclick="doRetiro('${id}','${key}',${!done},'${dayLabel}','${cap(meal)}')" ${done?'disabled':''}><span>${dayLabel} — ${cap(meal)}</span><span>${done?'✅':'⏳'}</span></button>`;}).join('')
+    :'<div style="color:var(--muted);font-size:13px;text-align:center;padding:12px">Sin comidas asignadas</div>';
+  document.getElementById('ret-modal').classList.add('open');
 }
-function closeRetiro(){ document.getElementById('retiro-modal').classList.remove('open'); }
-
-async function doRetiro(id, key, value, dayLabel, mLabel){
-  await saveRetiroToFirebase(id, key, value);
-  showToast(`✅ ${dayLabel} ${mLabel} — registrado`);
+function closeRetiro(){document.getElementById('ret-modal').classList.remove('open');}
+async function doRetiro(id,key,val,dl,ml){
+  await saveRetiro(id,key,val);
+  showToast(`✅ ${dl} ${ml} — registrado`);
   closeRetiro();
 }
 
-// ===================== SCAN MODE =====================
-function openScan(){
-  document.getElementById('scan-overlay').classList.add('open');
-  setTimeout(()=>document.getElementById('scan-input').focus(),100);
-}
-function closeScan(){
-  document.getElementById('scan-overlay').classList.remove('open');
-  document.getElementById('scan-input').value='';
-}
+// ═══════════════════ SCAN ═══════════════════
+function openScan(){document.getElementById('scan-ov').classList.add('open');setTimeout(()=>document.getElementById('scan-inp').focus(),100);}
+function closeScan(){document.getElementById('scan-ov').classList.remove('open');document.getElementById('scan-inp').value='';}
 function processScan(){
-  let val = document.getElementById('scan-input').value.trim();
-  // Try to parse as JSON (QR code data)
-  try{ const obj=JSON.parse(val); if(obj.id)val=obj.id; }catch(e){}
+  let v=document.getElementById('scan-inp').value.trim();
+  try{const o=JSON.parse(v);if(o.id)v=o.id;}catch(e){}
   closeScan();
-  const p = DATA.find(x=>x.id===val || x.nombre.toLowerCase()===val.toLowerCase());
-  if(p){ openRetiro(p.id); }
-  else { showToast('Participante no encontrado: '+val); }
+  const p=DATA.find(x=>x.id===v||x.nombre.toLowerCase()===v.toLowerCase());
+  p?openRetiro(p.id):showToast('Participante no encontrado: '+v);
 }
 
-// ===================== TOAST =====================
-function showToast(msg){
-  const t=document.getElementById('toast');
-  t.textContent=msg; t.classList.add('show');
-  setTimeout(()=>t.classList.remove('show'),2500);
-}
+// ═══════════════════ TOAST ═══════════════════
+function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');clearTimeout(t._to);t._to=setTimeout(()=>t.classList.remove('show'),2500);}
 
-// ===================== CLOSE MODALS ON OUTSIDE CLICK =====================
-document.getElementById('qr-modal').addEventListener('click',function(e){if(e.target===this)closeQR();});
-document.getElementById('retiro-modal').addEventListener('click',function(e){if(e.target===this)closeRetiro();});
+// ═══════════════════ MODAL CLOSE ═══════════════════
+document.getElementById('qr-modal').addEventListener('click',e=>{if(e.target===e.currentTarget)closeQR();});
+document.getElementById('ret-modal').addEventListener('click',e=>{if(e.target===e.currentTarget)closeRetiro();});
 </script>
 </body>
 </html>
