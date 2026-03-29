@@ -17,6 +17,7 @@
 </script>
 <script src="https://cdn.jsdelivr.net/npm/qr-creator@1.0.0/dist/qr-creator.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
 
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
@@ -226,7 +227,7 @@ tr:last-child td{border-bottom:none}tr:hover td{background:rgba(232,168,56,.02)}
   .rbox{max-width:100%;width:100%;border-radius:14px;padding:20px 14px}
 
   /* Gallery: 2 cols on mobile — big enough to see QR and text */
-  #gallery-grid{grid-template-columns:repeat(2,1fr)!important;gap:8px!important;padding:8px!important}
+  #gallery-grid{grid-template-columns:repeat(2,1fr)!important;gap:10px!important;padding:10px!important}
 
   /* scan overlay input */
   #scan-inp{width:90%}
@@ -278,7 +279,7 @@ tr:last-child td{border-bottom:none}tr:hover td{background:rgba(232,168,56,.02)}
       <button onclick="closeGallery()" style="background:none;border:1px solid var(--border);color:var(--muted);padding:5px 14px;border-radius:8px;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:12px">✕ Cerrar</button>
     </div>
   </div>
-  <div id="gallery-grid" style="flex:1;overflow-y:auto;padding:8px;display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px;align-content:start"></div>
+  <div id="gallery-grid" style="flex:1;overflow-y:auto;padding:12px;display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;align-content:start"></div>
 </div>
 
 <!-- RETIRO MODAL -->
@@ -349,9 +350,21 @@ tr:last-child td{border-bottom:none}tr:hover td{background:rgba(232,168,56,.02)}
 <!-- SCAN OVERLAY -->
 <div id="scan-ov">
   <h3>📷 Modo Escáner</h3>
-  <p>Escanea el QR o escribe el ID o nombre del participante</p>
-  <input type="text" id="scan-inp" placeholder="ID del participante" onkeydown="if(event.key==='Enter')processScan()">
-  <button onclick="processScan()" style="background:var(--gold);color:#000;border:none;padding:10px 24px;border-radius:10px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif">Buscar</button>
+  <!-- Camera view -->
+  <div id="scan-camera-wrap" style="position:relative;width:min(320px,90vw);height:min(320px,90vw);border-radius:16px;overflow:hidden;background:#000;border:2px solid var(--gold)">
+    <video id="scan-video" autoplay playsinline muted style="width:100%;height:100%;object-fit:cover"></video>
+    <canvas id="scan-canvas" style="display:none"></canvas>
+    <!-- Targeting overlay -->
+    <div style="position:absolute;inset:0;pointer-events:none">
+      <div style="position:absolute;top:15%;left:15%;width:70%;height:70%;border:2px solid rgba(232,168,56,.8);border-radius:8px;box-shadow:0 0 0 9999px rgba(0,0,0,.45)"></div>
+    </div>
+    <div id="scan-status" style="position:absolute;bottom:10px;left:0;right:0;text-align:center;font-size:12px;color:rgba(255,255,255,.7);font-family:'DM Sans',sans-serif">Apunta al código QR</div>
+  </div>
+  <!-- Manual fallback -->
+  <div style="display:flex;gap:8px;width:min(320px,90vw)">
+    <input type="text" id="scan-inp" placeholder="O escribe el ID / nombre" onkeydown="if(event.key==='Enter')processScan()" style="flex:1;min-width:0">
+    <button onclick="processScan()" style="background:var(--gold);color:#000;border:none;padding:10px 16px;border-radius:10px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;white-space:nowrap">Buscar</button>
+  </div>
   <button onclick="closeScan()" style="background:none;border:1px solid var(--border);color:var(--muted);padding:8px 18px;border-radius:8px;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:12px">Cancelar</button>
 </div>
 
@@ -880,8 +893,80 @@ async function doRetiro(id,key,val,dl,ml){
 }
 
 // ═══════════════════ SCAN ═══════════════════
-function openScan(){document.getElementById('scan-ov').classList.add('open');setTimeout(()=>document.getElementById('scan-inp').focus(),100);}
-function closeScan(){document.getElementById('scan-ov').classList.remove('open');document.getElementById('scan-inp').value='';}
+// ═══════════════════ SCANNER (CÁMARA) ═══════════════════
+let _scanStream = null;
+let _scanRAF = null;
+let _scanDone = false;
+
+async function openScan(){
+  _scanDone = false;
+  document.getElementById('scan-ov').classList.add('open');
+  document.getElementById('scan-status').textContent = 'Iniciando cámara...';
+  document.getElementById('scan-inp').value = '';
+  setTimeout(()=>document.getElementById('scan-inp').focus(), 100);
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 }, height: { ideal: 720 } }
+    });
+    _scanStream = stream;
+    const video = document.getElementById('scan-video');
+    video.srcObject = stream;
+    video.play();
+    video.addEventListener('loadedmetadata', () => {
+      document.getElementById('scan-status').textContent = 'Apunta al código QR';
+      _scanRAF = requestAnimationFrame(scanFrame);
+    }, { once: true });
+  } catch(e) {
+    document.getElementById('scan-status').textContent = '⚠️ Sin acceso a la cámara — usa el campo de texto';
+    console.warn('Camera error:', e);
+  }
+}
+
+function scanFrame(){
+  if(_scanDone) return;
+  const video = document.getElementById('scan-video');
+  const canvas = document.getElementById('scan-canvas');
+  if(!video.videoWidth){ _scanRAF = requestAnimationFrame(scanFrame); return; }
+  canvas.width  = video.videoWidth;
+  canvas.height = video.videoHeight;
+  const ctx = canvas.getContext('2d');
+  ctx.drawImage(video, 0, 0);
+  const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+  const code = jsQR(imageData.data, imageData.width, imageData.height, { inversionAttempts: 'dontInvert' });
+  if(code && code.data){
+    _scanDone = true;
+    stopCamera();
+    document.getElementById('scan-status').textContent = '✅ QR detectado';
+    handleScannedValue(code.data);
+  } else {
+    _scanRAF = requestAnimationFrame(scanFrame);
+  }
+}
+
+function stopCamera(){
+  if(_scanRAF){ cancelAnimationFrame(_scanRAF); _scanRAF = null; }
+  if(_scanStream){ _scanStream.getTracks().forEach(t => t.stop()); _scanStream = null; }
+  const video = document.getElementById('scan-video');
+  video.srcObject = null;
+}
+
+function closeScan(){
+  stopCamera();
+  _scanDone = false;
+  document.getElementById('scan-ov').classList.remove('open');
+  document.getElementById('scan-inp').value = '';
+}
+
+function handleScannedValue(v){
+  // URL format: ...?scan=ID
+  try{ const u=new URL(v); const s=u.searchParams.get('scan'); if(s) v=s; }catch(e){}
+  // Legacy JSON format
+  try{const o=JSON.parse(v);if(o.id&&o.app==='crptg11-comidas')v=o.id;}catch(e){}
+  closeScan();
+  const p=DATA.find(x=>x.id===v||x.nombre.toLowerCase()===v.toLowerCase());
+  if(!p){showToast('⚠️ Participante no encontrado: '+v);return;}
+  openScanConfirm(p.id);
+}
 
 // Detect current meal based on real clock + event days
 // Event: Wed–Sat. Times: Desayuno 7–10, Almuerzo 11–14, Cena 18–22
@@ -906,15 +991,9 @@ function getCurrentMeal(){
 let _scanConfirmData=null;
 
 function processScan(){
-  let v=document.getElementById('scan-inp').value.trim();
-  // Support new URL format: ...comida.html?scan=ID
-  try{ const u=new URL(v); const s=u.searchParams.get('scan'); if(s) v=s; }catch(e){}
-  // Support legacy JSON format
-  try{const o=JSON.parse(v);if(o.id&&o.app==='crptg11-comidas')v=o.id;}catch(e){}
-  closeScan();
-  const p=DATA.find(x=>x.id===v||x.nombre.toLowerCase()===v.toLowerCase());
-  if(!p){showToast('⚠️ Participante no encontrado: '+v);return;}
-  openScanConfirm(p.id);
+  const v = document.getElementById('scan-inp').value.trim();
+  if(!v) return;
+  handleScannedValue(v);
 }
 
 function openScanConfirm(id){
@@ -1320,7 +1399,7 @@ async function downloadAllQRPdf(){
     // Nombre — big and bold
     doc.setTextColor(10,10,10);
     doc.setFontSize(7.5);doc.setFont('helvetica','bold');
-    const nomLines=doc.splitTextToSize(p.nombre, CARD_W-3);
+    const nomLines=doc.splitTextToSize(p.nombre.toUpperCase(), CARD_W-3);
     doc.text(nomLines, x+CARD_W/2, infoY, {align:'center'});
 
     // ID — colored, large
