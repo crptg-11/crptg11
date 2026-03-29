@@ -16,6 +16,7 @@
   window.dispatchEvent(new Event('firebaseReady'));
 </script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
@@ -167,16 +168,16 @@ tr:last-child td{border-bottom:none}tr:hover td{background:rgba(232,168,56,.02)}
 </head>
 <body>
 
-<!-- OVERLAY -->
-<div id="overlay">
+<!-- ADMIN LOGIN MODAL (solo para edición) -->
+<div id="overlay" style="display:none">
   <div class="obox">
-    <div style="font-size:2.2rem;margin-bottom:10px">🍽️</div>
-    <h2>Hoja de Comidas — CRPTG 11</h2>
-    <p>Visible para todos en modo lectura.<br>Ingresa la contraseña para gestionar comidas y retiros.</p>
+    <div style="font-size:2.2rem;margin-bottom:10px">🔑</div>
+    <h2>Acceso de Administrador</h2>
+    <p>Ingresa la contraseña para activar el modo de edición.</p>
     <input type="password" class="oinput" id="pw-inp" placeholder="••••••••" onkeydown="if(event.key==='Enter')tryAuth()">
     <button class="obtn" onclick="tryAuth()">Ingresar</button>
     <div class="oerr" id="pw-err"></div>
-    <button class="olink" onclick="viewOnly()">Ver sin contraseña →</button>
+    <button class="olink" onclick="closeOverlay()">Cancelar →</button>
   </div>
 </div>
 
@@ -217,12 +218,14 @@ tr:last-child td{border-bottom:none}tr:hover td{background:rgba(232,168,56,.02)}
 <!-- TOPBAR -->
 <div class="topbar">
   <div style="display:flex;align-items:center;gap:12px">
-    <a href="participantes.html">← Participantes</a>
+    <a href="index.html">← Inicio</a>
     <span id="auth-badge" class="badge viewer">👁️ Solo lectura</span>
   </div>
   <div style="display:flex;gap:6px;align-items:center">
     <button id="scan-btn" class="tbtn scan" onclick="openScan()" style="display:none">📷 Modo Escáner</button>
-    <button class="tbtn" onclick="logout()">Cerrar sesión</button>
+    <button id="pdf-btn" class="tbtn" onclick="downloadAllQRPdf()" style="background:rgba(139,127,232,.1);border-color:rgba(139,127,232,.35);color:var(--lav)">📄 Descargar QR PDF</button>
+    <button id="admin-btn" class="tbtn" onclick="openAdminLogin()" style="display:inline">🔑 Admin</button>
+    <button id="logout-btn" class="tbtn" onclick="logout()" style="display:none">Cerrar sesión</button>
   </div>
 </div>
 
@@ -293,22 +296,42 @@ let currentQRId = null;
 // ═══════════════════ AUTH ═══════════════════
 (function(){
   const s = localStorage.getItem('crptg11-comidas-auth');
-  if(s==='admin'||s==='viewer'){ isAdmin=(s==='admin'); showApp(); }
+  if(s==='admin'){ isAdmin=true; }
+  // Always show app immediately in viewer mode (or admin if saved)
+  showApp();
 })();
+function openAdminLogin(){
+  document.getElementById('pw-inp').value='';
+  document.getElementById('pw-err').textContent='';
+  document.getElementById('overlay').style.display='flex';
+}
+function closeOverlay(){
+  document.getElementById('overlay').style.display='none';
+}
 function tryAuth(){
   const v=document.getElementById('pw-inp').value.trim();
-  if(v===ADMIN_PASS){ isAdmin=true; localStorage.setItem('crptg11-comidas-auth','admin'); showApp(); }
+  if(v===ADMIN_PASS){ isAdmin=true; localStorage.setItem('crptg11-comidas-auth','admin'); closeOverlay(); showApp(); }
   else { document.getElementById('pw-err').textContent='Contraseña incorrecta'; }
 }
-function viewOnly(){ isAdmin=false; localStorage.setItem('crptg11-comidas-auth','viewer'); showApp(); }
+function viewOnly(){ isAdmin=false; localStorage.removeItem('crptg11-comidas-auth'); showApp(); }
 function showApp(){
   document.getElementById('overlay').style.display='none';
   document.getElementById('auth-badge').textContent = isAdmin?'🔑 Administrador':'👁️ Solo lectura';
   document.getElementById('auth-badge').className = 'badge '+(isAdmin?'admin':'viewer');
-  if(isAdmin){ document.getElementById('scan-btn').style.display=''; document.getElementById('nf-sub').textContent='Administradores pueden asignar comidas desde aquí.'; }
-  init();
+  if(isAdmin){
+    document.getElementById('scan-btn').style.display='';
+    document.getElementById('admin-btn').style.display='none';
+    document.getElementById('logout-btn').style.display='inline';
+    document.getElementById('nf-sub').textContent='Administradores pueden asignar comidas desde aquí.';
+  } else {
+    document.getElementById('scan-btn').style.display='none';
+    document.getElementById('admin-btn').style.display='inline';
+    document.getElementById('logout-btn').style.display='none';
+  }
+  if(!DATA.length) init();
+  else { buildDayTabs(); renderMain(); renderNoFood(); updateStats(); }
 }
-function logout(){ localStorage.removeItem('crptg11-comidas-auth'); location.reload(); }
+function logout(){ localStorage.removeItem('crptg11-comidas-auth'); isAdmin=false; showApp(); }
 
 // ═══════════════════ FIREBASE ═══════════════════
 function waitFB(cb){ if(window._firebaseReady) cb(); else window.addEventListener('firebaseReady',cb,{once:true}); }
@@ -343,7 +366,10 @@ function parseCSV(text){
 }
 
 // ═══════════════════ INIT ═══════════════════
+let _initDone = false;
 async function init(){
+  if(_initDone) return;
+  _initDone = true;
   loadFB();
   try{
     const res=await fetch(SHEET_CSV,{cache:"no-store"});
@@ -652,6 +678,142 @@ function processScan(){
 
 // ═══════════════════ TOAST ═══════════════════
 function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');clearTimeout(t._to);t._to=setTimeout(()=>t.classList.remove('show'),2500);}
+
+// ═══════════════════ CATEGORIA ═══════════════════
+function getCategoria(edad){
+  if(!edad||edad<=0) return 'adulto';
+  if(edad<12) return 'nino';
+  if(edad<=25) return 'joven';
+  return 'adulto';
+}
+function getCatColor(cat){
+  // Returns hex color for the category stripe
+  if(cat==='nino')  return '#3ecfb8'; // teal  — niño
+  if(cat==='joven') return '#8b7fe8'; // lav   — joven
+  return '#e8a838';                   // gold  — adulto
+}
+function getCatLabel(cat){
+  if(cat==='nino')  return 'Niño/a';
+  if(cat==='joven') return 'Joven';
+  return 'Adulto';
+}
+
+// ═══════════════════ PDF QR DOWNLOAD ═══════════════════
+async function downloadAllQRPdf(){
+  if(!DATA.length){ showToast('⏳ Cargando datos...'); return; }
+  const btn = document.getElementById('pdf-btn');
+  btn.textContent='⏳ Generando...'; btn.disabled=true;
+
+  const { jsPDF } = window.jspdf;
+
+  // A4 landscape in mm: 297 x 210
+  // We'll do portrait A4: 210 x 297
+  // 4 QR cards per page (2 cols x 2 rows), each card ~95x130mm
+  const PW=210, PH=297;
+  const COLS=2, ROWS=2;
+  const MARGIN=8;
+  const CARD_W=(PW-MARGIN*(COLS+1))/COLS;   // ~94mm
+  const CARD_H=(PH-MARGIN*(ROWS+1))/ROWS;   // ~135mm
+  const QR_SIZE=65; // mm, square QR
+
+  const doc = new jsPDF({ orientation:'portrait', unit:'mm', format:'a4' });
+
+  // Helper: generate QR as base64 PNG via hidden canvas
+  function makeQRDataURL(text){
+    return new Promise(resolve=>{
+      const div=document.createElement('div');
+      div.style.cssText='position:fixed;left:-9999px;top:-9999px;background:#fff';
+      document.body.appendChild(div);
+      const qr=new QRCode(div,{text,width:512,height:512,colorDark:'#000000',colorLight:'#ffffff',correctLevel:QRCode.CorrectLevel.H});
+      setTimeout(()=>{
+        const img=div.querySelector('img')||div.querySelector('canvas');
+        let url='';
+        if(img && img.tagName==='CANVAS') url=img.toDataURL('image/png');
+        else if(img && img.tagName==='IMG') url=img.src;
+        document.body.removeChild(div);
+        resolve(url);
+      },120);
+    });
+  }
+
+  let i=0;
+  for(const p of DATA){
+    const col = i%COLS;
+    const row = Math.floor(i/COLS)%ROWS;
+    if(i>0 && col===0 && row===0) doc.addPage();
+
+    const x = MARGIN + col*(CARD_W+MARGIN);
+    const y = MARGIN + row*(CARD_H+MARGIN);
+
+    const cat    = getCategoria(p.edad);
+    const color  = getCatColor(cat);
+    const rHex   = parseInt(color.slice(1,3),16);
+    const gHex   = parseInt(color.slice(3,5),16);
+    const bHex   = parseInt(color.slice(5,7),16);
+
+    // Card background
+    doc.setFillColor(20,22,31);
+    doc.roundedRect(x, y, CARD_W, CARD_H, 4, 4, 'F');
+
+    // Category stripe at top (6mm tall)
+    doc.setFillColor(rHex, gHex, bHex);
+    doc.roundedRect(x, y, CARD_W, 6, 4, 4, 'F');
+    doc.setFillColor(rHex, gHex, bHex);
+    doc.rect(x, y+3, CARD_W, 3, 'F'); // square bottom corners of stripe
+
+    // Category label on stripe
+    doc.setTextColor(10,10,10);
+    doc.setFontSize(7);
+    doc.setFont('helvetica','bold');
+    doc.text(getCatLabel(cat).toUpperCase(), x+CARD_W/2, y+4.2, {align:'center'});
+
+    // QR code image
+    const qrUrl = await makeQRDataURL(JSON.stringify({id:p.id,app:'crptg11-comidas'}));
+    if(qrUrl){
+      const qrX = x+(CARD_W-QR_SIZE)/2;
+      const qrY = y+9;
+      // White background for QR
+      doc.setFillColor(255,255,255);
+      doc.roundedRect(qrX-2, qrY-2, QR_SIZE+4, QR_SIZE+4, 2, 2, 'F');
+      doc.addImage(qrUrl,'PNG', qrX, qrY, QR_SIZE, QR_SIZE);
+    }
+
+    // Info block below QR
+    const infoY = y+9+QR_SIZE+6;
+
+    // ID
+    doc.setTextColor(rHex, gHex, bHex);
+    doc.setFontSize(7.5);
+    doc.setFont('helvetica','bold');
+    doc.text(p.id, x+CARD_W/2, infoY, {align:'center'});
+
+    // Nombre
+    doc.setTextColor(230,230,240);
+    doc.setFontSize(9.5);
+    doc.setFont('helvetica','bold');
+    const nombre = doc.splitTextToSize(p.nombre, CARD_W-6);
+    doc.text(nombre, x+CARD_W/2, infoY+5.5, {align:'center'});
+
+    // Congregación
+    doc.setTextColor(120,125,149);
+    doc.setFontSize(7.5);
+    doc.setFont('helvetica','normal');
+    const cong = p.congregacion||'—';
+    const congLines = doc.splitTextToSize(cong, CARD_W-6);
+    doc.text(congLines, x+CARD_W/2, infoY+5.5+nombre.length*5+1, {align:'center'});
+
+    // Bottom color bar
+    doc.setFillColor(rHex, gHex, bHex);
+    doc.roundedRect(x, y+CARD_H-4, CARD_W, 4, 2, 2, 'F');
+    doc.rect(x, y+CARD_H-6, CARD_W, 3, 'F');
+
+    i++;
+  }
+
+  doc.save('CRPTG11_QR_Comidas.pdf');
+  btn.textContent='📄 Descargar QR PDF'; btn.disabled=false;
+  showToast(`✅ PDF generado con ${DATA.length} QR`);
+}
 
 // ═══════════════════ MODAL CLOSE ═══════════════════
 document.getElementById('qr-modal').addEventListener('click',e=>{if(e.target===e.currentTarget)closeQR();});
