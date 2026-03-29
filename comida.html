@@ -1277,13 +1277,13 @@ function closeGallery(){ document.getElementById('gallery-modal').style.display=
 
 async function buildGallery(){
   const grid = document.getElementById('gallery-grid');
-  grid.innerHTML='<div style="color:var(--muted);font-size:13px;padding:20px;grid-column:1/-1;text-align:center">⏳ Generando tarjetas...</div>';
+  grid.innerHTML='<div style="color:var(--muted);font-size:13px;padding:20px;width:100%;text-align:center">⏳ Generando tarjetas...</div>';
   const cards=[];
   for(const p of DATA){
     const cat=getCategoria(p.edad);
     const color=getCatColor(cat);
     const qrUrl=await makeQRDataURL(buildQRUrl(p.id));
-    // 400x520 matches PDF card proportions (~60mm x 78mm)
+    // Canvas only for PNG download (full resolution)
     const dlCanvas=await makeQRCardCanvas(p,400,520,qrUrl);
 
     const wrapper=document.createElement('div');
@@ -1291,20 +1291,52 @@ async function buildGallery(){
     wrapper.dataset.id=(p.id||'').toLowerCase();
     wrapper.dataset.cong=(p.congregacion||'').toLowerCase();
     wrapper.dataset.cat=cat;
-    // Fixed width card — never squish
-    wrapper.style.cssText=`border-radius:6px;overflow:hidden;border:1px solid ${color}66;background:#fff;display:flex;flex-direction:column;width:150px;flex-shrink:0;box-shadow:0 2px 8px rgba(0,0,0,.25);transition:transform .15s,box-shadow .15s`;
-    wrapper.onmouseenter=()=>{wrapper.style.transform='translateY(-3px)';wrapper.style.boxShadow='0 6px 18px rgba(0,0,0,.35)';};
-    wrapper.onmouseleave=()=>{wrapper.style.transform='';wrapper.style.boxShadow='0 2px 8px rgba(0,0,0,.25)';};
+    wrapper.style.cssText=`
+      width:150px;flex-shrink:0;
+      border-radius:6px;overflow:hidden;
+      border:2px solid ${color};
+      background:#fff;
+      display:flex;flex-direction:column;
+      box-shadow:0 2px 8px rgba(0,0,0,.3);
+      transition:transform .15s,box-shadow .15s;
+      cursor:default;
+    `;
+    wrapper.onmouseenter=()=>{wrapper.style.transform='translateY(-3px)';wrapper.style.boxShadow='0 6px 18px rgba(0,0,0,.4)';};
+    wrapper.onmouseleave=()=>{wrapper.style.transform='';wrapper.style.boxShadow='0 2px 8px rgba(0,0,0,.3)';};
 
-    // Preview image — let it define its own height via natural aspect ratio
-    const preview=document.createElement('img');
-    preview.src=dlCanvas.toDataURL('image/png');
-    preview.style.cssText='display:block;width:100%;height:auto';
+    // Top color stripe
+    const stripe=document.createElement('div');
+    stripe.style.cssText=`height:5px;background:${color};flex-shrink:0`;
+
+    // QR image (square, full width)
+    const qrImg=document.createElement('img');
+    qrImg.src=qrUrl;
+    qrImg.style.cssText='display:block;width:100%;height:auto';
+
+    // Text block
+    const info=document.createElement('div');
+    info.style.cssText='padding:5px 4px 4px;text-align:center;background:#fff;flex:1;display:flex;flex-direction:column;gap:1px';
+
+    const nomEl=document.createElement('div');
+    nomEl.textContent=(p.nombre||'').toUpperCase();
+    nomEl.style.cssText='font-size:8px;font-weight:700;color:#111;line-height:1.2;word-break:break-word;font-family:Arial,sans-serif';
+
+    const idEl=document.createElement('div');
+    idEl.textContent=p.id;
+    idEl.style.cssText=`font-size:8px;font-weight:700;color:${color};font-family:Arial,sans-serif`;
+
+    const congEl=document.createElement('div');
+    congEl.textContent=p.congregacion||'';
+    congEl.style.cssText='font-size:7px;color:#888;line-height:1.2;word-break:break-word;font-family:Arial,sans-serif';
+
+    info.appendChild(nomEl);
+    info.appendChild(idEl);
+    if(p.congregacion) info.appendChild(congEl);
 
     // Download button
     const dlBtn=document.createElement('button');
-    dlBtn.textContent='⬇ Descargar PNG';
-    dlBtn.style.cssText=`background:${color};color:#000;border:none;padding:8px 0;font-weight:700;font-size:11px;cursor:pointer;font-family:'DM Sans',sans-serif;display:block;width:100%;letter-spacing:.3px`;
+    dlBtn.textContent='⬇ PNG';
+    dlBtn.style.cssText=`background:${color};color:#000;border:none;padding:5px 0;font-weight:700;font-size:9px;cursor:pointer;font-family:Arial,sans-serif;display:block;width:100%;flex-shrink:0`;
     dlBtn.onclick=(e)=>{
       e.stopPropagation();
       const a=document.createElement('a');
@@ -1313,7 +1345,9 @@ async function buildGallery(){
       a.click();
     };
 
-    wrapper.appendChild(preview);
+    wrapper.appendChild(stripe);
+    wrapper.appendChild(qrImg);
+    wrapper.appendChild(info);
     wrapper.appendChild(dlBtn);
     cards.push(wrapper);
   }
