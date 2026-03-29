@@ -216,7 +216,7 @@ function parseCSVDashboard(text) {
       if (mealColIdx[mk] !== undefined) {
         hayColumnaComida = true;
         const val = (cells[mealColIdx[mk]] || "").replace(/^"|"$/g, "").trim().toLowerCase();
-        comidas[mk] = val === "true" || val === "1" || val === "sí" || val === "si" || val === "yes";
+        comidas[mk] = val === "true" || val === "1" || val === "sí" || val === "si" || val === "yes" || val === "verdadero" || val === "x";
       }
     });
     // Si el sheet no tiene columnas de comida individuales, usar el flag general
@@ -263,6 +263,7 @@ let vistaTiempo = "todos";
 const fkey = (dia,tiempo,id) => `d${dia}_${tiempo}_${id.replace(/-/g,"_")}`;
 
 function getTiemposPosibles(d) {
+  // Solo cuenta slots donde la persona TIENE esa comida asignada (=== true)
   const dias    = vistaDia    === "todos" ? DIAS    : [parseInt(vistaDia)];
   const tiempos = vistaTiempo === "todos" ? TIEMPOS : [vistaTiempo];
   return dias.flatMap(dia => {
@@ -271,7 +272,8 @@ function getTiemposPosibles(d) {
       .filter(t => validosDia.includes(t))
       .filter(t => {
         const col = MEAL_KEY[`${dia}_${t}`];
-        return !col || !d.comidas || d.comidas[col] !== false;
+        if (!col) return false;
+        return d.comidas && d.comidas[col] === true;
       })
       .map(t => ({dia, t}));
   });
@@ -409,17 +411,19 @@ function renderDashboard() {
     return "Adulto";
   };
 
-  const total = DATA.length;
+  // Solo participantes con al menos una comida asignada en la vista actual
+  const DATA_CON_COMIDA = DATA.filter(d => maxPosible(d) > 0);
+  const total = DATA_CON_COMIDA.length;
 
   // Totales generales
-  const totalRet = DATA.reduce((s,d) => s + Math.min(contarRetiros(d), maxPosible(d)), 0);
-  const totalMax = DATA.reduce((s,d) => s + maxPosible(d), 0);
+  const totalRet = DATA_CON_COMIDA.reduce((s,d) => s + Math.min(contarRetiros(d), maxPosible(d)), 0);
+  const totalMax = DATA_CON_COMIDA.reduce((s,d) => s + maxPosible(d), 0);
   const totalPen = totalMax - totalRet;
   const pct      = Math.round(totalRet / (totalMax||1) * 100) || 0;
 
   // Por categoría
   const cats = { Adulto:{total:0,ret:0}, Joven:{total:0,ret:0}, Menor:{total:0,ret:0} };
-  DATA.forEach(d => {
+  DATA_CON_COMIDA.forEach(d => {
     const cat = cats[catNorm(d.categoria)] || cats["Adulto"];
     cat.total += maxPosible(d);
     cat.ret   += Math.min(contarRetiros(d), maxPosible(d));
@@ -456,7 +460,7 @@ function renderDashboard() {
       if (vistaDia !== "todos" && parseInt(vistaDia) !== dia) return;
       if (vistaTiempo !== "todos" && vistaTiempo !== tiem) return;
       const col = MEAL_KEY[`${dia}_${tiem}`];
-      const elegibles = DATA.filter(d => !col || !d.comidas || d.comidas[col] !== false);
+      const elegibles = DATA.filter(d => { const col2 = MEAL_KEY[`${dia}_${tiem}`]; return col2 && d.comidas && d.comidas[col2] === true; });
       const ret = elegibles.filter(d => retiros[fkey(dia,tiem,d.id)]).length;
       row[tiem] = { ret, pen: elegibles.length - ret };
     });
