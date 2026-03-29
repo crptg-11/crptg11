@@ -96,7 +96,7 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min
 
 /* TABLE */
 .tw{max-width:1440px;margin:0 auto 24px;padding:0 22px}
-.tbox{background:var(--surface);border:1px solid var(--border);border-radius:13px;overflow:auto}
+.tbox{background:var(--surface);border:1px solid var(--border);border-radius:13px;overflow:auto;-webkit-overflow-scrolling:touch}
 table{width:100%;border-collapse:collapse;min-width:660px}
 thead{position:sticky;top:0;z-index:2}
 th{background:var(--surface2);color:var(--muted);font-size:10px;font-weight:600;letter-spacing:.8px;text-transform:uppercase;padding:9px 12px;text-align:left;border-bottom:1px solid var(--border);white-space:nowrap;cursor:pointer;user-select:none;transition:color .15s}
@@ -161,8 +161,75 @@ tr:last-child td{border-bottom:none}tr:hover td{background:rgba(232,168,56,.02)}
 .toast.show{opacity:1}
 
 @media(max-width:680px){
-  .stats,.day-tabs-wrap,.mst-wrap,.controls,.tw,.nf-wrap,.sdiv,.ph{padding-left:12px;padding-right:12px}
-  .day-tab{min-width:80px;padding:10px 8px}.dt-count{font-size:1.2rem}
+  /* spacing */
+  .stats,.day-tabs-wrap,.mst-wrap,.controls,.tw,.nf-wrap,.sdiv,.ph{padding-left:10px;padding-right:10px}
+
+  /* topbar: stack into two rows */
+  .topbar{padding:8px 10px;gap:6px}
+  .topbar>div{width:100%;justify-content:space-between}
+  .topbar>div:last-child{flex-wrap:wrap;gap:5px}
+  .tbtn{font-size:10px;padding:5px 9px}
+
+  /* page header */
+  .ph h1{font-size:1.3rem}
+
+  /* stats: 2 columns */
+  .stats{display:grid;grid-template-columns:1fr 1fr;gap:7px}
+  .sc{min-width:0;padding:10px 8px}
+  .sn{font-size:1.5rem}
+
+  /* day tabs: scroll horizontally */
+  .day-tabs-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
+  .day-tabs{flex-wrap:nowrap;gap:5px;padding-bottom:4px;width:max-content}
+  .day-tab{min-width:72px;padding:9px 7px}
+  .dt-count{font-size:1.1rem}
+  .dt-lbl{font-size:9px}
+  .dt-pill{font-size:8px;padding:1px 4px}
+
+  /* meal subtabs: scroll horizontally */
+  .mst-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;flex-wrap:nowrap!important;padding-bottom:4px}
+  .mst{white-space:nowrap;flex-shrink:0}
+
+  /* controls: search full width, filter buttons row */
+  .controls{flex-direction:column;gap:6px;align-items:stretch}
+  .sw{min-width:0;width:100%}
+  .controls .fbtn{flex:1}
+  .controls>div.sw~*{display:flex;gap:5px}
+
+  /* table: hide congregacion column (col 3) */
+  table th:nth-child(3),
+  table td:nth-child(3){display:none}
+
+  /* compact table cells */
+  th{font-size:9px;padding:7px 8px}
+  td{padding:7px 8px;font-size:11px}
+  .nm{font-size:11px}
+  .cg{display:none}
+
+  /* checkboxes inline, smaller */
+  .chk-lbl{margin-right:5px;margin-bottom:1px}
+  .chk-txt{font-size:9px}
+
+  /* QR button compact */
+  .qbtn{padding:3px 6px;font-size:10px}
+
+  /* section divider */
+  .sdiv h2{font-size:.9rem}
+
+  /* no-food section */
+  .nf-wrap{margin-bottom:80px}
+
+  /* QR modal full screen */
+  .qbox{max-width:100%;width:100%;border-radius:14px;padding:20px 14px}
+
+  /* Retiro modal */
+  .rbox{max-width:100%;width:100%;border-radius:14px;padding:20px 14px}
+
+  /* Gallery modal: 2-col grid */
+  #gallery-modal>div:last-child{grid-template-columns:repeat(2,1fr)!important;gap:8px;padding:10px}
+
+  /* scan overlay input */
+  #scan-inp{width:90%}
 }
 </style>
 </head>
@@ -529,7 +596,7 @@ function renderMain(){
   // HEADER
   const thead=document.getElementById('thead');
   const baseCols=[
-    {l:'Nombre',s:0},{l:'ID',s:1},{l:'Congregación',s:2},
+    {l:'ID',s:1},{l:'Nombre',s:0},{l:'Congregación',s:2},
   ];
   const showRetiro = activeDay!=='nofood';
   const extraCols = activeDay==='nofood'
@@ -620,8 +687,8 @@ function renderMain(){
       : `<td>${mealCell}</td><td>${retCell}</td>`;
 
     return`<tr>
+      <td style="font-size:11px;color:var(--muted);font-weight:600">${pid}</td>
       <td><div class="nm">${p.nombre}</div><div class="cg">${p.congregacion||''}</div></td>
-      <td style="font-size:10px;color:var(--muted)">${pid}</td>
       <td style="font-size:12px">${p.congregacion||'—'}</td>
       ${extraTds}
       <td><button class="qbtn" onclick="openQR('${pid}')">🔲 QR</button></td>
@@ -636,8 +703,8 @@ function renderNoFood(){
   if(!nf.length||activeDay==='nofood'){ document.getElementById('nf-wrap').style.display='none'; return; }
   document.getElementById('nf-wrap').style.display='';
   document.getElementById('nf-thead').innerHTML=`<tr>
-    <th data-nf="0" onclick="doSortNF(0)">Nombre</th>
     <th data-nf="1" onclick="doSortNF(1)">ID</th>
+    <th data-nf="0" onclick="doSortNF(0)">Nombre</th>
     <th data-nf="2" onclick="doSortNF(2)">Congregación</th>
     <th class="ns">Asignar comidas</th>
     <th class="ns">QR</th>
@@ -653,8 +720,8 @@ function renderNoFood(){
       ac='<span style="color:var(--muted);font-size:11px">Solo administradores</span>';
     }
     return`<tr>
+      <td style="font-size:11px;color:var(--muted);font-weight:600">${pid}</td>
       <td><div class="nm">${p.nombre}</div><div class="cg">${p.congregacion||''}</div></td>
-      <td style="font-size:10px;color:var(--muted)">${pid}</td>
       <td style="font-size:12px">${p.congregacion||'—'}</td>
       <td>${ac}</td>
       <td><button class="qbtn" onclick="openQR('${pid}')">🔲 QR</button></td>
@@ -878,7 +945,7 @@ async function openGallery(){
   if(!DATA.length){ showToast('⏳ Cargando datos...'); return; }
   const modal = document.getElementById('gallery-modal');
   modal.style.display='flex';
-  if(!_galleryBuilt){ await buildGallery(); _galleryBuilt=true; }
+  await buildGallery(); _galleryBuilt=true;
   filterGallery();
 }
 function closeGallery(){ document.getElementById('gallery-modal').style.display='none'; }
@@ -908,7 +975,7 @@ async function buildGallery(){
     // Download button
     const dlBtn=document.createElement('button');
     dlBtn.textContent='⬇ Descargar';
-    dlBtn.style.cssText=`position:absolute;bottom:8px;left:50%;transform:translateX(-50%);background:${color};color:#000;border:none;padding:5px 14px;border-radius:8px;font-weight:700;font-size:11px;cursor:pointer;font-family:'DM Sans',sans-serif;white-space:nowrap;opacity:0;transition:opacity .2s`;
+    dlBtn.style.cssText=`position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);background:${color};color:#000;border:none;padding:8px 18px;border-radius:8px;font-weight:700;font-size:12px;cursor:pointer;font-family:'DM Sans',sans-serif;white-space:nowrap;opacity:0;transition:opacity .2s;pointer-events:auto`;
     wrapper.onmouseenter=()=>{wrapper.style.transform='scale(1.03)';wrapper.style.borderColor=color;dlBtn.style.opacity='1';};
     wrapper.onmouseleave=()=>{wrapper.style.transform='';wrapper.style.borderColor=color+'33';dlBtn.style.opacity='0';};
     dlBtn.onclick=(e)=>{
@@ -918,7 +985,14 @@ async function buildGallery(){
       a.download=`QR_${p.id}_${p.nombre.replace(/\s+/g,'_')}.png`;
       a.click();
     };
+    // Name/ID label below the canvas
+    const lbl=document.createElement('div');
+    lbl.style.cssText=`background:#0f1117;padding:7px 8px 9px;text-align:center;border-top:1px solid ${color}33`;
+    lbl.innerHTML=`<div style="font-size:11px;font-weight:700;color:#e8e8f0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%">${p.nombre}</div>`
+      +`<div style="font-size:10px;color:${color};font-weight:600;margin-top:2px">${p.id}</div>`
+      +(p.congregacion?`<div style="font-size:9px;color:#7a7d95;margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${p.congregacion}</div>`:'');
     wrapper.appendChild(preview);
+    wrapper.appendChild(lbl);
     wrapper.appendChild(dlBtn);
     cards.push(wrapper);
   }
