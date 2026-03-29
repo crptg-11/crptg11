@@ -250,7 +250,10 @@ tr:last-child td{border-bottom:none}tr:hover td{background:rgba(232,168,56,.025)
     <button class="tab" onclick="showTab('qr',this)">📲 QR Codes</button>
     <button class="tab" onclick="showTab('add',this)">➕ Agregar</button>
   </div>
-  <button class="scan-btn-header" onclick="abrirCamara()">📷 Escanear QR</button>
+  <div style="display:flex;gap:8px;align-items:center">
+    <button onclick="actualizarSheet()" id="btn-refresh" class="scan-btn-header" style="background:var(--surface2);color:var(--teal);border:1px solid rgba(62,207,184,.3)">🔄 Actualizar</button>
+    <button class="scan-btn-header" onclick="abrirCamara()">📷 Escanear QR</button>
+  </div>
 </div>
 
 <!-- ══ PANEL LISTA ══ -->
@@ -502,10 +505,20 @@ const COL_MAP_C = {
   categoria:       ["CategoriaE", "Categoría", "categoria", "Categoria"],
 };
 
+function normHeaderC(s) {
+  return (s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9 ]/g, '').trim();
+}
+
 function findColC(headers, keys) {
+  // Primero intento exacto
   for (const k of keys) {
     const i = headers.findIndex(h => h.trim() === k);
     if (i !== -1) return i;
+  }
+  // Luego normalizado (sin tildes, sin signos especiales, minúsculas)
+  const normKeys = keys.map(k => normHeaderC(k));
+  for (let i = 0; i < headers.length; i++) {
+    if (normKeys.includes(normHeaderC(headers[i]))) return i;
   }
   return -1;
 }
@@ -624,44 +637,33 @@ async function cargarParticipantesDesdeSheet() {
 }
 
 
-let DATA_EXTRA = [];   // added via form, persisted in Firebase
+// Recarga el CSV desde el Sheet sin recargar la página
+window.actualizarSheet = async function() {
+  const btn = document.getElementById('btn-refresh');
+  if (btn) { btn.textContent = '⏳ Actualizando...'; btn.disabled = true; }
+  try {
+    const res = await fetch(SHEET_CSV_URL_COMIDA + "&t=" + Date.now(), {cache:"no-store"});
+    if (!res.ok) throw new Error("HTTP " + res.status);
+    const text = await res.text();
+    csvParticipantes = text;
+    DATA_BASE = parseCSVComida(text);
+    try { localStorage.setItem('crptg11-dataBase', JSON.stringify(DATA_BASE)); } catch(_){}
+    DATA_ALL = buildDataAll();
+    if(window._comidasOverrides) aplicarOverrides(window._comidasOverrides);
+    populateFilters();
+    actualizarStats(); renderLista(); renderQR();
+    mostrarAlerta('✅ Lista actualizada desde el sheet');
+  } catch(e) {
+    mostrarAlerta('⚠️ No se pudo actualizar: ' + e.message, true);
+  } finally {
+    if (btn) { btn.textContent = '🔄 Actualizar'; btn.disabled = false; }
+  }
+};
 let DATA_ALL   = [];   // merged
 
-// ── DEDUPLICACIÓN INTELIGENTE ────────────────────────────────
-// Normaliza nombre para comparar (ignora tildes, mayúsculas, espacios extra)
-function normNombreDedup(n) {
-  return (n || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, ' ').trim();
-}
-
-// Arma DATA_ALL deduplicando: si hay mismo nombre en DATA_BASE y DATA_EXTRA,
-// se queda con el de DATA_BASE (ID oficial del Sheet) y descarta el extra.
-// Si hay IDs duplicados, también se deduplican.
+// Sin deduplicación — se toman todos tal como vienen del sheet y Firebase
 function buildDataAll() {
-  const seenIds   = new Set();
-  const seenNames = new Map(); // normNombre → id del que ya está
-  const result    = [];
-
-  // Primero meter DATA_BASE (tienen prioridad — IDs oficiales del Sheet)
-  // Solo incluir los que marcaron querer alimentación
-  for (const p of DATA_BASE) {
-    if (!p._quiere_comida) continue; // excluir quienes no pidieron comida
-    if (seenIds.has(p.id)) continue;
-    seenIds.add(p.id);
-    seenNames.set(normNombreDedup(p.nombre), p.id);
-    result.push(p);
-  }
-
-  // Luego DATA_EXTRA: omitir si ya hay alguien con mismo nombre en el Sheet
-  for (const p of DATA_EXTRA) {
-    if (seenIds.has(p.id)) continue; // ID duplicado: saltar
-    const nn = normNombreDedup(p.nombre);
-    if (seenNames.has(nn)) continue; // Mismo nombre ya existe en Sheet: saltar
-    seenIds.add(p.id);
-    seenNames.set(nn, p.id);
-    result.push(p);
-  }
-
-  return result;
+  return [...DATA_BASE, ...DATA_EXTRA];
 }
 let retiros    = {};
 let diaActual  = null;
@@ -761,7 +763,7 @@ window.setTiempo = function(t){
 function actualizarStats(){
   const relevant = DATA_ALL.filter(p=>tieneComidasEsteTime(p));
   const ret = relevant.filter(p=>estaRetirado(p.id)).length;
-  document.getElementById('s-total').textContent = relevant.length;
+  document.getElementById('s-total').textContent = DATA_ALL.length;
   document.getElementById('s-ret').textContent   = ret;
   document.getElementById('s-pen').textContent   = relevant.length - ret;
 }
