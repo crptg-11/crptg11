@@ -190,6 +190,11 @@ function parseCSVDashboard(text) {
     const get = field => idx[field] !== -1 ? (cells[idx[field]] || "").replace(/^"|"$/g, "").trim() : "";
     const nombre = get("nombre");
     if (!nombre) continue;
+
+    // Solo incluir participantes que marcaron querer alimentación
+    const quiereComida = /^s[ií]/i.test(get("alimentacion"));
+    if (!quiereComida) continue;
+
     const edadRaw = parseInt(get("edad")) || 0;
     let categoria = get("categoria");
     if (!categoria) {

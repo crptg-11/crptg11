@@ -1009,17 +1009,20 @@ window.renderNoInscr = async function(){
   const tbody = document.getElementById('tbody-no-inscr');
   tbody.innerHTML = `<tr><td colspan="3" style="text-align:center;padding:20px;color:var(--muted)">⏳ Verificando lista de participantes...</td></tr>`;
 
+  // Usar el CSV ya cargado por parseCSVComida (misma hoja, mismo parser, mismos IDs)
   let sheetRows = [];
-  try {
-    // Intentar obtener el CSV actualizado
-    const resp = await fetch(CSV_URL + '&t=' + Date.now(), {cache:'no-store'});
-    if(resp.ok){
-      const text = await resp.text();
-      csvParticipantes = text;
-      sheetRows = parseCSVSimple(text);
-    }
-  } catch(e) {
-    // Sin conexión — mostrar aviso
+  if(csvParticipantes){
+    sheetRows = parseCSVComida(csvParticipantes);
+  } else {
+    // Si por algún motivo no está en memoria, re-cargar la misma URL
+    try {
+      const resp = await fetch(SHEET_CSV_URL_COMIDA + '&t=' + Date.now(), {cache:'no-store'});
+      if(resp.ok){
+        const text = await resp.text();
+        csvParticipantes = text;
+        sheetRows = parseCSVComida(text);
+      }
+    } catch(e) {}
   }
 
   if(!sheetRows.length){
@@ -1030,20 +1033,23 @@ window.renderNoInscr = async function(){
     return;
   }
 
-  // Nombres normalizados del Sheet
-  const sheetNorms = new Set(sheetRows.map(r=>normNombre(r.nombre)));
+  // Solo los que quieren comida en el sheet
+  const sheetConComida = sheetRows.filter(r=>r._quiere_comida);
 
-  // Nombres normalizados del comida.html
+  // Nombres normalizados del Sheet (solo los que quieren comida)
+  const sheetNorms = new Set(sheetConComida.map(r=>normNombre(r.nombre)));
+
+  // IDs normalizados del DATA_ALL (participantes ya en control de comida)
   const comidaNorms = new Set(DATA_ALL.map(p=>normNombre(p.nombre)));
 
-  // En comida pero NO en el sheet → "sobran" (inscritos manualmente sin pasar por el form)
+  // En comida pero NO en el sheet con comida → agregados manualmente o sin inscripción
   const soloEnComida = DATA_ALL.filter(p=>{
     const n = normNombre(p.nombre);
     return n && !sheetNorms.has(n);
   });
 
-  // En sheet pero NO en comida → "faltan" (se inscribieron pero no están en control de comida)
-  const soloEnSheet = sheetRows.filter(r=>{
+  // En sheet (con comida marcada) pero NO en control de comida
+  const soloEnSheet = sheetConComida.filter(r=>{
     const n = normNombre(r.nombre);
     return n && !comidaNorms.has(n);
   });
@@ -1083,7 +1089,7 @@ window.renderNoInscr = async function(){
     </td></tr>`;
   } else {
     rows += `<tr><td colspan="3" style="padding:6px 12px;font-size:11px;color:var(--muted)">
-      Sheet: ${sheetRows.length} participantes · Comida: ${DATA_ALL.length} registros · Verificado ahora
+      Sheet: ${sheetConComida.length} con alimentación · Comida: ${DATA_ALL.length} registros · Verificado ahora
     </td></tr>`;
   }
 
