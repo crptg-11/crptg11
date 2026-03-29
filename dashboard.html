@@ -148,10 +148,21 @@ const COL_MAP_D = {
   categoria:    ["CategoriaE", "Categoría", "categoria", "Categoria"],
 };
 
+function normHeader(s) {
+  return (s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9 ]/g, '').trim();
+}
+
 function findColD(headers, keys) {
+  // Primero intento exacto
   for (const k of keys) {
     const i = headers.findIndex(h => h.trim() === k);
     if (i !== -1) return i;
+  }
+  // Luego intento normalizado (sin tildes, sin signos, minúsculas)
+  const normKeys = keys.map(k => normHeader(k));
+  for (let i = 0; i < headers.length; i++) {
+    const hn = normHeader(headers[i]);
+    if (normKeys.includes(hn)) return i;
   }
   return -1;
 }
@@ -183,6 +194,9 @@ function parseCSVDashboard(text) {
   const idx = {};
   for (const [field, keys] of Object.entries(COL_MAP_D)) idx[field] = findColD(headers, keys);
 
+  // DEBUG — ver en consola del navegador
+  console.log("[Dashboard] Headers encontrados:", headers);
+  console.log("[Dashboard] idx alimentacion →", idx.alimentacion, "| header en esa col:", headers[idx.alimentacion]);
 
   const rows = [];
   for (let i = 1; i < allRows.length; i++) {
@@ -192,7 +206,8 @@ function parseCSVDashboard(text) {
     if (!nombre) continue;
 
     // Solo participantes que marcaron querer alimentación
-    const quiereComida = /^s[ií]/i.test(get("alimentacion"));
+    const alimentacionVal = get("alimentacion");
+    const quiereComida = /^s[ií]/i.test(alimentacionVal);
     if (!quiereComida) continue;
 
     const edadRaw = parseInt(get("edad")) || 0;
@@ -213,6 +228,7 @@ function parseCSVDashboard(text) {
 
     rows.push({ id: idVal, nombre, edad: edadRaw, categoria, congregacion: get("congregacion"), comidas });
   }
+  console.log(`[Dashboard] Total parseados: ${rows.length} (de ${allRows.length - 1} filas)`);
   return rows;
 }
 
@@ -332,11 +348,14 @@ async function cargarSheetDashboard() {
       try {
         const parsed = JSON.parse(cached);
         // Convertir formato comida → dashboard (categoria string)
+        // Solo incluir los que pidieron alimentación
         const catMap = { A: "Adulto", J: "Joven", N: "Menor" };
-        DATA_BASE = parsed.map(p => ({
-          ...p,
-          categoria: catMap[p.cat] || p.categoria || "Adulto"
-        }));
+        DATA_BASE = parsed
+          .filter(p => p._quiere_comida)
+          .map(p => ({
+            ...p,
+            categoria: catMap[p.cat] || p.categoria || "Adulto"
+          }));
       } catch(_){}
     }
   }
