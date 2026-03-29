@@ -934,54 +934,36 @@ function getCatLabel(cat){
 function makeQRDataURL(text){
   return new Promise(resolve=>{
     const div=document.createElement('div');
-    div.style.cssText='position:fixed;left:-9999px;top:-9999px;background:#fff';
+    div.style.cssText='position:fixed;left:-9999px;top:-9999px;width:256px;height:256px;background:#fff';
     document.body.appendChild(div);
-    new QRCode(div,{text,width:512,height:512,colorDark:'#000000',colorLight:'#ffffff',correctLevel:QRCode.CorrectLevel.H});
-
-    function extract(){
-      const canvas=div.querySelector('canvas');
-      if(canvas){
-        const url=canvas.toDataURL('image/png');
-        document.body.removeChild(div);
-        resolve(url);
-        return true;
+    new QRCode(div,{text,width:256,height:256,colorDark:'#000000',colorLight:'#ffffff',correctLevel:QRCode.CorrectLevel.H});
+    // QRCode.js always produces either a <canvas> or an <img> synchronously in the DOM,
+    // but the img src may load async. We wait up to 1s then give up.
+    const deadline=Date.now()+1000;
+    function tryGet(){
+      const cv=div.querySelector('canvas');
+      if(cv){ document.body.removeChild(div); resolve(cv.toDataURL('image/png')); return; }
+      const im=div.querySelector('img');
+      if(im){
+        if(im.src&&im.src.length>100){ document.body.removeChild(div); resolve(im.src); return; }
+        if(im.complete&&im.naturalWidth>0){ document.body.removeChild(div); resolve(im.src); return; }
+        im.onload=()=>{ document.body.removeChild(div); resolve(im.src); };
+        im.onerror=()=>{ document.body.removeChild(div); resolve(''); };
+        return;
       }
-      const img=div.querySelector('img');
-      if(img){
-        if(img.complete&&img.naturalWidth>0){
-          const tmp=document.createElement('canvas');
-          tmp.width=img.naturalWidth;tmp.height=img.naturalHeight;
-          tmp.getContext('2d').drawImage(img,0,0);
-          const url=tmp.toDataURL('image/png');
-          document.body.removeChild(div);
-          resolve(url);
-          return true;
-        }
-        img.onload=()=>extract();
-        return false;
-      }
-      return false;
+      if(Date.now()<deadline){ setTimeout(tryGet,30); }
+      else { document.body.removeChild(div); resolve(''); }
     }
-
-    if(!extract()){
-      let attempts=0;
-      const t=setInterval(()=>{
-        attempts++;
-        if(extract()||attempts>12){
-          clearInterval(t);
-          if(attempts>12){ document.body.removeChild(div); resolve(''); }
-        }
-      },50);
-    }
+    tryGet();
   });
 }
 
 // Draw a styled QR card onto a canvas and return it
-async function makeQRCardCanvas(p, W, H){
+async function makeQRCardCanvas(p, W, H, qrUrl){
   const cat   = getCategoria(p.edad);
   const color = getCatColor(cat);
   const label = getCatLabel(cat);
-  const qrUrl = await makeQRDataURL(JSON.stringify({id:p.id,app:'crptg11-comidas'}));
+  if(!qrUrl) qrUrl = await makeQRDataURL(JSON.stringify({id:p.id,app:'crptg11-comidas'}));
 
   const cv = document.createElement('canvas');
   cv.width=W; cv.height=H;
@@ -1092,8 +1074,8 @@ async function buildGallery(){
     const color=getCatColor(cat);
     const label=getCatLabel(cat);
     const qrUrl=await makeQRDataURL(JSON.stringify({id:p.id,app:'crptg11-comidas'}));
-    // High-res canvas only for download
-    const dlCanvas=await makeQRCardCanvas(p,700,960);
+    // High-res canvas only for download — reuse already-loaded qrUrl
+    const dlCanvas=await makeQRCardCanvas(p,700,960,qrUrl);
 
     const wrapper=document.createElement('div');
     wrapper.dataset.name=(p.nombre||'').toLowerCase();
@@ -1109,10 +1091,10 @@ async function buildGallery(){
     stripe.style.cssText=`background:${color};padding:4px 6px;text-align:center`;
     stripe.innerHTML=`<span style="font-size:9px;font-weight:800;color:#000;letter-spacing:1px;text-transform:uppercase">${label}</span>`;
 
-    // QR image — fills full card width, always legible
+    // QR image — wait for load before attaching to avoid blank square
     const qrImg=document.createElement('img');
-    qrImg.src=qrUrl;
-    qrImg.style.cssText='display:block;width:100%;aspect-ratio:1/1;background:#fff;padding:4px;box-sizing:border-box';
+    qrImg.style.cssText='display:block;width:100%;aspect-ratio:1/1;background:#fff;padding:4px;box-sizing:border-box;image-rendering:pixelated';
+    await new Promise(res=>{ qrImg.onload=res; qrImg.onerror=res; qrImg.src=qrUrl; if(qrImg.complete) res(); });
 
     // Info block
     const info=document.createElement('div');
