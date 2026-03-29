@@ -15,7 +15,7 @@
   window._firebaseReady=true;
   window.dispatchEvent(new Event('firebaseReady'));
 </script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/qr-creator@1.0.0/dist/qr-creator.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
 <style>
@@ -808,7 +808,10 @@ function openQR(id){
   document.getElementById('qr-name').textContent=p.nombre;
   document.getElementById('qr-sub').textContent=`ID: ${id}  •  ${p.congregacion||''}`;
   const wrap=document.getElementById('qr-wrap');wrap.innerHTML='';
-  new QRCode(wrap,{text:JSON.stringify({id,app:'crptg11-comidas'}),width:260,height:260,colorDark:'#000',colorLight:'#fff',correctLevel:QRCode.CorrectLevel.H});
+  const qrCv=document.createElement('canvas');
+  qrCv.width=260;qrCv.height=260;
+  wrap.appendChild(qrCv);
+  QrCreator.render({text:JSON.stringify({id,app:'crptg11-comidas'}),radius:0,ecLevel:'H',fill:'#000',background:'#fff',size:260},qrCv);
   const fb=FB_DATA[id]||{};const meals=fb.meals||{};const ret=fb.retirado||{};
   const assigned=ALL_MEALS.filter(({day,meal})=>meals[MK(day,meal)]);
   document.getElementById('qr-list').innerHTML=assigned.length
@@ -932,30 +935,11 @@ function getCatLabel(cat){
 
 // ═══════════════════ QR CANVAS HELPER ═══════════════════
 function makeQRDataURL(text){
-  return new Promise(resolve=>{
-    const div=document.createElement('div');
-    div.style.cssText='position:fixed;left:-9999px;top:-9999px;width:256px;height:256px;background:#fff';
-    document.body.appendChild(div);
-    new QRCode(div,{text,width:256,height:256,colorDark:'#000000',colorLight:'#ffffff',correctLevel:QRCode.CorrectLevel.H});
-    // QRCode.js always produces either a <canvas> or an <img> synchronously in the DOM,
-    // but the img src may load async. We wait up to 1s then give up.
-    const deadline=Date.now()+1000;
-    function tryGet(){
-      const cv=div.querySelector('canvas');
-      if(cv){ document.body.removeChild(div); resolve(cv.toDataURL('image/png')); return; }
-      const im=div.querySelector('img');
-      if(im){
-        if(im.src&&im.src.length>100){ document.body.removeChild(div); resolve(im.src); return; }
-        if(im.complete&&im.naturalWidth>0){ document.body.removeChild(div); resolve(im.src); return; }
-        im.onload=()=>{ document.body.removeChild(div); resolve(im.src); };
-        im.onerror=()=>{ document.body.removeChild(div); resolve(''); };
-        return;
-      }
-      if(Date.now()<deadline){ setTimeout(tryGet,30); }
-      else { document.body.removeChild(div); resolve(''); }
-    }
-    tryGet();
-  });
+  // qr-creator renders synchronously to a canvas — no async needed
+  const cv=document.createElement('canvas');
+  cv.width=256;cv.height=256;
+  QrCreator.render({text,radius:0,ecLevel:'H',fill:'#000000',background:'#ffffff',size:256},cv);
+  return Promise.resolve(cv.toDataURL('image/png'));
 }
 
 // Draw a styled QR card onto a canvas and return it
@@ -1074,7 +1058,6 @@ async function buildGallery(){
     const color=getCatColor(cat);
     const label=getCatLabel(cat);
     const qrUrl=await makeQRDataURL(JSON.stringify({id:p.id,app:'crptg11-comidas'}));
-    // High-res canvas only for download — reuse already-loaded qrUrl
     const dlCanvas=await makeQRCardCanvas(p,700,960,qrUrl);
 
     const wrapper=document.createElement('div');
@@ -1091,10 +1074,10 @@ async function buildGallery(){
     stripe.style.cssText=`background:${color};padding:4px 6px;text-align:center`;
     stripe.innerHTML=`<span style="font-size:9px;font-weight:800;color:#000;letter-spacing:1px;text-transform:uppercase">${label}</span>`;
 
-    // QR image — wait for load before attaching to avoid blank square
+    // QR image — data URL loads instantly
     const qrImg=document.createElement('img');
     qrImg.style.cssText='display:block;width:100%;aspect-ratio:1/1;background:#fff;padding:4px;box-sizing:border-box;image-rendering:pixelated';
-    await new Promise(res=>{ qrImg.onload=res; qrImg.onerror=res; qrImg.src=qrUrl; if(qrImg.complete) res(); });
+    qrImg.src=qrUrl;
 
     // Info block
     const info=document.createElement('div');
