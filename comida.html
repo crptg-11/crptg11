@@ -937,14 +937,42 @@ function makeQRDataURL(text){
     div.style.cssText='position:fixed;left:-9999px;top:-9999px;background:#fff';
     document.body.appendChild(div);
     new QRCode(div,{text,width:512,height:512,colorDark:'#000000',colorLight:'#ffffff',correctLevel:QRCode.CorrectLevel.H});
-    setTimeout(()=>{
-      const img=div.querySelector('img')||div.querySelector('canvas');
-      let url='';
-      if(img&&img.tagName==='CANVAS') url=img.toDataURL('image/png');
-      else if(img&&img.tagName==='IMG') url=img.src;
-      document.body.removeChild(div);
-      resolve(url);
-    },120);
+
+    function extract(){
+      const canvas=div.querySelector('canvas');
+      if(canvas){
+        const url=canvas.toDataURL('image/png');
+        document.body.removeChild(div);
+        resolve(url);
+        return true;
+      }
+      const img=div.querySelector('img');
+      if(img){
+        if(img.complete&&img.naturalWidth>0){
+          const tmp=document.createElement('canvas');
+          tmp.width=img.naturalWidth;tmp.height=img.naturalHeight;
+          tmp.getContext('2d').drawImage(img,0,0);
+          const url=tmp.toDataURL('image/png');
+          document.body.removeChild(div);
+          resolve(url);
+          return true;
+        }
+        img.onload=()=>extract();
+        return false;
+      }
+      return false;
+    }
+
+    if(!extract()){
+      let attempts=0;
+      const t=setInterval(()=>{
+        attempts++;
+        if(extract()||attempts>12){
+          clearInterval(t);
+          if(attempts>12){ document.body.removeChild(div); resolve(''); }
+        }
+      },50);
+    }
   });
 }
 
