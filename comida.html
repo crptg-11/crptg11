@@ -225,8 +225,8 @@ tr:last-child td{border-bottom:none}tr:hover td{background:rgba(232,168,56,.02)}
   /* Retiro modal */
   .rbox{max-width:100%;width:100%;border-radius:14px;padding:20px 14px}
 
-  /* Gallery modal: 2-col grid */
-  #gallery-modal>div:last-child{grid-template-columns:repeat(2,1fr)!important;gap:8px;padding:10px}
+  /* Gallery: 4.5 cols on mobile */
+  #gallery-grid{grid-template-columns:repeat(4,1fr)!important;gap:6px!important;padding:8px!important}
 
   /* scan overlay input */
   #scan-inp{width:90%}
@@ -278,7 +278,7 @@ tr:last-child td{border-bottom:none}tr:hover td{background:rgba(232,168,56,.02)}
       <button onclick="closeGallery()" style="background:none;border:1px solid var(--border);color:var(--muted);padding:5px 14px;border-radius:8px;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:12px">✕ Cerrar</button>
     </div>
   </div>
-  <div id="gallery-grid" style="flex:1;overflow-y:auto;padding:16px;display:grid;grid-template-columns:repeat(auto-fill,minmax(175px,1fr));gap:12px;align-content:start"></div>
+  <div id="gallery-grid" style="flex:1;overflow-y:auto;padding:10px;display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px;align-content:start"></div>
 </div>
 
 <!-- RETIRO MODAL -->
@@ -1100,32 +1100,32 @@ async function buildGallery(){
     wrapper.dataset.id=(p.id||'').toLowerCase();
     wrapper.dataset.cong=(p.congregacion||'').toLowerCase();
     wrapper.dataset.cat=cat;
-    wrapper.style.cssText=`border-radius:14px;overflow:hidden;border:2px solid ${color}55;background:#13161f;display:flex;flex-direction:column;transition:transform .15s,border-color .15s`;
+    wrapper.style.cssText=`border-radius:8px;overflow:hidden;border:1px solid ${color}55;background:#13161f;display:flex;flex-direction:column;transition:transform .15s,border-color .15s`;
     wrapper.onmouseenter=()=>{wrapper.style.transform='scale(1.02)';wrapper.style.borderColor=color;};
     wrapper.onmouseleave=()=>{wrapper.style.transform='';wrapper.style.borderColor=color+'55';};
 
     // Top stripe
     const stripe=document.createElement('div');
-    stripe.style.cssText=`background:${color};padding:7px 10px;text-align:center`;
-    stripe.innerHTML=`<span style="font-size:12px;font-weight:800;color:#000;letter-spacing:1.5px;text-transform:uppercase">${label}</span>`;
+    stripe.style.cssText=`background:${color};padding:4px 6px;text-align:center`;
+    stripe.innerHTML=`<span style="font-size:9px;font-weight:800;color:#000;letter-spacing:1px;text-transform:uppercase">${label}</span>`;
 
     // QR image — fills full card width, always legible
     const qrImg=document.createElement('img');
     qrImg.src=qrUrl;
-    qrImg.style.cssText='display:block;width:100%;aspect-ratio:1/1;background:#fff';
+    qrImg.style.cssText='display:block;width:100%;aspect-ratio:1/1;background:#fff;padding:4px;box-sizing:border-box';
 
     // Info block
     const info=document.createElement('div');
-    info.style.cssText=`padding:8px 10px 4px;text-align:center`;
+    info.style.cssText=`padding:4px 6px 2px;text-align:center`;
     info.innerHTML=
-      `<div style="font-size:13px;font-weight:700;color:#e8e8f0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${p.nombre}</div>`+
-      `<div style="font-size:11px;font-weight:600;color:${color};margin-top:2px">${p.id}</div>`+
-      (p.congregacion?`<div style="font-size:10px;color:#7a7d95;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-top:1px">${p.congregacion}</div>`:'');
+      `<div style="font-size:10px;font-weight:700;color:#e8e8f0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${p.nombre}</div>`+
+      `<div style="font-size:9px;font-weight:600;color:${color};margin-top:1px">${p.id}</div>`+
+      (p.congregacion?`<div style="font-size:8px;color:#7a7d95;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-top:1px">${p.congregacion}</div>`:'');
 
     // Download button
     const dlBtn=document.createElement('button');
     dlBtn.textContent='⬇ Descargar';
-    dlBtn.style.cssText=`margin:6px 10px 10px;background:${color};color:#000;border:none;padding:7px 0;border-radius:8px;font-weight:700;font-size:12px;cursor:pointer;font-family:'DM Sans',sans-serif;display:block;width:calc(100% - 20px)`;
+    dlBtn.style.cssText=`margin:4px 6px 6px;background:${color};color:#000;border:none;padding:4px 0;border-radius:6px;font-weight:700;font-size:9px;cursor:pointer;font-family:'DM Sans',sans-serif;display:block;width:calc(100% - 12px)`;
     dlBtn.onclick=(e)=>{
       e.stopPropagation();
       const a=document.createElement('a');

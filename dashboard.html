@@ -406,46 +406,64 @@ function renderDashboard() {
 
   const DATA_TOTAL = DATA;
 
-  // Solo participantes con al menos una comida asignada en la vista actual
-  const DATA_CON_COMIDA = DATA.filter(d => maxPosible(d.id) > 0);
+  // Totales generales — directo desde Firebase
+  let totalMax = 0, totalRet = 0;
+  const diasFiltro    = vistaDia    === "todos" ? DIAS    : [parseInt(vistaDia)];
+  const tiemposFiltro = vistaTiempo === "todos" ? TIEMPOS : [vistaTiempo];
 
-  // Totales generales
-  const totalRet = DATA_CON_COMIDA.reduce((s,d) => s + Math.min(contarRetiros(d.id), maxPosible(d.id)), 0);
-  const totalMax = DATA_CON_COMIDA.reduce((s,d) => s + maxPosible(d.id), 0);
+  Object.values(FB_COMIDAS).forEach(fb => {
+    if (!fb || !fb.meals) return;
+    DAYS_CFG.forEach(dayCfg => {
+      if (!diasFiltro.includes(dayCfg.dia)) return;
+      dayCfg.meals.forEach(meal => {
+        if (!tiemposFiltro.includes(meal)) return;
+        const fbKey = MK(dayCfg.key, meal);
+        if (fb.meals[fbKey] === true) {
+          totalMax++;
+          if (fb.retirado && fb.retirado[fbKey] === true) totalRet++;
+        }
+      });
+    });
+  });
   const totalPen = totalMax - totalRet;
   const pct      = Math.round(totalRet / (totalMax||1) * 100) || 0;
 
-  // Por categoría
+  // Por categoría — usa DATA del CSV para nombre/categoría, pero conteo desde Firebase
   const cats = { Adulto:{total:0,ret:0}, Joven:{total:0,ret:0}, Menor:{total:0,ret:0} };
   DATA_TOTAL.forEach(d => {
+    const fb = FB_COMIDAS[d.id];
+    // Solo cuenta si tiene al menos una comida asignada en Firebase
+    const tieneComida = fb && fb.meals && DAYS_CFG.some(dayCfg =>
+      dayCfg.meals.some(meal => fb.meals[MK(dayCfg.key, meal)] === true)
+    );
+    if (!tieneComida) return;
     const cat = cats[catNorm(d.categoria)] || cats["Adulto"];
     cat.total += 1;
     if (contarRetiros(d.id) > 0) cat.ret += 1;
   });
 
-  // Últimos retiros desde el nodo comidas/retirado de Firebase
-  const diasFiltro    = vistaDia    === "todos" ? DIAS    : [parseInt(vistaDia)];
-  const tiemposFiltro = vistaTiempo === "todos" ? TIEMPOS : [vistaTiempo];
+  // Últimos retiros desde Firebase
   const ultimos = getUltimosRetiros(25).filter(({dayCfg, meal}) =>
     diasFiltro.includes(dayCfg.dia) && tiemposFiltro.includes(meal)
   );
 
-  // Tabla resumen días × tiempos
+  // Tabla resumen días × tiempos — conteo directo desde Firebase (sin filtrar por DATA del CSV)
   const resumenFilas = DAYS_CFG.map(dayCfg => {
     const row = { dia: dayCfg.dia };
     if (vistaDia !== "todos" && parseInt(vistaDia) !== dayCfg.dia) return row;
     const tiemposVista = vistaTiempo === "todos" ? TIEMPOS : [vistaTiempo];
     tiemposVista.forEach(tiem => {
       if (!dayCfg.meals.includes(tiem)) return;
-      const elegibles = DATA.filter(d => {
-        const fb = FB_COMIDAS[d.id];
-        return fb && fb.meals && fb.meals[MK(dayCfg.key, tiem)] === true;
+      const fbKey = MK(dayCfg.key, tiem);
+      let asignados = 0, retirados = 0;
+      Object.values(FB_COMIDAS).forEach(fb => {
+        if (!fb || !fb.meals) return;
+        if (fb.meals[fbKey] === true) {
+          asignados++;
+          if (fb.retirado && fb.retirado[fbKey] === true) retirados++;
+        }
       });
-      const ret = elegibles.filter(d => {
-        const fb = FB_COMIDAS[d.id];
-        return fb && fb.retirado && fb.retirado[MK(dayCfg.key, tiem)] === true;
-      }).length;
-      row[tiem] = { ret, pen: elegibles.length - ret };
+      row[tiem] = { ret: retirados, pen: asignados - retirados };
     });
     return row;
   });
