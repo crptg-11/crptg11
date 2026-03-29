@@ -1280,7 +1280,6 @@ async function buildGallery(){
   for(const p of DATA){
     const cat=getCategoria(p.edad);
     const color=getCatColor(cat);
-    // label removed
     const qrUrl=await makeQRDataURL(buildQRUrl(p.id));
     const dlCanvas=await makeQRCardCanvas(p,700,960,qrUrl);
 
@@ -1289,29 +1288,19 @@ async function buildGallery(){
     wrapper.dataset.id=(p.id||'').toLowerCase();
     wrapper.dataset.cong=(p.congregacion||'').toLowerCase();
     wrapper.dataset.cat=cat;
-    wrapper.style.cssText=`border-radius:8px;overflow:hidden;border:1px solid ${color}55;background:#13161f;display:flex;flex-direction:column;transition:transform .15s,border-color .15s`;
+    wrapper.style.cssText=`border-radius:10px;overflow:hidden;border:2px solid ${color}55;background:#13161f;display:flex;flex-direction:column;transition:transform .15s,border-color .15s`;
     wrapper.onmouseenter=()=>{wrapper.style.transform='scale(1.02)';wrapper.style.borderColor=color;};
     wrapper.onmouseleave=()=>{wrapper.style.transform='';wrapper.style.borderColor=color+'55';};
 
-    // No category stripe — removed
-
-    // QR image — data URL loads instantly
-    const qrImg=document.createElement('img');
-    qrImg.style.cssText='display:block;width:100%;background:#fff;padding:6px;box-sizing:border-box';
-    qrImg.src=qrUrl;
-
-    // Info block
-    const info=document.createElement('div');
-    info.style.cssText=`padding:5px 7px 3px;text-align:center`;
-    info.innerHTML=
-      `<div style="font-size:11px;font-weight:700;color:#e8e8f0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${p.nombre}</div>`+
-      `<div style="font-size:10px;font-weight:600;color:${color};margin-top:2px">${p.id}</div>`+
-      (p.congregacion?`<div style="font-size:9px;color:#7a7d95;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-top:1px">${p.congregacion}</div>`:'');
+    // Full card preview — uses the same canvas as download, correct aspect ratio guaranteed
+    const preview=document.createElement('img');
+    preview.src=dlCanvas.toDataURL('image/png');
+    preview.style.cssText='display:block;width:100%;height:auto;aspect-ratio:700/960';
 
     // Download button
     const dlBtn=document.createElement('button');
     dlBtn.textContent='⬇ Descargar';
-    dlBtn.style.cssText=`margin:5px 7px 8px;background:${color};color:#000;border:none;padding:6px 0;border-radius:7px;font-weight:700;font-size:10px;cursor:pointer;font-family:'DM Sans',sans-serif;display:block;width:calc(100% - 14px)`;
+    dlBtn.style.cssText=`background:${color};color:#000;border:none;padding:9px 0;font-weight:700;font-size:11px;cursor:pointer;font-family:'DM Sans',sans-serif;display:block;width:100%`;
     dlBtn.onclick=(e)=>{
       e.stopPropagation();
       const a=document.createElement('a');
@@ -1320,8 +1309,7 @@ async function buildGallery(){
       a.click();
     };
 
-    wrapper.appendChild(qrImg);
-    wrapper.appendChild(info);
+    wrapper.appendChild(preview);
     wrapper.appendChild(dlBtn);
     cards.push(wrapper);
   }
