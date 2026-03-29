@@ -183,12 +183,6 @@ function parseCSVDashboard(text) {
   const idx = {};
   for (const [field, keys] of Object.entries(COL_MAP_D)) idx[field] = findColD(headers, keys);
 
-  // Detectar columnas de comida directamente en el header del sheet
-  const mealColIdx = {};
-  Object.keys(MEALS_T).forEach(mk => {
-    const i = headers.findIndex(h => h.trim() === mk);
-    if (i !== -1) mealColIdx[mk] = i;
-  });
 
   const rows = [];
   for (let i = 1; i < allRows.length; i++) {
@@ -208,21 +202,9 @@ function parseCSVDashboard(text) {
     let idVal = get("id");
     if (!idVal) idVal = "CR-11" + String(1000 + i).slice(1);
 
-    // Leer comidas desde columnas del sheet (si existen), si no, usar alimentacion general
+    // Comidas arrancan todas en false — igual que comida.html
+    // Los valores reales llegan via comidas_override de Firebase
     const comidas = { ...MEALS_T };
-    const tieneAlim = /^s[ií]/i.test(get("alimentacion"));
-    let hayColumnaComida = false;
-    Object.keys(MEALS_T).forEach(mk => {
-      if (mealColIdx[mk] !== undefined) {
-        hayColumnaComida = true;
-        const val = (cells[mealColIdx[mk]] || "").replace(/^"|"$/g, "").trim().toLowerCase();
-        comidas[mk] = val === "true" || val === "1" || val === "sí" || val === "si" || val === "yes" || val === "verdadero" || val === "x";
-      }
-    });
-    // Si el sheet no tiene columnas de comida individuales, usar el flag general
-    if (!hayColumnaComida) {
-      Object.keys(comidas).forEach(k => comidas[k] = tieneAlim);
-    }
 
     rows.push({ id: idVal, nombre, edad: edadRaw, categoria, congregacion: get("congregacion"), comidas });
   }
