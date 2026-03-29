@@ -408,12 +408,12 @@ function renderDashboard() {
   const totalPen = totalMax - totalRet;
   const pct      = Math.round(totalRet / (totalMax||1) * 100) || 0;
 
-  // Por categoría
+  // Por categoría — contar personas, no comidas
   const cats = { Adulto:{total:0,ret:0}, Joven:{total:0,ret:0}, Menor:{total:0,ret:0} };
   DATA_CON_COMIDA.forEach(d => {
     const cat = cats[catNorm(d.categoria)] || cats["Adulto"];
-    cat.total += maxPosible(d);
-    cat.ret   += Math.min(contarRetiros(d), maxPosible(d));
+    cat.total += 1;
+    if (contarRetiros(d) > 0) cat.ret += 1;
   });
 
   // Últimos retiros (filtrando vista)
