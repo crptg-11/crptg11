@@ -291,6 +291,42 @@ tr:last-child td{border-bottom:none}tr:hover td{background:rgba(232,168,56,.02)}
   </div>
 </div>
 
+<!-- ADD PARTICIPANT MODAL -->
+<div id="add-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:9100;align-items:center;justify-content:center">
+  <div style="background:#13161f;border:2px solid var(--teal);border-radius:20px;padding:28px;max-width:380px;width:92%;max-height:92vh;overflow-y:auto">
+    <h3 style="font-family:'Playfair Display',serif;font-size:1.05rem;margin-bottom:4px;color:var(--teal)">➕ Agregar Participante</h3>
+    <p style="color:var(--muted);font-size:12px;margin-bottom:18px">Persona sin inscripción — se generará un ID externo automáticamente.</p>
+
+    <label style="font-size:11px;color:var(--muted);display:block;margin-bottom:3px">Nombre completo *</label>
+    <input id="add-nombre" type="text" placeholder="Ej: María González" style="width:100%;background:#0b0d13;border:1px solid #22263a;color:var(--text);font-family:'DM Sans',sans-serif;font-size:13px;padding:9px 12px;border-radius:10px;outline:none;margin-bottom:12px;transition:border-color .2s" onfocus="this.style.borderColor='var(--teal)'" onblur="this.style.borderColor='#22263a'">
+
+    <label style="font-size:11px;color:var(--muted);display:block;margin-bottom:3px">Congregación</label>
+    <input id="add-cong" type="text" placeholder="Ej: Iglesia Restaurada" style="width:100%;background:#0b0d13;border:1px solid #22263a;color:var(--text);font-family:'DM Sans',sans-serif;font-size:13px;padding:9px 12px;border-radius:10px;outline:none;margin-bottom:12px;transition:border-color .2s" onfocus="this.style.borderColor='var(--teal)'" onblur="this.style.borderColor='#22263a'">
+
+    <div style="display:flex;gap:10px;margin-bottom:14px">
+      <div style="flex:1">
+        <label style="font-size:11px;color:var(--muted);display:block;margin-bottom:3px">Edad</label>
+        <input id="add-edad" type="number" min="1" max="120" placeholder="Ej: 32" style="width:100%;background:#0b0d13;border:1px solid #22263a;color:var(--text);font-family:'DM Sans',sans-serif;font-size:13px;padding:9px 12px;border-radius:10px;outline:none;transition:border-color .2s" onfocus="this.style.borderColor='var(--teal)'" onblur="this.style.borderColor='#22263a'">
+      </div>
+      <div style="flex:1">
+        <label style="font-size:11px;color:var(--muted);display:block;margin-bottom:3px">Sexo</label>
+        <select id="add-sexo" style="width:100%;background:#0b0d13;border:1px solid #22263a;color:var(--text);font-family:'DM Sans',sans-serif;font-size:13px;padding:9px 12px;border-radius:10px;outline:none;cursor:pointer">
+          <option value="">—</option>
+          <option value="M">Masculino</option>
+          <option value="F">Femenino</option>
+        </select>
+      </div>
+    </div>
+
+    <label style="font-size:11px;color:var(--muted);display:block;margin-bottom:6px">Comidas a asignar</label>
+    <div id="add-meals-wrap" style="background:#0b0d13;border:1px solid #22263a;border-radius:10px;padding:10px;margin-bottom:16px"></div>
+
+    <div id="add-err" style="color:var(--rose);font-size:12px;min-height:16px;margin-bottom:8px"></div>
+    <button onclick="saveAddParticipant()" style="width:100%;padding:11px;border-radius:10px;border:none;background:var(--teal);color:#000;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:700;cursor:pointer;margin-bottom:7px">✅ Guardar participante</button>
+    <button onclick="closeAddModal()" style="width:100%;padding:9px;border-radius:10px;border:1px solid var(--border);background:none;color:var(--muted);font-family:'DM Sans',sans-serif;font-size:12px;cursor:pointer">Cancelar</button>
+  </div>
+</div>
+
 <!-- SCAN OVERLAY -->
 <div id="scan-ov">
   <h3>📷 Modo Escáner</h3>
@@ -310,6 +346,7 @@ tr:last-child td{border-bottom:none}tr:hover td{background:rgba(232,168,56,.02)}
     <span id="auth-badge" class="badge viewer">👁️ Solo lectura</span>
   </div>
   <div style="display:flex;gap:6px;align-items:center">
+    <button id="add-btn" class="tbtn" onclick="openAddModal()" style="display:none;background:rgba(62,207,184,.1);border-color:rgba(62,207,184,.35);color:var(--teal)">➕ Agregar</button>
     <button id="scan-btn" class="tbtn scan" onclick="openScan()" style="display:none">📷 Modo Escáner</button>
     <button id="gallery-btn" class="tbtn" onclick="openGallery()" style="background:rgba(62,207,184,.08);border-color:rgba(62,207,184,.3);color:var(--teal)">🔲 Ver QR</button>
     <button id="pdf-btn" class="tbtn" onclick="downloadAllQRPdf()" style="background:rgba(139,127,232,.1);border-color:rgba(139,127,232,.35);color:var(--lav)">📄 Descargar PDF</button>
@@ -441,12 +478,14 @@ function showApp(){
   document.getElementById('auth-badge').className = 'badge '+(isAdmin?'admin':'viewer');
   if(isAdmin){
     document.getElementById('scan-btn').style.display='';
+    document.getElementById('add-btn').style.display='';
     document.getElementById('admin-btn').style.display='none';
     document.getElementById('viewer-btn').style.display='inline';
     document.getElementById('logout-btn').style.display='inline';
     document.getElementById('nf-sub').textContent='Administradores pueden asignar comidas desde aquí.';
   } else {
     document.getElementById('scan-btn').style.display='none';
+    document.getElementById('add-btn').style.display='none';
     document.getElementById('admin-btn').style.display='inline';
     document.getElementById('viewer-btn').style.display='none';
     document.getElementById('logout-btn').style.display='none';
@@ -505,6 +544,13 @@ async function init(){
     waitFB(async()=>{
       const snap=await window._get(window._ref(window._db,FB_PATH));
       const ex=snap.val()||{};
+      // Load external participants (added manually) that aren't in the CSV
+      const csvIds=new Set(DATA.map(p=>p.id));
+      Object.entries(ex).forEach(([id,val])=>{
+        if(val._external && !csvIds.has(id)){
+          DATA.push({id,nombre:val.nombre||id,sexo:val.sexo||'',edad:val.edad||0,congregacion:val.congregacion||'',quiere_comida:true,_external:true});
+        }
+      });
       const upd={};
       DATA.forEach(p=>{ if(p.quiere_comida&&!ex[p.id]){upd[`${FB_PATH}/${p.id}/meals`]=defaultMeals();upd[`${FB_PATH}/${p.id}/retirado`]={};} });
       if(Object.keys(upd).length) await window._update(window._ref(window._db),upd);
@@ -687,7 +733,7 @@ function renderMain(){
       : `<td>${mealCell}</td><td>${retCell}</td>`;
 
     return`<tr>
-      <td style="font-size:11px;color:var(--muted);font-weight:600">${pid}</td>
+      <td style="font-size:11px;color:var(--muted);font-weight:600">${pid}${p._external?'<span style="margin-left:4px;background:rgba(62,207,184,.15);color:var(--teal);font-size:9px;padding:1px 5px;border-radius:4px;font-weight:700">EXT</span>':''}</td>
       <td><div class="nm">${p.nombre}</div><div class="cg">${p.congregacion||''}</div></td>
       <td style="font-size:12px">${p.congregacion||'—'}</td>
       ${extraTds}
@@ -720,7 +766,7 @@ function renderNoFood(){
       ac='<span style="color:var(--muted);font-size:11px">Solo administradores</span>';
     }
     return`<tr>
-      <td style="font-size:11px;color:var(--muted);font-weight:600">${pid}</td>
+      <td style="font-size:11px;color:var(--muted);font-weight:600">${pid}${p._external?'<span style="margin-left:4px;background:rgba(62,207,184,.15);color:var(--teal);font-size:9px;padding:1px 5px;border-radius:4px;font-weight:700">EXT</span>':''}</td>
       <td><div class="nm">${p.nombre}</div><div class="cg">${p.congregacion||''}</div></td>
       <td style="font-size:12px">${p.congregacion||'—'}</td>
       <td>${ac}</td>
@@ -802,6 +848,65 @@ function processScan(){
   const p=DATA.find(x=>x.id===v||x.nombre.toLowerCase()===v.toLowerCase());
   p?openRetiro(p.id):showToast('Participante no encontrado: '+v);
 }
+
+// ═══════════════════ ADD PARTICIPANT ═══════════════════
+function openAddModal(){
+  if(!isAdmin){showToast('Solo administradores');return;}
+  document.getElementById('add-nombre').value='';
+  document.getElementById('add-cong').value='';
+  document.getElementById('add-edad').value='';
+  document.getElementById('add-sexo').value='';
+  document.getElementById('add-err').textContent='';
+  // Build meal checkboxes — all checked by default
+  const wrap=document.getElementById('add-meals-wrap');
+  wrap.innerHTML=DAYS.map(d=>
+    `<div style="margin-bottom:8px"><div style="font-size:9px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px">${d.label}</div>`
+    +d.meals.map(m=>`<label style="display:inline-flex;align-items:center;gap:4px;margin-right:10px;cursor:pointer"><input type="checkbox" class="add-meal-chk" data-key="${MK(d.key,m)}" checked style="accent-color:var(--teal);width:13px;height:13px"><span style="font-size:11px;color:var(--text)">${cap(m)}</span></label>`).join('')
+    +'</div>'
+  ).join('');
+  document.getElementById('add-modal').style.display='flex';
+  setTimeout(()=>document.getElementById('add-nombre').focus(),100);
+}
+function closeAddModal(){document.getElementById('add-modal').style.display='none';}
+
+function genExternalId(){
+  // Format: EXT-XXXX where XXXX is a random 4-digit number not already used
+  const usedIds=new Set(DATA.map(p=>p.id));
+  let id;
+  do { id='EXT-'+String(Math.floor(1000+Math.random()*9000)); } while(usedIds.has(id));
+  return id;
+}
+
+async function saveAddParticipant(){
+  const nombre=document.getElementById('add-nombre').value.trim();
+  if(!nombre){document.getElementById('add-err').textContent='El nombre es obligatorio.';return;}
+  document.getElementById('add-err').textContent='';
+
+  const id=genExternalId();
+  const edad=parseInt(document.getElementById('add-edad').value)||0;
+  const congregacion=document.getElementById('add-cong').value.trim();
+  const sexo=document.getElementById('add-sexo').value;
+
+  // Collect selected meals
+  const meals={};
+  document.querySelectorAll('.add-meal-chk').forEach(chk=>{ if(chk.checked) meals[chk.dataset.key]=true; });
+
+  // Add to local DATA array
+  const newP={id,nombre,sexo,edad,congregacion,quiere_comida:Object.keys(meals).length>0,_external:true};
+  DATA.push(newP);
+
+  // Save to Firebase
+  waitFB(async()=>{
+    await window._update(window._ref(window._db,`${FB_PATH}/${id}`),{meals,retirado:{},_external:true,nombre,congregacion,edad,sexo});
+  });
+
+  closeAddModal();
+  buildDayTabs(); renderMain(); renderNoFood(); updateStats();
+  showToast(`✅ ${nombre} agregado — ID: ${id}`);
+}
+
+// Close add modal on backdrop click
+document.getElementById('add-modal').addEventListener('click',e=>{if(e.target===e.currentTarget)closeAddModal();});
 
 // ═══════════════════ TOAST ═══════════════════
 function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');clearTimeout(t._to);t._to=setTimeout(()=>t.classList.remove('show'),2500);}

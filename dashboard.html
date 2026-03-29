@@ -236,56 +236,86 @@ function parseCSVDashboard(text) {
 document.getElementById("main").innerHTML = `<div style="text-align:center;padding:60px;color:var(--muted)">⏳ Cargando participantes desde el sheet...</div>`;
 document.getElementById("last-update").textContent = "Cargando...";
 
+// ── ESTRUCTURA DE DÍAS/COMIDAS (igual que comida.html) ────────────────────────
+// comida.html guarda en Firebase bajo: comidas/{id}/meals/{day}_{meal} = true/false
+// comida.html guarda retiros en:       comidas/{id}/retirado/{day}_{meal} = true/false
+// Días: mie, jue, vie, sab   Comidas: desayuno, almuerzo, cena (mie solo tiene cena)
+
+const DAYS_CFG = [
+  { key:"mie", label:"Miércoles", dia:1, meals:["cena"] },
+  { key:"jue", label:"Jueves",    dia:2, meals:["desayuno","almuerzo","cena"] },
+  { key:"vie", label:"Viernes",   dia:3, meals:["desayuno","almuerzo","cena"] },
+  { key:"sab", label:"Sábado",    dia:4, meals:["desayuno","almuerzo","cena"] },
+];
+// Firebase key: "{dayKey}_{meal}"  e.g. "mie_cena", "jue_desayuno"
+const MK = (dk, m) => `${dk}_${m}`;
+
 const DIAS    = [1,2,3,4];
 const TIEMPOS = ["desayuno","almuerzo","cena"];
 const TLABEL  = {desayuno:"Desayuno",almuerzo:"Almuerzo",cena:"Cena"};
 const TIEMPOS_POR_DIA = {1:["cena"],2:["desayuno","almuerzo","cena"],3:["desayuno","almuerzo","cena"],4:["desayuno","almuerzo","cena"]};
-const MEAL_KEY = {
-  "1_cena":    "cena - miercoles",
-  "2_desayuno":"desayuno -jueves",
-  "2_almuerzo":"almuerzo -jueves",
-  "2_cena":    "cena - jueves",
-  "3_desayuno":"desayuno -viernes",
-  "3_almuerzo":"almuerzo -viernes",
-  "3_cena":    "cena - viernes",
-  "4_desayuno":"desayuno - sábado",
-  "4_almuerzo":"almuerzo -sábado",
-  "4_cena":    "cena - sábado"
-};
 
-
-let DATA_BASE = []; // se carga dinámicamente desde el Sheet
-let DATA_EXTRA = [];
+let DATA_BASE = [];
 let DATA  = [];
-let retiros = {};
-let _comidasOverrides = {};
-let _csvCargado = false; // evita renderizar antes de tener datos del sheet
+let FB_COMIDAS = {}; // nodo completo de comidas de Firebase: { [id]: { meals:{...}, retirado:{...} } }
+let _csvCargado = false;
 let vistaDia    = "todos";
 let vistaTiempo = "todos";
 
-const fkey = (dia,tiempo,id) => `d${dia}_${tiempo}_${id.replace(/-/g,"_")}`;
+// Devuelve los slots (día config, meal) que tiene asignados este participante según Firebase
+function getSlotsAsignados(pid) {
+  const fb = FB_COMIDAS[pid];
+  if (!fb || !fb.meals) return [];
+  return DAYS_CFG.flatMap(d =>
+    d.meals
+      .filter(m => fb.meals[MK(d.key, m)] === true)
+      .map(m => ({ dayCfg: d, meal: m }))
+  );
+}
 
-function getTiemposPosibles(d) {
-  // Solo cuenta slots donde la persona TIENE esa comida asignada (=== true)
-  const dias    = vistaDia    === "todos" ? DIAS    : [parseInt(vistaDia)];
-  const tiempos = vistaTiempo === "todos" ? TIEMPOS : [vistaTiempo];
-  return dias.flatMap(dia => {
-    const validosDia = TIEMPOS_POR_DIA[dia] || TIEMPOS;
-    return tiempos
-      .filter(t => validosDia.includes(t))
-      .filter(t => {
-        const col = MEAL_KEY[`${dia}_${t}`];
-        if (!col) return false;
-        return d.comidas && d.comidas[col] === true;
-      })
-      .map(t => ({dia, t}));
+// Devuelve los slots retirados
+function getSlotsRetirados(pid) {
+  const fb = FB_COMIDAS[pid];
+  if (!fb || !fb.retirado) return [];
+  return DAYS_CFG.flatMap(d =>
+    d.meals
+      .filter(m => fb.retirado[MK(d.key, m)] === true)
+      .map(m => ({ dayCfg: d, meal: m }))
+  );
+}
+
+// Filtra slots según la vista actual (día + tiempo)
+function filtrarSlotsPorVista(slots) {
+  const diasFiltro    = vistaDia    === "todos" ? DIAS    : [parseInt(vistaDia)];
+  const tiemposFiltro = vistaTiempo === "todos" ? TIEMPOS : [vistaTiempo];
+  return slots.filter(({dayCfg, meal}) =>
+    diasFiltro.includes(dayCfg.dia) && tiemposFiltro.includes(meal)
+  );
+}
+
+function maxPosible(pid)    { return filtrarSlotsPorVista(getSlotsAsignados(pid)).length; }
+function contarRetiros(pid) { return filtrarSlotsPorVista(getSlotsRetirados(pid)).length; }
+
+// Últimos retiros: extrae timestamps del nodo retirado si existen, o los cuenta simplemente
+function getUltimosRetiros(limite = 25) {
+  const lista = [];
+  Object.entries(FB_COMIDAS).forEach(([pid, fb]) => {
+    if (!fb || !fb.retirado) return;
+    const p = DATA.find(d => d.id === pid);
+    if (!p) return;
+    DAYS_CFG.forEach(dayCfg => {
+      dayCfg.meals.forEach(meal => {
+        const val = fb.retirado[MK(dayCfg.key, meal)];
+        if (val === true || (val && typeof val === "object")) {
+          const hora = (val && val.hora) ? val.hora : "--:--";
+          lista.push({ pid, p, dayCfg, meal, hora });
+        }
+      });
+    });
   });
-}
-function contarRetiros(d) {
-  return getTiemposPosibles(d).filter(({dia,t}) => retiros[fkey(dia,t,d.id)]).length;
-}
-function maxPosible(d) {
-  return getTiemposPosibles(d).length;
+  // Ordenar por hora descendente (si hay timestamps); si no, por orden natural
+  lista.sort((a, b) => b.hora.localeCompare(a.hora));
+  return lista.slice(0, limite);
 }
 
 function setVistaDia(v, el) {
@@ -325,14 +355,6 @@ function setVistaTiempo(v, el) {
 window.setVistaDia    = setVistaDia;
 window.setVistaTiempo = setVistaTiempo;
 
-function aplicarOverrides(overrides){
-  _comidasOverrides = overrides || {};
-  Object.entries(_comidasOverrides).forEach(([keyFb, comidas])=>{
-    const p = DATA.find(d => d.id.replace(/-/g,"_") === keyFb);
-    if(p) p.comidas = {...(p.comidas||{}), ...comidas};
-  });
-}
-
 // ── CARGA INICIAL DESDE GOOGLE SHEET ─────────────────────────
 async function cargarSheetDashboard() {
   try {
@@ -342,63 +364,28 @@ async function cargarSheetDashboard() {
     DATA_BASE = parseCSVDashboard(text);
   } catch(e) {
     console.warn("Error cargando Sheet en dashboard:", e.message);
-    // Fallback: intenta usar caché de localStorage si hay
-    const cached = localStorage.getItem('crptg11-dataBase');
-    if (cached) {
-      try {
-        const parsed = JSON.parse(cached);
-        // Convertir formato comida → dashboard (categoria string)
-        // Solo incluir los que pidieron alimentación
-        const catMap = { A: "Adulto", J: "Joven", N: "Menor" };
-        DATA_BASE = parsed
-          .filter(p => p._quiere_comida)
-          .map(p => ({
-            ...p,
-            categoria: catMap[p.cat] || p.categoria || "Adulto"
-          }));
-      } catch(_){}
-    }
   }
-  DATA = [...DATA_BASE, ...DATA_EXTRA];
-  aplicarOverrides(_comidasOverrides);
+  DATA = [...DATA_BASE];
   _csvCargado = true;
   renderDashboard();
-  // Refrescar cada 5 minutos
+  // Refrescar CSV cada 5 minutos
   setInterval(async () => {
     try {
       const res = await fetch(SHEET_CSV_URL + "&t=" + Date.now(), { cache: "no-store" });
       if (!res.ok) return;
       DATA_BASE = parseCSVDashboard(await res.text());
-      DATA = [...DATA_BASE, ...DATA_EXTRA];
-      aplicarOverrides(_comidasOverrides);
+      DATA = [...DATA_BASE];
       renderDashboard();
     } catch(_){}
   }, 5 * 60 * 1000);
 }
 
-onValue(ref(db,"retiros"), snap => {
-  retiros = snap.val() || {};
+// ── ESCUCHA FIREBASE: nodo "comidas" (igual que comida.html) ──────────────────
+onValue(ref(db, "comidas"), snap => {
+  FB_COMIDAS = snap.val() || {};
   const now = new Date();
-  document.getElementById("last-update").textContent = "Actualizado: " + now.toLocaleTimeString("es-CR",{hour:"2-digit",minute:"2-digit"});
-  if (_csvCargado) renderDashboard();
-});
-
-onValue(ref(db,"participantes_extra"), snap => {
-  DATA_EXTRA = [];
-  const val = snap.val() || {};
-  const catMap = { A: "Adulto", J: "Joven", N: "Menor" };
-  Object.values(val).forEach(p => DATA_EXTRA.push({
-    ...p,
-    categoria: catMap[p.cat] || p.categoria || "Adulto"
-  }));
-  DATA = [...DATA_BASE, ...DATA_EXTRA];
-  aplicarOverrides(_comidasOverrides);
-  if (_csvCargado) renderDashboard();
-});
-
-onValue(ref(db,"comidas_override"), snap => {
-  DATA = [...DATA_BASE, ...DATA_EXTRA];
-  aplicarOverrides(snap.val() || {});
+  document.getElementById("last-update").textContent =
+    "Actualizado: " + now.toLocaleTimeString("es-CR", {hour:"2-digit", minute:"2-digit"});
   if (_csvCargado) renderDashboard();
 });
 
@@ -417,59 +404,47 @@ function renderDashboard() {
     return "Adulto";
   };
 
-  // Todos los participantes que quieren comida (ya filtrados al parsear el CSV)
   const DATA_TOTAL = DATA;
 
-  // Solo participantes con al menos una comida asignada en la vista actual (para retiros)
-  const DATA_CON_COMIDA = DATA.filter(d => maxPosible(d) > 0);
+  // Solo participantes con al menos una comida asignada en la vista actual
+  const DATA_CON_COMIDA = DATA.filter(d => maxPosible(d.id) > 0);
 
   // Totales generales
-  const totalRet = DATA_CON_COMIDA.reduce((s,d) => s + Math.min(contarRetiros(d), maxPosible(d)), 0);
-  const totalMax = DATA_CON_COMIDA.reduce((s,d) => s + maxPosible(d), 0);
+  const totalRet = DATA_CON_COMIDA.reduce((s,d) => s + Math.min(contarRetiros(d.id), maxPosible(d.id)), 0);
+  const totalMax = DATA_CON_COMIDA.reduce((s,d) => s + maxPosible(d.id), 0);
   const totalPen = totalMax - totalRet;
   const pct      = Math.round(totalRet / (totalMax||1) * 100) || 0;
 
-  // Por categoría — contar personas totales (no solo las que tienen comidas asignadas)
+  // Por categoría
   const cats = { Adulto:{total:0,ret:0}, Joven:{total:0,ret:0}, Menor:{total:0,ret:0} };
   DATA_TOTAL.forEach(d => {
     const cat = cats[catNorm(d.categoria)] || cats["Adulto"];
     cat.total += 1;
-    if (contarRetiros(d) > 0) cat.ret += 1;
+    if (contarRetiros(d.id) > 0) cat.ret += 1;
   });
 
-  // Últimos retiros (filtrando vista)
-  const dias    = vistaDia    === "todos" ? DIAS    : [parseInt(vistaDia)];
-  const tiempos = vistaTiempo === "todos" ? TIEMPOS : [vistaTiempo];
-  const ultimos = Object.entries(retiros)
-    .filter(([k]) => {
-      const parts = k.split("_"); // d1_desayuno_CR_11001
-      const dia   = parseInt(parts[0].replace("d",""));
-      const tiem  = parts[1];
-      return dias.includes(dia) && tiempos.includes(tiem);
-    })
-    .map(([k,v]) => {
-      const parts = k.split("_");
-      const dia   = parseInt(parts[0].replace("d",""));
-      const tiem  = parts[1];
-      const id    = parts.slice(2).join("-").replace(/_/g,"-");
-      const p     = DATA.find(d => d.id === id);
-      return { dia, tiem, hora: v.hora, p };
-    })
-    .filter(x => x.p)
-    .sort((a,b) => b.hora.localeCompare(a.hora))
-    .slice(0, 25);
+  // Últimos retiros desde el nodo comidas/retirado de Firebase
+  const diasFiltro    = vistaDia    === "todos" ? DIAS    : [parseInt(vistaDia)];
+  const tiemposFiltro = vistaTiempo === "todos" ? TIEMPOS : [vistaTiempo];
+  const ultimos = getUltimosRetiros(25).filter(({dayCfg, meal}) =>
+    diasFiltro.includes(dayCfg.dia) && tiemposFiltro.includes(meal)
+  );
 
   // Tabla resumen días × tiempos
-  const resumenFilas = DIAS.map(dia => {
-    const row = { dia };
-    const validosDia = TIEMPOS_POR_DIA[dia] || TIEMPOS;
-    TIEMPOS.forEach(tiem => {
-      if (!validosDia.includes(tiem)) return;
-      if (vistaDia !== "todos" && parseInt(vistaDia) !== dia) return;
-      if (vistaTiempo !== "todos" && vistaTiempo !== tiem) return;
-      const col = MEAL_KEY[`${dia}_${tiem}`];
-      const elegibles = DATA.filter(d => { const col2 = MEAL_KEY[`${dia}_${tiem}`]; return col2 && d.comidas && d.comidas[col2] === true; });
-      const ret = elegibles.filter(d => retiros[fkey(dia,tiem,d.id)]).length;
+  const resumenFilas = DAYS_CFG.map(dayCfg => {
+    const row = { dia: dayCfg.dia };
+    if (vistaDia !== "todos" && parseInt(vistaDia) !== dayCfg.dia) return row;
+    const tiemposVista = vistaTiempo === "todos" ? TIEMPOS : [vistaTiempo];
+    tiemposVista.forEach(tiem => {
+      if (!dayCfg.meals.includes(tiem)) return;
+      const elegibles = DATA.filter(d => {
+        const fb = FB_COMIDAS[d.id];
+        return fb && fb.meals && fb.meals[MK(dayCfg.key, tiem)] === true;
+      });
+      const ret = elegibles.filter(d => {
+        const fb = FB_COMIDAS[d.id];
+        return fb && fb.retirado && fb.retirado[MK(dayCfg.key, tiem)] === true;
+      }).length;
       row[tiem] = { ret, pen: elegibles.length - ret };
     });
     return row;
@@ -550,10 +525,11 @@ function renderDashboard() {
                 totalRet2 += row[t].ret;
                 return `<td class="cell-ret">${row[t].ret}</td><td class="cell-pen">${row[t].pen}</td>`;
               }).join("");
+              const dayCfg = DAYS_CFG[i] || {};
               return `<tr>
                 <td>
                   <span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${colors[i%colors.length]};margin-right:6px"></span>
-                  Día ${row.dia} <span style="color:var(--muted);font-size:11px;margin-left:4px">${["1 Abr","2 Abr","3 Abr","4 Abr"][row.dia-1]}</span>
+                  ${dayCfg.label || "Día "+row.dia}
                 </td>
                 ${celdas}
                 <td><strong style="color:var(--gold)">${totalRet2}</strong></td>
@@ -570,9 +546,9 @@ function renderDashboard() {
         ${ultimos.length ? ultimos.map(x => `
           <div class="recent-item">
             <div class="r-hora">${x.hora}</div>
-            <div class="r-tiempo ${x.tiem}">${TLABEL[x.tiem]}</div>
+            <div class="r-tiempo ${x.meal}">${TLABEL[x.meal]}</div>
             <div class="r-name">${x.p.nombre}</div>
-            <div class="r-info">Día ${x.dia} · ${x.p.congregacion} · ${catNorm(x.p.categoria)}</div>
+            <div class="r-info">${x.dayCfg.label} · ${x.p.congregacion || ''} · ${catNorm(x.p.categoria)}</div>
           </div>`).join("")
           : `<div class="empty">Aún no hay retiros registrados</div>`}
       </div>
