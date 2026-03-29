@@ -398,9 +398,11 @@ function renderDashboard() {
     return "Adulto";
   };
 
-  // Solo participantes con al menos una comida asignada en la vista actual
+  // Todos los participantes que quieren comida (ya filtrados al parsear el CSV)
+  const DATA_TOTAL = DATA;
+
+  // Solo participantes con al menos una comida asignada en la vista actual (para retiros)
   const DATA_CON_COMIDA = DATA.filter(d => maxPosible(d) > 0);
-  const total = DATA_CON_COMIDA.length;
 
   // Totales generales
   const totalRet = DATA_CON_COMIDA.reduce((s,d) => s + Math.min(contarRetiros(d), maxPosible(d)), 0);
@@ -408,9 +410,9 @@ function renderDashboard() {
   const totalPen = totalMax - totalRet;
   const pct      = Math.round(totalRet / (totalMax||1) * 100) || 0;
 
-  // Por categoría — contar personas, no comidas
+  // Por categoría — contar personas totales (no solo las que tienen comidas asignadas)
   const cats = { Adulto:{total:0,ret:0}, Joven:{total:0,ret:0}, Menor:{total:0,ret:0} };
-  DATA_CON_COMIDA.forEach(d => {
+  DATA_TOTAL.forEach(d => {
     const cat = cats[catNorm(d.categoria)] || cats["Adulto"];
     cat.total += 1;
     if (contarRetiros(d) > 0) cat.ret += 1;
