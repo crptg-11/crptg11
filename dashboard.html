@@ -191,7 +191,7 @@ function parseCSVDashboard(text) {
     const nombre = get("nombre");
     if (!nombre) continue;
 
-    // Solo incluir participantes que marcaron querer alimentación
+    // Solo participantes que marcaron querer alimentación
     const quiereComida = /^s[ií]/i.test(get("alimentacion"));
     if (!quiereComida) continue;
 

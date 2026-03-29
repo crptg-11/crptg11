@@ -179,9 +179,6 @@ tr:last-child td{border-bottom:none}tr:hover td{background:rgba(232,168,56,.025)
 .cam-box video{width:100%;height:100%;object-fit:cover}
 .cam-status{color:var(--muted);font-size:12px}
 
-/* ── NO-MEAL WARNING ── */
-.no-meal-warn{display:none;padding:10px 14px;background:rgba(232,107,139,.08);border:1px solid rgba(232,107,139,.2);border-radius:10px;color:var(--rose);font-size:12px;margin-bottom:12px}
-
 /* ── RESPONSIVE ── */
 @media(max-width:600px){
   .panel{padding:14px 12px}
@@ -250,8 +247,6 @@ tr:last-child td{border-bottom:none}tr:hover td{background:rgba(232,168,56,.025)
 <div class="tabs">
   <div class="tab-group">
     <button class="tab on" onclick="showTab('lista',this)">📋 Lista</button>
-    <button class="tab" onclick="showTab('no-org',this)">🌐 Sin organizar</button>
-    <button class="tab" onclick="showTab('pendientes-inscr',this)">⚠️ Sin inscripción</button>
     <button class="tab" onclick="showTab('qr',this)">📲 QR Codes</button>
     <button class="tab" onclick="showTab('add',this)">➕ Agregar</button>
   </div>
@@ -260,9 +255,6 @@ tr:last-child td{border-bottom:none}tr:hover td{background:rgba(232,168,56,.025)
 
 <!-- ══ PANEL LISTA ══ -->
 <div class="panel on" id="tab-lista">
-  <div class="no-meal-warn" id="no-meal-warn">
-    ⚠️ Algunos participantes <strong>no tienen</strong> este tiempo de comida asignado. Aparecen marcados en gris.
-  </div>
   <div class="controls">
     <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
       <div class="search-wrap"><input type="text" id="search" placeholder="Buscar participante..." oninput="renderLista()"></div>
@@ -304,70 +296,6 @@ tr:last-child td{border-bottom:none}tr:hover td{background:rgba(232,168,56,.025)
   <div class="info-row" id="lista-info"></div>
 </div>
 
-
-<!-- ══ PANEL SIN ORGANIZAR ══ -->
-<div class="panel" id="tab-no-org">
-  <div class="controls">
-    <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
-      <div class="search-wrap"><input type="text" id="search-no-org" placeholder="Buscar..." oninput="renderNoOrg()"></div>
-      <select id="filter-no-org-cat" onchange="renderNoOrg()" style="background:var(--surface);border:1px solid var(--border);color:var(--text);font-family:'DM Sans',sans-serif;font-size:12px;padding:7px 10px;border-radius:8px;outline:none">
-        <option value="">Todas las categorías</option>
-        <option value="A">Adultos</option>
-        <option value="J">Jóvenes</option>
-        <option value="N">Niños</option>
-      </select>
-      <select id="sort-no-org" onchange="renderNoOrg()" style="background:var(--surface);border:1px solid var(--border);color:var(--text);font-family:'DM Sans',sans-serif;font-size:12px;padding:7px 10px;border-radius:8px;outline:none">
-        <option value="nombre">Ordenar por nombre</option>
-        <option value="id">Ordenar por ID</option>
-        <option value="cong">Ordenar por congregación</option>
-        <option value="cat">Ordenar por categoría</option>
-      </select>
-    </div>
-    <div class="filter-btns">
-      <button class="fbtn on" onclick="setFiltroNoOrg('todos',this)">Todos</button>
-      <button class="fbtn" onclick="setFiltroNoOrg('con-comida',this)">Con comida</button>
-      <button class="fbtn" onclick="setFiltroNoOrg('sin-comida',this)">Sin comida</button>
-    </div>
-  </div>
-  <div style="padding:10px 24px 4px;font-size:12px;color:var(--muted)">
-    Congregaciones <strong>Bataan</strong> y <strong>Extranjero</strong> — no asignadas a un día de cocina.
-  </div>
-  <div class="table-wrap">
-    <table>
-      <thead><tr>
-        <th onclick="setSortNoOrg('id')" style="cursor:pointer">ID ↕</th>
-        <th onclick="setSortNoOrg('nombre')" style="cursor:pointer">Nombre ↕</th>
-        <th onclick="setSortNoOrg('cat')" style="cursor:pointer">Cat. ↕</th>
-        <th onclick="setSortNoOrg('cong')" style="cursor:pointer">Congregación ↕</th>
-        <th>Este tiempo</th><th>Estado</th><th>Acción</th><th>Editar</th>
-      </tr></thead>
-      <tbody id="tbody-no-org"></tbody>
-    </table>
-  </div>
-  <div class="info-row" id="no-org-info"></div>
-</div>
-
-<!-- ══ PANEL SIN INSCRIPCIÓN ══ -->
-<div class="panel" id="tab-pendientes-inscr">
-  <div style="padding:20px 24px 8px;display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:10px">
-    <div>
-      <div style="font-family:'Playfair Display',serif;font-size:1.1rem;color:var(--rose);margin-bottom:6px">⚠️ Verificación de inscripciones</div>
-      <div style="font-size:13px;color:var(--muted);line-height:1.6;max-width:600px">
-        Compara automáticamente la lista de participantes del Google Sheet con el control de comidas.
-        Se actualiza cada vez que abres esta pestaña.
-      </div>
-    </div>
-    <button onclick="renderNoInscr()" style="padding:7px 14px;border-radius:8px;border:1px solid rgba(62,207,184,.4);background:transparent;color:var(--teal);font-family:'DM Sans',sans-serif;font-size:12px;cursor:pointer;white-space:nowrap;margin-top:4px">🔄 Actualizar ahora</button>
-  </div>
-  <div class="table-wrap">
-    <table>
-      <thead><tr>
-        <th>Nombre</th><th>Congregación</th><th>Estado</th>
-      </tr></thead>
-      <tbody id="tbody-no-inscr"></tbody>
-    </table>
-  </div>
-</div>
 
 <!-- ══ PANEL QR ══ -->
 <div class="panel" id="tab-qr">
@@ -562,8 +490,6 @@ const CONGS    = ["Angelina","Bataan","Bribrí","Extranjero","Ipís","Limoncito"
 // ── PARTICIPANT DATA — cargado dinámicamente desde Google Sheet ──
 // La misma URL y lógica que participantes.html para que IDs sean idénticos
 const SHEET_CSV_URL_COMIDA = "https://docs.google.com/spreadsheets/d/e/2PACX-1vS-FHGAAPJvj_dQEHyN09G1xVJWfblbjGrDgjCREmoi19ucjl1cuPLm5fR0ZHvcmZZ6PPdrEQ7g1pSV/pub?gid=1479802457&single=true&output=csv";
-const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vS-FHGAAPJvj_dQEHyN09G1xVJWfblbjGrDgjCREmoi19ucjl1cuPLm5fR0ZHvcmZZ6PPdrEQ7g1pSV/pub?output=csv";
-
 // Mapeo idéntico al de participantes.html
 const COL_MAP_C = {
   id:              ["ID", "id", "Código", "codigo"],
@@ -698,14 +624,6 @@ async function cargarParticipantesDesdeSheet() {
 }
 
 
-const ORGANIZED_CONGS = ["Angelina","Ipís","Valle la estrella","Tucurrique","Bribrí","Santa Marta","Limoncito","Río Banano"];
-const NOT_IN_PARTICIPANTS = []; // legacy
-
-function isOrganized(cong) {
-  const c = cong.trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
-  return ORGANIZED_CONGS.some(o => o.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'') === c);
-}
-
 let DATA_EXTRA = [];   // added via form, persisted in Firebase
 let DATA_ALL   = [];   // merged
 
@@ -724,7 +642,9 @@ function buildDataAll() {
   const result    = [];
 
   // Primero meter DATA_BASE (tienen prioridad — IDs oficiales del Sheet)
+  // Solo incluir los que marcaron querer alimentación
   for (const p of DATA_BASE) {
+    if (!p._quiere_comida) continue; // excluir quienes no pidieron comida
     if (seenIds.has(p.id)) continue;
     seenIds.add(p.id);
     seenNames.set(normNombreDedup(p.nombre), p.id);
@@ -827,14 +747,14 @@ window.setDia = function(n){
   document.getElementById('t-cen').style.display = valid.includes('cena')     ? '' : 'none';
   // Si el tiempo actual no está disponible para este día, cambiar al primero válido
   if(!valid.includes(tiempoActual)) setTiempo(valid[0]);
-  actualizarStats();renderLista();renderNoOrg();
+  actualizarStats();renderLista();
 };
 window.setTiempo = function(t){
   tiempoActual=t;
   ['des','alm','cen'].forEach(x=>document.getElementById('t-'+x).className='pill');
   const cls = t==='desayuno'?'active-des':t==='almuerzo'?'active-alm':'active-cen';
   document.getElementById('t-'+(t==='desayuno'?'des':t==='almuerzo'?'alm':'cen')).className='pill '+cls;
-  actualizarStats();renderLista();renderNoOrg();
+  actualizarStats();renderLista();
 };
 
 // ── STATS ─────────────────────────────────────────────────
@@ -844,9 +764,6 @@ function actualizarStats(){
   document.getElementById('s-total').textContent = relevant.length;
   document.getElementById('s-ret').textContent   = ret;
   document.getElementById('s-pen').textContent   = relevant.length - ret;
-  // No-meal warning
-  const hasSin = DATA_ALL.some(p=>!tieneComidasEsteTime(p));
-  document.getElementById('no-meal-warn').style.display = hasSin ? 'block' : 'none';
 }
 
 // ── FILTERS ───────────────────────────────────────────────
@@ -926,176 +843,6 @@ window.setSortLista = function(by){
   if(sel) sel.value = by;
   renderLista();
 };
-
-window.setSortNoOrg = function(by){
-  const sel = document.getElementById('sort-no-org');
-  if(sel) sel.value = by;
-  renderNoOrg();
-};
-
-// ── NO ORGANIZADOS ────────────────────────────────────────
-let filtroNoOrg = 'todos';
-window.setFiltroNoOrg = function(f,el){
-  filtroNoOrg=f;
-  document.querySelectorAll('#tab-no-org .fbtn').forEach(b=>b.classList.remove('on'));
-  el.classList.add('on');
-  renderNoOrg();
-};
-window.renderNoOrg = function(){
-  const q=(document.getElementById('search-no-org')?.value||'').toLowerCase();
-  const catF=document.getElementById('filter-no-org-cat')?.value||'';
-  const sortBy=document.getElementById('sort-no-org')?.value||'nombre';
-  let data = DATA_ALL.filter(p=>{
-    if(isOrganized(p.congregacion||'')) return false;
-    if(catF && (p.cat||'')!==catF) return false;
-    const hasMeal=tieneComidasEsteTime(p);
-    if(filtroNoOrg==='con-comida' && !hasMeal) return false;
-    if(filtroNoOrg==='sin-comida' && hasMeal) return false;
-    if(q && !p.nombre.toLowerCase().includes(q) && !p.id.toLowerCase().includes(q) && !(p.congregacion||'').toLowerCase().includes(q)) return false;
-    return true;
-  });
-  data = sortPersonas(data, sortBy);
-  const tbody = document.getElementById('tbody-no-org');
-  tbody.innerHTML = data.length ? data.map(p=>{
-    const r=estaRetirado(p.id);
-    const hasMeal=tieneComidasEsteTime(p);
-    return `<tr style="${!hasMeal?'opacity:.45':''}">
-      <td style="color:var(--muted);font-size:11px">${p.id}</td>
-      <td><strong>${p.nombre}</strong></td>
-      <td>${catBadge(p.cat||'')}</td>
-      <td style="color:var(--gold);font-size:12px">${p.congregacion||'–'}</td>
-      <td>${hasMeal?'<span style="color:var(--teal);font-size:11px">✅ Sí</span>':'<span class="badge b-no-meal">No</span>'}</td>
-      <td>${r?`<span class="badge b-ret">✅ ${r.hora}</span>`:(hasMeal?'<span class="badge b-pen">⏳ Pendiente</span>':'<span class="badge b-no-meal">—</span>')}</td>
-      <td>${hasMeal?(r?`<button class="btn-undo" onclick="deshacerRetiro('${p.id}')">↩</button>`:`<button class="btn-ret" onclick="marcarRetiro('${p.id}')">✅ Marcar</button>`):'<button class="btn-no-meal" disabled>Sin comida</button>'}</td>
-      <td><button class="btn-edit-meals" onclick="abrirEditComidas('${p.id}')">✏️</button></td>
-    </tr>`;
-  }).join('') : '<tr><td colspan="8" style="text-align:center;padding:30px;color:var(--muted)">Sin resultados</td></tr>';
-  document.getElementById('no-org-info').textContent=`${data.length} participantes · ${tiempoLabel(tiempoActual)||'–'}`;
-};
-
-// ── SIN INSCRIPCIÓN ───────────────────────────────────────
-// ── NORMALIZAR NOMBRE PARA COMPARAR ─────────────────────────
-function normNombre(n){
-  return (n||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9 ]/g,'').replace(/\s+/g,' ').trim();
-}
-
-// ── PARSEAR CSV SIMPLE ────────────────────────────────────────
-function parseCSVSimple(text){
-  const lines = text.split('\n').map(l=>l.trim()).filter(Boolean);
-  if(!lines.length) return [];
-  const headers = lines[0].split(',').map(h=>h.replace(/^"|"$/g,'').trim().toLowerCase());
-  const idx = {};
-  headers.forEach((h,i)=>idx[h]=i);
-  const rows = [];
-  for(let i=1;i<lines.length;i++){
-    // split respetando comillas
-    const cells = []; let cur='', inQ=false;
-    for(const ch of lines[i]+(',')){
-      if(ch==='"'){inQ=!inQ;}
-      else if(ch===','&&!inQ){cells.push(cur.trim());cur='';}
-      else cur+=ch;
-    }
-    const get = k => idx[k]!==undefined ? (cells[idx[k]]||'').replace(/^"|"$/g,'').trim() : '';
-    // intentar distintos nombres de columna para el nombre
-    const nombre = get('nombre completo')||get('nombre')||get('name')||get('nombre_completo')||cells[0]||'';
-    const cong   = get('congregacion')||get('congregación')||get('iglesia')||'';
-    const id     = get('id')||get('código')||get('codigo')||'';
-    if(nombre) rows.push({nombre, cong, id});
-  }
-  return rows;
-}
-
-window.renderNoInscr = async function(){
-  const tbody = document.getElementById('tbody-no-inscr');
-  tbody.innerHTML = `<tr><td colspan="3" style="text-align:center;padding:20px;color:var(--muted)">⏳ Verificando lista de participantes...</td></tr>`;
-
-  // Usar el CSV ya cargado por parseCSVComida (misma hoja, mismo parser, mismos IDs)
-  let sheetRows = [];
-  if(csvParticipantes){
-    sheetRows = parseCSVComida(csvParticipantes);
-  } else {
-    // Si por algún motivo no está en memoria, re-cargar la misma URL
-    try {
-      const resp = await fetch(SHEET_CSV_URL_COMIDA + '&t=' + Date.now(), {cache:'no-store'});
-      if(resp.ok){
-        const text = await resp.text();
-        csvParticipantes = text;
-        sheetRows = parseCSVComida(text);
-      }
-    } catch(e) {}
-  }
-
-  if(!sheetRows.length){
-    tbody.innerHTML = `<tr><td colspan="3" style="text-align:center;padding:24px;color:var(--muted)">
-      ⚠️ No se pudo cargar la lista de participantes.<br>
-      <small style="font-size:11px">Verificá tu conexión a internet.</small>
-    </td></tr>`;
-    return;
-  }
-
-  // Solo los que quieren comida en el sheet
-  const sheetConComida = sheetRows.filter(r=>r._quiere_comida);
-
-  // Nombres normalizados del Sheet (solo los que quieren comida)
-  const sheetNorms = new Set(sheetConComida.map(r=>normNombre(r.nombre)));
-
-  // IDs normalizados del DATA_ALL (participantes ya en control de comida)
-  const comidaNorms = new Set(DATA_ALL.map(p=>normNombre(p.nombre)));
-
-  // En comida pero NO en el sheet con comida → agregados manualmente o sin inscripción
-  const soloEnComida = DATA_ALL.filter(p=>{
-    const n = normNombre(p.nombre);
-    return n && !sheetNorms.has(n);
-  });
-
-  // En sheet (con comida marcada) pero NO en control de comida
-  const soloEnSheet = sheetConComida.filter(r=>{
-    const n = normNombre(r.nombre);
-    return n && !comidaNorms.has(n);
-  });
-
-  let rows = '';
-
-  if(soloEnSheet.length){
-    rows += `<tr><td colspan="3" style="background:rgba(232,107,139,.08);padding:6px 12px;font-size:11px;font-weight:700;color:var(--rose);text-transform:uppercase;letter-spacing:1px">
-      📋 En lista de participantes pero SIN registro en comida (${soloEnSheet.length})
-    </td></tr>`;
-    soloEnSheet.forEach(r=>{
-      rows += `<tr>
-        <td><strong>${r.nombre}</strong></td>
-        <td style="color:var(--gold);font-size:12px">${r.cong||'—'}</td>
-        <td><span style="color:var(--rose);font-size:12px">⚠️ Agregar a comida</span></td>
-      </tr>`;
-    });
-  }
-
-  if(soloEnComida.length){
-    rows += `<tr><td colspan="3" style="background:rgba(139,127,232,.08);padding:6px 12px;font-size:11px;font-weight:700;color:var(--lav);text-transform:uppercase;letter-spacing:1px">
-      🔍 En control de comida pero NO en lista de participantes (${soloEnComida.length})
-    </td></tr>`;
-    soloEnComida.forEach(p=>{
-      rows += `<tr>
-        <td><strong>${p.nombre}</strong> <span style="font-size:10px;color:var(--muted)">${p.id}</span></td>
-        <td style="color:var(--gold);font-size:12px">${p.congregacion||'—'}</td>
-        <td><span style="color:var(--lav);font-size:12px">🔍 Verificar</span></td>
-      </tr>`;
-    });
-  }
-
-  if(!rows){
-    rows = `<tr><td colspan="3" style="text-align:center;padding:28px;color:var(--teal)">
-      ✅ Todo en orden — todos los participantes del sheet están en control de comida y viceversa.<br>
-      <small style="font-size:11px;color:var(--muted)">${sheetRows.length} participantes verificados · Actualizado ahora</small>
-    </td></tr>`;
-  } else {
-    rows += `<tr><td colspan="3" style="padding:6px 12px;font-size:11px;color:var(--muted)">
-      Sheet: ${sheetConComida.length} con alimentación · Comida: ${DATA_ALL.length} registros · Verificado ahora
-    </td></tr>`;
-  }
-
-  tbody.innerHTML = rows;
-};
-
 
 // ── RETIROS ───────────────────────────────────────────────
 window.marcarRetiro = async function(id){
@@ -1664,8 +1411,6 @@ window.showTab = function(id, el){
   el.classList.add('on');
   if(id==='lista') renderLista();
   if(id==='qr') renderQR();
-  if(id==='no-org') renderNoOrg();
-  if(id==='pendientes-inscr') renderNoInscr();
 };
 
 // ── ALERT ─────────────────────────────────────────────────
@@ -1690,7 +1435,7 @@ function inicializarApp() {
   autoDetect();
   populateFilters();
   DATA_ALL = buildDataAll();
-  actualizarStats(); renderLista(); renderNoOrg(); renderNoInscr(); renderQR();
+  actualizarStats(); renderLista(); renderQR();
   generarNextId();
   checkURLScan();
 }
