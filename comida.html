@@ -327,6 +327,25 @@ tr:last-child td{border-bottom:none}tr:hover td{background:rgba(232,168,56,.02)}
   </div>
 </div>
 
+
+<!-- SCAN CONFIRM MODAL -->
+<div id="scan-confirm" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:10500;align-items:center;justify-content:center">
+  <div style="background:#13161f;border:2px solid var(--teal);border-radius:22px;padding:30px 26px;max-width:340px;width:92%;text-align:center">
+    <div id="sc-icon" style="font-size:2.8rem;margin-bottom:10px">🍽️</div>
+    <h3 id="sc-nombre" style="font-family:'Playfair Display',serif;font-size:1.2rem;margin-bottom:4px"></h3>
+    <div id="sc-id" style="font-size:11px;color:var(--muted);margin-bottom:4px"></div>
+    <div id="sc-cong" style="font-size:11px;color:var(--muted);margin-bottom:18px"></div>
+    <div id="sc-meal-box" style="background:var(--surface);border-radius:12px;padding:14px;margin-bottom:20px">
+      <div id="sc-day" style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;margin-bottom:4px"></div>
+      <div id="sc-meal" style="font-size:1.3rem;font-weight:700;color:var(--teal)"></div>
+      <div id="sc-time" style="font-size:11px;color:var(--muted);margin-top:4px"></div>
+    </div>
+    <div id="sc-warn" style="color:var(--rose);font-size:12px;margin-bottom:14px;min-height:16px"></div>
+    <button id="sc-accept" style="width:100%;padding:13px;border-radius:12px;border:none;background:var(--teal);color:#000;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:700;cursor:pointer;margin-bottom:8px">✅ Confirmar retiro</button>
+    <button onclick="closeScanConfirm()" style="width:100%;padding:10px;border-radius:12px;border:1px solid var(--border);background:none;color:var(--muted);font-family:'DM Sans',sans-serif;font-size:13px;cursor:pointer">✕ Cancelar</button>
+  </div>
+</div>
+
 <!-- SCAN OVERLAY -->
 <div id="scan-ov">
   <h3>📷 Modo Escáner</h3>
@@ -844,12 +863,110 @@ async function doRetiro(id,key,val,dl,ml){
 // ═══════════════════ SCAN ═══════════════════
 function openScan(){document.getElementById('scan-ov').classList.add('open');setTimeout(()=>document.getElementById('scan-inp').focus(),100);}
 function closeScan(){document.getElementById('scan-ov').classList.remove('open');document.getElementById('scan-inp').value='';}
+
+// Detect current meal based on real clock + event days
+// Event: Wed–Sat. Times: Desayuno 7–10, Almuerzo 11–14, Cena 18–22
+function getCurrentMeal(){
+  const now=new Date();
+  const dow=now.getDay(); // 0=Sun,1=Mon,...,3=Wed,4=Thu,5=Fri,6=Sat
+  const h=now.getHours();
+  const dayMap={3:'mie',4:'jue',5:'vie',6:'sab'};
+  const dk=dayMap[dow];
+  if(!dk) return null; // not an event day
+  const d=DAYS.find(x=>x.key===dk);
+  if(!d) return null;
+  let meal=null;
+  if(h>=6&&h<11)  meal='desayuno';
+  else if(h>=11&&h<15) meal='almuerzo';
+  else if(h>=17&&h<23) meal='cena';
+  if(!meal) return null;
+  if(!d.meals.includes(meal)) return null; // e.g. miércoles has no desayuno
+  return {dayKey:dk, dayLabel:d.label, meal};
+}
+
+let _scanConfirmData=null;
+
 function processScan(){
   let v=document.getElementById('scan-inp').value.trim();
-  try{const o=JSON.parse(v);if(o.id)v=o.id;}catch(e){}
+  try{const o=JSON.parse(v);if(o.id&&o.app==='crptg11-comidas')v=o.id;}catch(e){}
   closeScan();
   const p=DATA.find(x=>x.id===v||x.nombre.toLowerCase()===v.toLowerCase());
-  p?openRetiro(p.id):showToast('Participante no encontrado: '+v);
+  if(!p){showToast('⚠️ Participante no encontrado: '+v);return;}
+  openScanConfirm(p.id);
+}
+
+function openScanConfirm(id){
+  if(!isAdmin){showToast('Solo administradores pueden registrar retiros');return;}
+  const p=DATA.find(x=>x.id===id);
+  if(!p) return;
+  const fb=FB_DATA[id]||{};
+  const meals=fb.meals||{};
+  const ret=fb.retirado||{};
+  const cm=getCurrentMeal();
+
+  document.getElementById('sc-nombre').textContent=p.nombre;
+  document.getElementById('sc-id').textContent='ID: '+p.id;
+  document.getElementById('sc-cong').textContent=p.congregacion||'';
+
+  const now=new Date();
+  const timeStr=now.toLocaleTimeString('es-CR',{hour:'2-digit',minute:'2-digit'});
+
+  let warn='';
+  let mealData=null;
+
+  if(!cm){
+    // Outside meal hours — let admin pick manually
+    document.getElementById('sc-day').textContent='Fuera de horario de comida';
+    document.getElementById('sc-meal').textContent='Sin comida activa ahora';
+    document.getElementById('sc-time').textContent=timeStr;
+    document.getElementById('sc-icon').textContent='⏰';
+    warn='No hay comida programada en este momento. ¿Registrar manualmente?';
+    // Find next pending meal
+    const pending=ALL_MEALS.filter(({day,meal})=>meals[MK(day,meal)]&&!ret[MK(day,meal)]);
+    if(pending.length){
+      mealData=pending[0];
+      document.getElementById('sc-meal').textContent=cap(mealData.meal);
+      document.getElementById('sc-day').textContent=mealData.dayLabel;
+    }
+  } else {
+    const key=MK(cm.dayKey,cm.meal);
+    document.getElementById('sc-day').textContent=cm.dayLabel;
+    document.getElementById('sc-meal').textContent=cap(cm.meal);
+    document.getElementById('sc-time').textContent=timeStr;
+    document.getElementById('sc-icon').textContent=cm.meal==='desayuno'?'🌅':cm.meal==='almuerzo'?'☀️':'🌙';
+
+    if(!meals[key]){
+      warn='⚠️ Esta persona no tiene asignada esta comida.';
+    } else if(ret[key]){
+      warn='⚠️ Esta comida ya fue retirada anteriormente.';
+    }
+    mealData={dayKey:cm.dayKey, dayLabel:cm.dayLabel, meal:cm.meal};
+  }
+
+  document.getElementById('sc-warn').textContent=warn;
+
+  _scanConfirmData={id, mealData};
+
+  const acceptBtn=document.getElementById('sc-accept');
+  acceptBtn.onclick=()=>confirmScanRetiro();
+
+  document.getElementById('scan-confirm').style.display='flex';
+}
+
+async function confirmScanRetiro(){
+  if(!_scanConfirmData) return;
+  const {id, mealData}=_scanConfirmData;
+  if(!mealData){showToast('No hay comida para registrar');closeScanConfirm();return;}
+  const key=MK(mealData.dayKey||mealData.day, mealData.meal);
+  await saveRetiro(id, key, true);
+  const p=DATA.find(x=>x.id===id);
+  showToast(`✅ ${p?p.nombre:id} — ${mealData.dayLabel||mealData.dayLabel} ${cap(mealData.meal)} registrado`);
+  closeScanConfirm();
+}
+
+function closeScanConfirm(){
+  document.getElementById('scan-confirm').style.display='none';
+  _scanConfirmData=null;
 }
 
 // ═══════════════════ ADD PARTICIPANT ═══════════════════
@@ -1056,7 +1173,7 @@ async function buildGallery(){
   for(const p of DATA){
     const cat=getCategoria(p.edad);
     const color=getCatColor(cat);
-    const label=getCatLabel(cat);
+    // label removed
     const qrUrl=await makeQRDataURL(JSON.stringify({id:p.id,app:'crptg11-comidas'}));
     const dlCanvas=await makeQRCardCanvas(p,700,960,qrUrl);
 
@@ -1069,10 +1186,7 @@ async function buildGallery(){
     wrapper.onmouseenter=()=>{wrapper.style.transform='scale(1.02)';wrapper.style.borderColor=color;};
     wrapper.onmouseleave=()=>{wrapper.style.transform='';wrapper.style.borderColor=color+'55';};
 
-    // Top stripe
-    const stripe=document.createElement('div');
-    stripe.style.cssText=`background:${color};padding:4px 6px;text-align:center`;
-    stripe.innerHTML=`<span style="font-size:9px;font-weight:800;color:#000;letter-spacing:1px;text-transform:uppercase">${label}</span>`;
+    // No category stripe — removed
 
     // QR image — data URL loads instantly
     const qrImg=document.createElement('img');
@@ -1099,7 +1213,6 @@ async function buildGallery(){
       a.click();
     };
 
-    wrapper.appendChild(stripe);
     wrapper.appendChild(qrImg);
     wrapper.appendChild(info);
     wrapper.appendChild(dlBtn);
@@ -1162,46 +1275,38 @@ async function downloadAllQRPdf(){
     doc.setFillColor(19,22,31);
     doc.roundedRect(x,y,CARD_W,CARD_H,2,2,'F');
 
-    // Top stripe
-    const strH=4.5;
+    // Colored left border accent
     doc.setFillColor(R,G,B);
-    doc.roundedRect(x,y,CARD_W,strH,2,2,'F');
-    doc.rect(x,y+2,CARD_W,strH-2,'F');
+    doc.rect(x,y,1.5,CARD_H,'F');
 
-    // Cat label
-    doc.setTextColor(10,10,10);
-    doc.setFontSize(5);doc.setFont('helvetica','bold');
-    doc.text(getCatLabel(cat).toUpperCase(), x+CARD_W/2, y+3.3, {align:'center'});
-
-    // QR
+    // QR — takes most of card height, leaving room for text below
     const qrUrl = await makeQRDataURL(JSON.stringify({id:p.id,app:'crptg11-comidas'}));
-    const qrMM = CARD_W - 8;
+    const qrMM = CARD_W - 6;
     const qrX  = x + (CARD_W-qrMM)/2;
-    const qrY  = y + strH + 1.5;
+    const qrY  = y + 2;
     doc.setFillColor(255,255,255);
     doc.roundedRect(qrX-1,qrY-1,qrMM+2,qrMM+2,1,1,'F');
     doc.addImage(qrUrl,'PNG',qrX,qrY,qrMM,qrMM);
 
-    // Info
-    const infoY = qrY + qrMM + 2.5;
-    doc.setTextColor(R,G,B);
-    doc.setFontSize(5.5);doc.setFont('helvetica','bold');
-    doc.text(p.id, x+CARD_W/2, infoY, {align:'center'});
+    // Info below QR
+    const infoY = qrY + qrMM + 2;
 
+    // Nombre — largest, white
     doc.setTextColor(220,220,230);
-    doc.setFontSize(6.5);doc.setFont('helvetica','bold');
+    doc.setFontSize(6);doc.setFont('helvetica','bold');
     const nomLines=doc.splitTextToSize(p.nombre, CARD_W-4);
-    doc.text(nomLines, x+CARD_W/2, infoY+3.5, {align:'center'});
+    doc.text(nomLines, x+CARD_W/2, infoY, {align:'center'});
 
+    // ID — colored
+    doc.setTextColor(R,G,B);
+    doc.setFontSize(5);doc.setFont('helvetica','bold');
+    doc.text(p.id, x+CARD_W/2, infoY+nomLines.length*3.5, {align:'center'});
+
+    // Congregación — muted
     doc.setTextColor(110,115,140);
-    doc.setFontSize(5.2);doc.setFont('helvetica','normal');
-    const congLines=doc.splitTextToSize(p.congregacion||'—', CARD_W-4);
-    doc.text(congLines, x+CARD_W/2, infoY+3.5+nomLines.length*3.8, {align:'center'});
-
-    // Bottom stripe
-    doc.setFillColor(R,G,B);
-    doc.roundedRect(x,y+CARD_H-3,CARD_W,3,1,1,'F');
-    doc.rect(x,y+CARD_H-4.5,CARD_W,2,'F');
+    doc.setFontSize(4.5);doc.setFont('helvetica','normal');
+    const congLines=doc.splitTextToSize(p.congregacion||'', CARD_W-4);
+    if(p.congregacion) doc.text(congLines, x+CARD_W/2, infoY+nomLines.length*3.5+3.2, {align:'center'});
 
     i++;
   }
@@ -1213,6 +1318,7 @@ async function downloadAllQRPdf(){
 
 // ═══════════════════ MODAL CLOSE ═══════════════════
 document.getElementById('qr-modal').addEventListener('click',e=>{if(e.target===e.currentTarget)closeQR();});
+document.getElementById('scan-confirm').addEventListener('click',e=>{if(e.target===e.currentTarget)closeScanConfirm();});
 document.getElementById('ret-modal').addEventListener('click',e=>{if(e.target===e.currentTarget)closeRetiro();});
 document.getElementById('gallery-modal').addEventListener('keydown',e=>{if(e.key==='Escape')closeGallery();});
 </script>
