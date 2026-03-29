@@ -294,12 +294,12 @@ let sortCol = -1, sortDir = 1;
 let currentQRId = null;
 
 // ═══════════════════ AUTH ═══════════════════
-(function(){
+document.addEventListener('DOMContentLoaded', function(){
   const s = localStorage.getItem('crptg11-comidas-auth');
   if(s==='admin'){ isAdmin=true; }
   // Always show app immediately in viewer mode (or admin if saved)
   showApp();
-})();
+});
 function openAdminLogin(){
   document.getElementById('pw-inp').value='';
   document.getElementById('pw-err').textContent='';
@@ -368,7 +368,10 @@ function parseCSV(text){
 // ═══════════════════ INIT ═══════════════════
 let _initDone = false;
 async function init(){
-  if(_initDone) return;
+  if(_initDone){
+    buildDayTabs(); renderMain(); renderNoFood(); updateStats();
+    return;
+  }
   _initDone = true;
   loadFB();
   try{
