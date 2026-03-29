@@ -1,0 +1,729 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CRPTG 11 — Hoja de Comidas</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+
+<!-- Firebase SDK -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+  import { getDatabase, ref, set, get, onValue, update } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+
+  const firebaseConfig = {
+    databaseURL: "https://crptg-11-default-rtdb.firebaseio.com/"
+  };
+  const app = initializeApp(firebaseConfig);
+  const db = getDatabase(app);
+  window._db = db;
+  window._ref = ref;
+  window._set = set;
+  window._get = get;
+  window._onValue = onValue;
+  window._update = update;
+  window._firebaseReady = true;
+  window.dispatchEvent(new Event('firebaseReady'));
+</script>
+
+<!-- QR Code library -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#0f1117;--surface:#181b24;--surface2:#1f2333;
+  --border:#2a2d40;--text:#e8e8f0;--muted:#7a7d95;
+  --gold:#e8a838;--teal:#3ecfb8;--rose:#e86b8b;
+  --lav:#8b7fe8;--orange:#d4773e;
+}
+body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min-height:100vh}
+
+/* ===== OVERLAY ===== */
+#overlay{position:fixed;inset:0;background:rgba(11,13,19,.97);z-index:9999;display:flex;align-items:center;justify-content:center}
+.overlay-box{background:#13161f;border:1px solid #22263a;border-radius:24px;padding:40px 42px;text-align:center;max-width:360px;width:90%;box-shadow:0 24px 64px rgba(0,0,0,.6)}
+.overlay-box h2{font-family:'Playfair Display',serif;font-size:1.3rem;margin-bottom:8px}
+.overlay-box p{color:var(--muted);font-size:13px;margin-bottom:22px;line-height:1.5}
+.overlay-input{width:100%;background:#0b0d13;border:1px solid #22263a;color:var(--text);font-family:'DM Sans',sans-serif;font-size:15px;padding:11px 16px;border-radius:12px;outline:none;text-align:center;letter-spacing:3px;margin-bottom:10px;transition:border-color .2s;box-sizing:border-box}
+.overlay-input:focus{border-color:var(--gold)}
+.overlay-btn{width:100%;padding:12px;border-radius:12px;border:none;background:var(--gold);color:#000;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:700;cursor:pointer;transition:opacity .2s}
+.overlay-btn:hover{opacity:.85}
+.overlay-err{color:var(--rose);font-size:12px;margin-top:8px;min-height:16px}
+
+/* ===== TOPBAR ===== */
+.topbar{background:var(--surface);border-bottom:1px solid var(--border);padding:10px 24px;display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.topbar-left{display:flex;align-items:center;gap:12px}
+.topbar a{color:var(--muted);font-size:13px;text-decoration:none}
+.topbar a:hover{color:var(--gold)}
+.auth-badge{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:20px;font-size:11px;font-weight:600}
+.auth-badge.admin{background:rgba(232,168,56,.15);color:var(--gold)}
+.auth-badge.viewer{background:rgba(122,125,149,.12);color:var(--muted)}
+
+/* ===== HEADER ===== */
+.page-header{padding:28px 24px 0;max-width:1400px;margin:0 auto}
+.page-title{font-family:'Playfair Display',serif;font-size:1.8rem;margin-bottom:4px}
+.page-sub{color:var(--muted);font-size:13px}
+
+/* ===== STATS BAR ===== */
+.stats-bar{max-width:1400px;margin:20px auto 0;padding:0 24px;display:flex;flex-wrap:wrap;gap:10px}
+.stat-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px 18px;text-align:center;flex:1;min-width:120px}
+.stat-num{font-family:'Playfair Display',serif;font-size:2rem;font-weight:900;line-height:1}
+.stat-lbl{font-size:11px;color:var(--muted);margin-top:3px;font-weight:500}
+.stat-card.gold .stat-num{color:var(--gold)}
+.stat-card.teal .stat-num{color:var(--teal)}
+.stat-card.rose .stat-num{color:var(--rose)}
+.stat-card.lav .stat-num{color:var(--lav)}
+
+/* ===== CONTROLS ===== */
+.controls{max-width:1400px;margin:18px auto 0;padding:0 24px;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.search-wrap{position:relative;flex:1;min-width:200px}
+.search-wrap input{width:100%;background:var(--surface);border:1px solid var(--border);color:var(--text);font-family:'DM Sans',sans-serif;font-size:13px;padding:8px 12px 8px 32px;border-radius:8px;outline:none;transition:border-color .2s}
+.search-wrap input:focus{border-color:var(--gold)}
+.search-wrap::before{content:'🔍';position:absolute;left:9px;top:50%;transform:translateY(-50%);font-size:12px;opacity:.38}
+.filter-btn{background:var(--surface);border:1px solid var(--border);color:var(--muted);padding:8px 14px;border-radius:8px;cursor:pointer;font-size:12px;font-family:'DM Sans',sans-serif;transition:all .15s;white-space:nowrap}
+.filter-btn:hover,.filter-btn.on{border-color:var(--gold);color:var(--gold)}
+.filter-btn.on{background:rgba(232,168,56,.08)}
+
+/* ===== TABLE ===== */
+.table-wrap{max-width:1400px;margin:14px auto 60px;padding:0 24px}
+.table-box{background:var(--surface);border:1px solid var(--border);border-radius:13px;overflow:auto}
+table{width:100%;border-collapse:collapse;min-width:900px}
+thead{position:sticky;top:0;z-index:2}
+th{background:var(--surface2);color:var(--muted);font-size:10px;font-weight:600;letter-spacing:1px;text-transform:uppercase;padding:10px 12px;text-align:left;border-bottom:1px solid var(--border);white-space:nowrap;cursor:pointer;user-select:none;transition:color .15s}
+th:hover{color:var(--gold)}
+th.asc::after{content:' ↑';color:var(--gold)}
+th.desc::after{content:' ↓';color:var(--gold)}
+th.no-sort{cursor:default}
+th.no-sort:hover{color:var(--muted)}
+td{padding:8px 12px;font-size:12px;border-bottom:1px solid rgba(42,45,64,.5);vertical-align:middle}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:rgba(232,168,56,.03)}
+
+/* ===== MEAL CHECKBOXES ===== */
+.meal-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:2px;min-width:340px}
+.meal-col{display:flex;flex-direction:column;gap:2px}
+.meal-day{font-size:9px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:var(--muted);margin-bottom:3px;padding:0 2px}
+.meal-cell{display:flex;align-items:center;gap:4px;padding:3px 5px;border-radius:5px;cursor:pointer;transition:background .15s;white-space:nowrap}
+.meal-cell:hover{background:rgba(255,255,255,.04)}
+.meal-cell input[type=checkbox]{accent-color:var(--gold);width:13px;height:13px;cursor:pointer}
+.meal-cell input[type=checkbox]:disabled{cursor:not-allowed;opacity:.5}
+.meal-label{font-size:10px;color:var(--text)}
+
+/* Retirado badge */
+.ret-check{width:14px;height:14px;cursor:pointer;accent-color:var(--teal)}
+.ret-dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--teal);box-shadow:0 0 6px rgba(62,207,184,.5)}
+.pend-dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--border)}
+
+/* QR cell */
+.qr-btn{background:none;border:1px solid var(--border);color:var(--muted);padding:4px 8px;border-radius:6px;cursor:pointer;font-size:11px;transition:all .15s;white-space:nowrap}
+.qr-btn:hover{border-color:var(--gold);color:var(--gold)}
+
+/* Name cell */
+.name-cell{font-weight:500;min-width:160px}
+.cong-cell{font-size:11px;color:var(--muted)}
+
+/* badge */
+.b{display:inline-block;padding:2px 7px;border-radius:100px;font-size:10px;font-weight:600}
+.b-si{background:rgba(62,207,184,.15);color:var(--teal)}
+.b-no{background:rgba(122,125,149,.12);color:var(--muted)}
+
+/* ===== MODAL QR ===== */
+#qr-modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:8000;align-items:center;justify-content:center}
+#qr-modal.open{display:flex}
+.qr-box{background:#13161f;border:1px solid #22263a;border-radius:20px;padding:32px;text-align:center;max-width:420px;width:90%;max-height:90vh;overflow-y:auto}
+.qr-box h3{font-family:'Playfair Display',serif;font-size:1.1rem;margin-bottom:6px}
+.qr-box p{color:var(--muted);font-size:12px;margin-bottom:18px}
+#qr-canvas-wrap{display:flex;justify-content:center;margin-bottom:18px}
+#qr-canvas-wrap canvas,#qr-canvas-wrap img{border-radius:8px}
+.qr-meal-list{text-align:left;margin-bottom:18px}
+.qr-meal-item{display:flex;align-items:center;justify-content:space-between;padding:7px 10px;border-radius:8px;margin-bottom:5px;background:var(--surface)}
+.qr-meal-item .meal-name{font-size:12px;color:var(--text)}
+.qr-meal-status{font-size:11px;font-weight:600}
+.qr-meal-status.pend{color:var(--muted)}
+.qr-meal-status.ret{color:var(--teal)}
+.qr-scan-btn{width:100%;padding:12px;border-radius:10px;border:none;background:var(--gold);color:#000;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:700;cursor:pointer;margin-bottom:8px}
+.qr-scan-btn:hover{opacity:.85}
+.qr-close-btn{width:100%;padding:10px;border-radius:10px;border:1px solid var(--border);background:none;color:var(--muted);font-family:'DM Sans',sans-serif;font-size:13px;cursor:pointer}
+.qr-close-btn:hover{border-color:var(--gold);color:var(--gold)}
+
+/* ===== RETIRO MODAL ===== */
+#retiro-modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.9);z-index:9000;align-items:center;justify-content:center}
+#retiro-modal.open{display:flex}
+.retiro-box{background:#13161f;border:2px solid var(--gold);border-radius:20px;padding:32px;text-align:center;max-width:380px;width:90%}
+.retiro-box h3{font-family:'Playfair Display',serif;font-size:1.2rem;margin-bottom:6px}
+.retiro-box p{color:var(--muted);font-size:13px;margin-bottom:20px}
+.retiro-meal-btn{width:100%;padding:12px;border-radius:10px;border:1px solid var(--border);background:var(--surface);color:var(--text);font-family:'DM Sans',sans-serif;font-size:14px;cursor:pointer;margin-bottom:8px;text-align:left;display:flex;align-items:center;justify-content:space-between;transition:all .2s}
+.retiro-meal-btn:hover:not(:disabled){border-color:var(--teal);background:rgba(62,207,184,.07);color:var(--teal)}
+.retiro-meal-btn:disabled{opacity:.4;cursor:not-allowed}
+.retiro-meal-btn.done{border-color:var(--teal);color:var(--teal);background:rgba(62,207,184,.07)}
+.retiro-cancel{width:100%;padding:10px;border-radius:10px;border:1px solid var(--border);background:none;color:var(--muted);font-family:'DM Sans',sans-serif;font-size:13px;cursor:pointer;margin-top:8px}
+
+/* ===== SCAN INPUT OVERLAY ===== */
+#scan-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:10000;flex-direction:column;align-items:center;justify-content:center;gap:16px}
+#scan-overlay.open{display:flex}
+#scan-overlay h3{font-family:'Playfair Display',serif;color:var(--gold);font-size:1.2rem}
+#scan-overlay p{color:var(--muted);font-size:13px;text-align:center;max-width:300px}
+#scan-input{background:#0b0d13;border:2px solid var(--gold);color:var(--text);font-family:'DM Sans',sans-serif;font-size:16px;padding:12px 18px;border-radius:12px;outline:none;width:280px;text-align:center}
+#scan-cancel{background:none;border:1px solid var(--border);color:var(--muted);padding:8px 20px;border-radius:8px;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:13px}
+
+/* ===== EMPTY / LOADING ===== */
+.empty{text-align:center;padding:48px;color:var(--muted);font-size:14px}
+.loading{display:flex;align-items:center;justify-content:center;padding:60px;gap:10px;color:var(--muted);font-size:13px}
+
+/* ===== TOTALS ROW ===== */
+.day-totals{display:flex;gap:16px;flex-wrap:wrap;margin-bottom:14px}
+.day-total-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:10px 14px;min-width:110px}
+.day-total-card .day-name{font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px}
+.day-total-card .day-meals{display:flex;flex-direction:column;gap:3px}
+.day-total-card .dm{font-size:11px;color:var(--text);display:flex;justify-content:space-between;gap:8px}
+.day-total-card .dm span:last-child{color:var(--gold);font-weight:600}
+
+@media(max-width:700px){
+  .stats-bar{padding:0 12px}.controls,.table-wrap,.page-header{padding-left:12px;padding-right:12px}
+  .meal-grid{min-width:300px;grid-template-columns:repeat(4,minmax(75px,1fr))}
+}
+
+/* Toast */
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--teal);color:#000;padding:10px 20px;border-radius:20px;font-weight:600;font-size:13px;z-index:20000;opacity:0;transition:opacity .3s;pointer-events:none}
+.toast.show{opacity:1}
+</style>
+</head>
+<body>
+
+<!-- ACCESS OVERLAY -->
+<div id="overlay">
+  <div class="overlay-box">
+    <div style="font-size:2.4rem;margin-bottom:12px">🍽️</div>
+    <h2>Hoja de Comidas — CRPTG 11</h2>
+    <p>Esta página es pública en modo lectura.<br>Ingresa la contraseña para gestionar comidas.</p>
+    <input type="password" class="overlay-input" id="pw-input" placeholder="••••••••" onkeydown="if(event.key==='Enter')tryAuth()">
+    <button class="overlay-btn" onclick="tryAuth()">Ingresar</button>
+    <div class="overlay-err" id="pw-err"></div>
+    <div style="margin-top:16px">
+      <button onclick="viewOnly()" style="background:none;border:1px solid var(--border);color:var(--muted);padding:8px 18px;border-radius:8px;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:12px">Ver sin contraseña →</button>
+    </div>
+  </div>
+</div>
+
+<!-- QR MODAL -->
+<div id="qr-modal">
+  <div class="qr-box">
+    <h3 id="qr-name">Participante</h3>
+    <p id="qr-sub">Presenta este QR para retirar tus comidas</p>
+    <div id="qr-canvas-wrap"></div>
+    <div class="qr-meal-list" id="qr-meal-list"></div>
+    <button class="qr-scan-btn" id="qr-scan-btn" style="display:none" onclick="openRetiroFromQR()">✅ Registrar Retiro (Admin)</button>
+    <button class="qr-close-btn" onclick="closeQR()">Cerrar</button>
+  </div>
+</div>
+
+<!-- RETIRO MODAL -->
+<div id="retiro-modal">
+  <div class="retiro-box">
+    <h3 id="retiro-name">Registrar Retiro</h3>
+    <p id="retiro-sub">Selecciona la comida a retirar</p>
+    <div id="retiro-meals"></div>
+    <button class="retiro-cancel" onclick="closeRetiro()">Cancelar</button>
+  </div>
+</div>
+
+<!-- SCAN OVERLAY (for QR scanner redirect) -->
+<div id="scan-overlay">
+  <h3>📷 Modo Retiro</h3>
+  <p>Escanea el QR o ingresa el ID del participante</p>
+  <input type="text" id="scan-input" placeholder="ID del participante" onkeydown="if(event.key==='Enter')processScan()">
+  <button onclick="processScan()" style="background:var(--gold);color:#000;border:none;padding:10px 24px;border-radius:10px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif">Buscar</button>
+  <button id="scan-cancel" onclick="closeScan()">Cancelar</button>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<!-- TOPBAR -->
+<div class="topbar">
+  <div class="topbar-left">
+    <a href="participantes.html">← Participantes</a>
+    <span id="auth-badge" class="auth-badge viewer">👁️ Solo lectura</span>
+  </div>
+  <div style="display:flex;gap:8px;align-items:center">
+    <button id="scan-mode-btn" onclick="openScan()" style="display:none;background:rgba(232,168,56,.1);border:1px solid rgba(232,168,56,.3);color:var(--gold);padding:6px 14px;border-radius:8px;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:600">📷 Modo Escáner</button>
+    <button onclick="logout()" style="background:none;border:1px solid var(--border);color:var(--muted);padding:6px 12px;border-radius:8px;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:12px">Cerrar sesión</button>
+  </div>
+</div>
+
+<!-- PAGE HEADER -->
+<div class="page-header">
+  <div class="page-title">🍽️ Hoja de Comidas</div>
+  <div class="page-sub">CRPTG 11 — Retiro de Alimentación</div>
+</div>
+
+<!-- STATS BAR -->
+<div class="stats-bar">
+  <div class="stat-card gold"><div class="stat-num" id="stat-total">—</div><div class="stat-lbl">Total comidas asignadas</div></div>
+  <div class="stat-card teal"><div class="stat-num" id="stat-retirado">—</div><div class="stat-lbl">Retiradas</div></div>
+  <div class="stat-card rose"><div class="stat-num" id="stat-pendiente">—</div><div class="stat-lbl">Pendientes</div></div>
+  <div class="stat-card lav"><div class="stat-num" id="stat-personas">—</div><div class="stat-lbl">Personas con comida</div></div>
+</div>
+
+<!-- DAY TOTALS -->
+<div class="table-wrap" style="margin-bottom:0">
+  <div class="day-totals" id="day-totals" style="padding:16px 0 4px 0"></div>
+</div>
+
+<!-- CONTROLS -->
+<div class="controls">
+  <div class="search-wrap">
+    <input type="text" id="search-input" placeholder="Buscar nombre, ID, congregación..." oninput="applyFilter()">
+  </div>
+  <button class="filter-btn on" id="btn-todos" onclick="setFilter('todos',this)">Todos</button>
+  <button class="filter-btn" id="btn-comida" onclick="setFilter('comida',this)">Con comida</button>
+  <button class="filter-btn" id="btn-pendiente" onclick="setFilter('pendiente',this)">Pendientes</button>
+  <button class="filter-btn" id="btn-completo" onclick="setFilter('completo',this)">Completados</button>
+</div>
+
+<!-- TABLE -->
+<div class="table-wrap">
+  <div class="table-box">
+    <table id="main-table">
+      <thead id="thead"></thead>
+      <tbody id="tbody"><tr><td colspan="20" class="loading">⏳ Cargando datos...</td></tr></tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+// ===================== CONFIG =====================
+const SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vS-FHGAAPJvj_dQEHyN09G1xVJWfblbjGrDgjCREmoi19ucjl1cuPLm5fR0ZHvcmZZ6PPdrEQ7g1pSV/pub?gid=1479802457&single=true&output=csv";
+const ADMIN_PASS = "AlimentosRestaurados";
+const FB_PATH = "comidas";
+
+// ===================== MEALS STRUCTURE =====================
+const DAYS = [
+  { key:"mie", label:"Miércoles", meals:["cena"] },
+  { key:"jue", label:"Jueves",    meals:["desayuno","almuerzo","cena"] },
+  { key:"vie", label:"Viernes",   meals:["desayuno","almuerzo","cena"] },
+  { key:"sab", label:"Sábado",    meals:["desayuno","almuerzo","cena"] },
+];
+const ALL_MEALS = [];
+DAYS.forEach(d => d.meals.forEach(m => ALL_MEALS.push({ day:d.key, dayLabel:d.label, meal:m })));
+const MEAL_KEY = (day,meal) => `${day}_${meal}`;
+
+// Comidas por defecto cuando quiere_comida = true
+function defaultMeals(){
+  const meals = {};
+  ALL_MEALS.forEach(({day,meal}) => { meals[MEAL_KEY(day,meal)] = true; });
+  return meals;
+}
+
+// ===================== STATE =====================
+let isAdmin = false;
+let DATA = [];         // parsed from CSV
+let FB_DATA = {};      // from Firebase {id: {meals:{}, retirado:{}}}
+let currentFilter = 'todos';
+let sortCol = -1, sortDir = 1;
+let currentQRId = null;
+
+// ===================== AUTH =====================
+(function(){
+  const stored = localStorage.getItem('crptg11-comidas-auth');
+  if(stored === 'admin'){ isAdmin = true; showApp(); }
+  else if(stored === 'viewer'){ isAdmin = false; showApp(); }
+})();
+
+function tryAuth(){
+  const v = document.getElementById('pw-input').value.trim();
+  if(v === ADMIN_PASS){
+    isAdmin = true;
+    localStorage.setItem('crptg11-comidas-auth','admin');
+    showApp();
+  } else {
+    document.getElementById('pw-err').textContent = 'Contraseña incorrecta';
+  }
+}
+function viewOnly(){
+  isAdmin = false;
+  localStorage.setItem('crptg11-comidas-auth','viewer');
+  showApp();
+}
+function showApp(){
+  document.getElementById('overlay').style.display='none';
+  document.getElementById('auth-badge').textContent = isAdmin ? '🔑 Administrador' : '👁️ Solo lectura';
+  document.getElementById('auth-badge').className = 'auth-badge ' + (isAdmin ? 'admin' : 'viewer');
+  if(isAdmin) document.getElementById('scan-mode-btn').style.display='';
+  init();
+}
+function logout(){
+  localStorage.removeItem('crptg11-comidas-auth');
+  location.reload();
+}
+
+// ===================== COL MAP =====================
+const COL_MAP = {
+  id:["ID","id","Código","codigo"],
+  nombre:["Nombre completo","nombre","Nombre"],
+  sexo:["Sexo","sexo","Género","genero"],
+  edad:["Edad","edad"],
+  congregacion:["Congregación","congregacion","Congregacion"],
+  alimentacion:["¿Necesita alimentación?","Alimentación","alimentacion","Comida"],
+};
+function findCol(headers,keys){for(const k of keys){const i=headers.findIndex(h=>h.trim()===k);if(i!==-1)return i;}return -1;}
+function parseCSV(text){
+  const allRows=[]; let cur="",inQ=false,row=[];
+  for(let i=0;i<text.length;i++){
+    const ch=text[i];
+    if(ch==='"'){if(inQ&&text[i+1]==='"'){cur+='"';i++;}else inQ=!inQ;}
+    else if(ch===','&&!inQ){row.push(cur);cur="";}
+    else if((ch==='\n'||ch==='\r')&&!inQ){if(ch==='\r'&&text[i+1]==='\n')i++;row.push(cur);cur="";if(row.some(c=>c!==""))allRows.push(row);row=[];}
+    else cur+=ch;
+  }
+  if(cur||row.length){row.push(cur);allRows.push(row);}
+  const headers=allRows[0].map(h=>h.replace(/^"|"$/g,"").trim());
+  const idx={};for(const [f,keys] of Object.entries(COL_MAP))idx[f]=findCol(headers,keys);
+  const rows=[];
+  for(let i=1;i<allRows.length;i++){
+    const cells=allRows[i];
+    const get=f=>idx[f]!==-1?(cells[idx[f]]||"").replace(/^"|"$/g,"").trim():"";
+    if(!get("nombre"))continue;
+    let idVal=get("id");
+    if(!idVal)idVal="CR-11"+String(1000+i).slice(1);
+    const quiereComida=/^s[ií]/i.test(get("alimentacion"));
+    rows.push({id:idVal,nombre:get("nombre"),sexo:get("sexo"),edad:parseInt(get("edad"))||0,congregacion:get("congregacion"),quiere_comida:quiereComida});
+  }
+  return rows;
+}
+
+// ===================== FIREBASE =====================
+function waitForFirebase(cb){
+  if(window._firebaseReady) cb();
+  else window.addEventListener('firebaseReady',cb,{once:true});
+}
+
+function fbPath(path){ return window._ref(window._db, path); }
+
+function loadFromFirebase(cb){
+  waitForFirebase(()=>{
+    window._onValue(fbPath(FB_PATH), snap=>{
+      FB_DATA = snap.val() || {};
+      if(DATA.length) renderTable();
+      cb && cb();
+    });
+  });
+}
+
+async function saveMealToFirebase(id, mealKey, value){
+  waitForFirebase(async ()=>{
+    await window._update(fbPath(`${FB_PATH}/${id}/meals`), {[mealKey]: value});
+  });
+}
+async function saveRetiroToFirebase(id, mealKey, value){
+  waitForFirebase(async ()=>{
+    await window._update(fbPath(`${FB_PATH}/${id}/retirado`), {[mealKey]: value});
+  });
+}
+
+// ===================== INIT =====================
+async function init(){
+  loadFromFirebase();
+  try{
+    const res = await fetch(SHEET_CSV_URL,{cache:"no-store"});
+    if(!res.ok) throw new Error("HTTP "+res.status);
+    const text = await res.text();
+    DATA = parseCSV(text);
+    // Apply default meals for new participants
+    waitForFirebase(async()=>{
+      const snap = await window._get(fbPath(FB_PATH));
+      const existing = snap.val() || {};
+      const updates = {};
+      DATA.forEach(p => {
+        if(p.quiere_comida && !existing[p.id]){
+          updates[`${FB_PATH}/${p.id}/meals`] = defaultMeals();
+          updates[`${FB_PATH}/${p.id}/retirado`] = {};
+        }
+      });
+      if(Object.keys(updates).length){
+        await window._update(window._ref(window._db), updates);
+      }
+    });
+    renderTable();
+  } catch(e){
+    document.getElementById('tbody').innerHTML=`<tr><td colspan="20" class="empty">⚠️ Error al cargar: ${e.message}</td></tr>`;
+  }
+}
+
+// ===================== RENDER TABLE =====================
+function buildHeader(){
+  const thead = document.getElementById('thead');
+  let html = '<tr>';
+  html += `<th onclick="doSort(0)" id="th0">Nombre</th>`;
+  html += `<th onclick="doSort(1)" id="th1">ID</th>`;
+  html += `<th onclick="doSort(2)" id="th2">Congregación</th>`;
+  html += `<th class="no-sort">Comidas asignadas</th>`;
+  html += `<th class="no-sort">Retirado</th>`;
+  html += `<th class="no-sort">QR</th>`;
+  html += '</tr>';
+  thead.innerHTML = html;
+}
+
+function getVisible(){
+  let rows = [...DATA];
+  const q = document.getElementById('search-input').value.toLowerCase();
+  if(q) rows = rows.filter(p => p.nombre.toLowerCase().includes(q) || p.id.toLowerCase().includes(p.congregacion ? q : q) || p.congregacion.toLowerCase().includes(q));
+
+  if(currentFilter === 'comida') rows = rows.filter(p => p.quiere_comida || getMeals(p.id).length > 0);
+  if(currentFilter === 'pendiente') rows = rows.filter(p => getPendientes(p.id) > 0);
+  if(currentFilter === 'completo') rows = rows.filter(p => {
+    const meals = getMeals(p.id);
+    return meals.length > 0 && getPendientes(p.id) === 0;
+  });
+
+  if(sortCol === 0) rows.sort((a,b) => a.nombre.localeCompare(b.nombre)*sortDir);
+  if(sortCol === 1) rows.sort((a,b) => a.id.localeCompare(b.id)*sortDir);
+  if(sortCol === 2) rows.sort((a,b) => a.congregacion.localeCompare(b.congregacion)*sortDir);
+  return rows;
+}
+
+function getMeals(id){
+  const fb = FB_DATA[id];
+  if(!fb || !fb.meals) return [];
+  return ALL_MEALS.filter(({day,meal}) => fb.meals[MEAL_KEY(day,meal)]);
+}
+function getRetirados(id){
+  const fb = FB_DATA[id];
+  if(!fb || !fb.retirado) return [];
+  return ALL_MEALS.filter(({day,meal}) => fb.retirado[MEAL_KEY(day,meal)]);
+}
+function getPendientes(id){
+  return getMeals(id).length - getRetirados(id).length;
+}
+
+function renderTable(){
+  buildHeader();
+  const rows = getVisible();
+  const tbody = document.getElementById('tbody');
+  if(!rows.length){ tbody.innerHTML='<tr><td colspan="6" class="empty">Sin resultados</td></tr>'; updateStats(); return; }
+
+  tbody.innerHTML = rows.map(p => {
+    const pid = p.id;
+    const fbP = FB_DATA[pid] || {};
+    const meals = fbP.meals || {};
+    const retirado = fbP.retirado || {};
+
+    // Meals grid
+    let mealGrid = `<div class="meal-grid">`;
+    DAYS.forEach(d => {
+      mealGrid += `<div class="meal-col"><div class="meal-day">${d.label.substring(0,3)}</div>`;
+      d.meals.forEach(m => {
+        const key = MEAL_KEY(d.key, m);
+        const checked = meals[key] ? 'checked' : '';
+        const disabled = isAdmin ? '' : 'disabled';
+        const mLabel = m.charAt(0).toUpperCase()+m.slice(1);
+        mealGrid += `<label class="meal-cell"><input type="checkbox" ${checked} ${disabled} onchange="toggleMeal('${pid}','${key}',this.checked)"><span class="meal-label">${mLabel}</span></label>`;
+      });
+      mealGrid += `</div>`;
+    });
+    mealGrid += `</div>`;
+
+    // Retirado summary
+    const assignedList = ALL_MEALS.filter(({day,meal})=>meals[MEAL_KEY(day,meal)]);
+    let retHtml = '';
+    if(assignedList.length === 0){
+      retHtml = '<span style="color:var(--muted);font-size:11px">Sin comidas</span>';
+    } else {
+      const retCount = assignedList.filter(({day,meal})=>retirado[MEAL_KEY(day,meal)]).length;
+      const total = assignedList.length;
+      retHtml = `<div style="font-size:11px;margin-bottom:4px"><span style="color:var(--teal);font-weight:600">${retCount}</span>/<span style="color:var(--muted)">${total}</span> retiradas</div>`;
+      retHtml += assignedList.map(({day,meal,dayLabel})=>{
+        const key=MEAL_KEY(day,meal);
+        const done = retirado[key];
+        const disabled = (isAdmin ? '' : 'disabled');
+        const mLabel = meal.charAt(0).toUpperCase()+meal.slice(1);
+        return `<label style="display:flex;align-items:center;gap:5px;margin-bottom:2px;cursor:${isAdmin?'pointer':'default'}">
+          <input type="checkbox" class="ret-check" ${done?'checked':''} ${disabled} onchange="toggleRetiro('${pid}','${key}',this.checked)">
+          <span style="font-size:10px;color:${done?'var(--teal)':'var(--muted)'}">${dayLabel.substring(0,3)} ${mLabel}</span>
+        </label>`;
+      }).join('');
+    }
+
+    return `<tr>
+      <td class="name-cell">${p.nombre}<div class="cong-cell">${p.congregacion||''}</div></td>
+      <td style="font-size:11px;color:var(--muted)">${pid}</td>
+      <td style="font-size:12px">${p.congregacion||'—'}</td>
+      <td>${mealGrid}</td>
+      <td>${retHtml}</td>
+      <td><button class="qr-btn" onclick="openQR('${pid}')">🔲 QR</button></td>
+    </tr>`;
+  }).join('');
+
+  updateStats();
+  updateDayTotals();
+}
+
+// ===================== SORT & FILTER =====================
+function doSort(col){
+  if(sortCol===col) sortDir=-sortDir; else{sortCol=col;sortDir=1;}
+  document.querySelectorAll('th[id^=th]').forEach((th,i)=>{
+    th.className = i===col ? (sortDir===1?'asc':'desc') : '';
+  });
+  renderTable();
+}
+function setFilter(f, btn){
+  currentFilter=f;
+  document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('on'));
+  btn.classList.add('on');
+  renderTable();
+}
+function applyFilter(){ renderTable(); }
+
+// ===================== STATS =====================
+function updateStats(){
+  let totalMeals=0, totalRet=0, personas=0;
+  DATA.forEach(p=>{
+    const m=getMeals(p.id).length;
+    const r=getRetirados(p.id).length;
+    totalMeals+=m; totalRet+=r;
+    if(m>0)personas++;
+  });
+  document.getElementById('stat-total').textContent=totalMeals;
+  document.getElementById('stat-retirado').textContent=totalRet;
+  document.getElementById('stat-pendiente').textContent=totalMeals-totalRet;
+  document.getElementById('stat-personas').textContent=personas;
+}
+function updateDayTotals(){
+  const wrap = document.getElementById('day-totals');
+  wrap.innerHTML = DAYS.map(d=>{
+    const mealCounts = d.meals.map(m=>{
+      const key=MEAL_KEY(d.key,m);
+      const total=DATA.filter(p=>(FB_DATA[p.id]?.meals||{})[key]).length;
+      const ret=DATA.filter(p=>(FB_DATA[p.id]?.retirado||{})[key]).length;
+      return `<div class="dm"><span>${m.charAt(0).toUpperCase()+m.slice(1)}</span><span>${ret}/${total}</span></div>`;
+    }).join('');
+    return `<div class="day-total-card"><div class="day-name">${d.label}</div><div class="day-meals">${mealCounts}</div></div>`;
+  }).join('');
+}
+
+// ===================== MEAL TOGGLE =====================
+async function toggleMeal(id, mealKey, value){
+  if(!isAdmin){ showToast('Necesitas ser administrador'); return; }
+  await saveMealToFirebase(id, mealKey, value);
+  showToast(value?'Comida asignada':'Comida removida');
+}
+async function toggleRetiro(id, mealKey, value){
+  if(!isAdmin){ showToast('Solo admins pueden registrar retiros'); return; }
+  await saveRetiroToFirebase(id, mealKey, value);
+  showToast(value?'✅ Retiro registrado':'↩️ Retiro cancelado');
+}
+
+// ===================== QR =====================
+function openQR(id){
+  const p = DATA.find(x=>x.id===id);
+  if(!p) return;
+  currentQRId = id;
+  document.getElementById('qr-name').textContent = p.nombre;
+  document.getElementById('qr-sub').textContent = `ID: ${id} — ${p.congregacion||''}`;
+
+  // Generate QR
+  const wrap = document.getElementById('qr-canvas-wrap');
+  wrap.innerHTML = '';
+  const qrData = JSON.stringify({id:id, app:'crptg11-comidas'});
+  new QRCode(wrap, {
+    text: qrData,
+    width: 280,
+    height: 280,
+    colorDark: '#000000',
+    colorLight: '#ffffff',
+    correctLevel: QRCode.CorrectLevel.H
+  });
+
+  // Meal list
+  const fbP = FB_DATA[id] || {};
+  const meals = fbP.meals || {};
+  const retirado = fbP.retirado || {};
+  const assigned = ALL_MEALS.filter(({day,meal})=>meals[MEAL_KEY(day,meal)]);
+  let listHtml = '';
+  if(assigned.length === 0){
+    listHtml = '<div style="text-align:center;color:var(--muted);font-size:12px;padding:10px">Sin comidas asignadas</div>';
+  } else {
+    listHtml = assigned.map(({day,meal,dayLabel})=>{
+      const key=MEAL_KEY(day,meal);
+      const done=retirado[key];
+      const mLabel=meal.charAt(0).toUpperCase()+meal.slice(1);
+      return `<div class="qr-meal-item">
+        <span class="meal-name">${dayLabel} — ${mLabel}</span>
+        <span class="qr-meal-status ${done?'ret':'pend'}">${done?'✅ Retirado':'⏳ Pendiente'}</span>
+      </div>`;
+    }).join('');
+  }
+  document.getElementById('qr-meal-list').innerHTML = listHtml;
+  document.getElementById('qr-scan-btn').style.display = isAdmin ? '' : 'none';
+  document.getElementById('qr-modal').classList.add('open');
+}
+function closeQR(){ document.getElementById('qr-modal').classList.remove('open'); currentQRId=null; }
+function openRetiroFromQR(){ closeQR(); if(currentQRId) openRetiro(currentQRId); }
+
+// ===================== RETIRO MODAL =====================
+function openRetiro(id){
+  const p = DATA.find(x=>x.id===id);
+  if(!p || !isAdmin){ showToast('Solo admins pueden registrar retiros'); return; }
+  const fbP = FB_DATA[id] || {};
+  const meals = fbP.meals || {};
+  const retirado = fbP.retirado || {};
+  const assigned = ALL_MEALS.filter(({day,meal})=>meals[MEAL_KEY(day,meal)]);
+
+  document.getElementById('retiro-name').textContent = p.nombre;
+  document.getElementById('retiro-sub').textContent = `Selecciona la comida a retirar`;
+
+  if(assigned.length === 0){
+    document.getElementById('retiro-meals').innerHTML='<div style="color:var(--muted);font-size:13px;text-align:center;padding:16px">Sin comidas asignadas</div>';
+  } else {
+    document.getElementById('retiro-meals').innerHTML = assigned.map(({day,meal,dayLabel})=>{
+      const key=MEAL_KEY(day,meal);
+      const done=retirado[key];
+      const mLabel=meal.charAt(0).toUpperCase()+meal.slice(1);
+      return `<button class="retiro-meal-btn ${done?'done':''}" onclick="doRetiro('${id}','${key}',${!done},'${dayLabel}','${mLabel}')" ${done?'disabled':''}>
+        <span>${dayLabel} — ${mLabel}</span>
+        <span>${done?'✅ Retirado':'⏳ Pendiente'}</span>
+      </button>`;
+    }).join('');
+  }
+  document.getElementById('retiro-modal').classList.add('open');
+}
+function closeRetiro(){ document.getElementById('retiro-modal').classList.remove('open'); }
+
+async function doRetiro(id, key, value, dayLabel, mLabel){
+  await saveRetiroToFirebase(id, key, value);
+  showToast(`✅ ${dayLabel} ${mLabel} — registrado`);
+  closeRetiro();
+}
+
+// ===================== SCAN MODE =====================
+function openScan(){
+  document.getElementById('scan-overlay').classList.add('open');
+  setTimeout(()=>document.getElementById('scan-input').focus(),100);
+}
+function closeScan(){
+  document.getElementById('scan-overlay').classList.remove('open');
+  document.getElementById('scan-input').value='';
+}
+function processScan(){
+  let val = document.getElementById('scan-input').value.trim();
+  // Try to parse as JSON (QR code data)
+  try{ const obj=JSON.parse(val); if(obj.id)val=obj.id; }catch(e){}
+  closeScan();
+  const p = DATA.find(x=>x.id===val || x.nombre.toLowerCase()===val.toLowerCase());
+  if(p){ openRetiro(p.id); }
+  else { showToast('Participante no encontrado: '+val); }
+}
+
+// ===================== TOAST =====================
+function showToast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),2500);
+}
+
+// ===================== CLOSE MODALS ON OUTSIDE CLICK =====================
+document.getElementById('qr-modal').addEventListener('click',function(e){if(e.target===this)closeQR();});
+document.getElementById('retiro-modal').addEventListener('click',function(e){if(e.target===this)closeRetiro();});
+</script>
+</body>
+</html>
