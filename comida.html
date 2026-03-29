@@ -1086,47 +1086,58 @@ function closeGallery(){ document.getElementById('gallery-modal').style.display=
 async function buildGallery(){
   const grid = document.getElementById('gallery-grid');
   grid.innerHTML='<div style="color:var(--muted);font-size:13px;padding:20px;grid-column:1/-1;text-align:center">⏳ Generando tarjetas...</div>';
-  const CARD_W=350, CARD_H=480;
   const cards=[];
   for(const p of DATA){
-    const cv = await makeQRCardCanvas(p, CARD_W, CARD_H);
     const cat=getCategoria(p.edad);
     const color=getCatColor(cat);
+    const label=getCatLabel(cat);
+    const qrUrl=await makeQRDataURL(JSON.stringify({id:p.id,app:'crptg11-comidas'}));
+    // High-res canvas only for download
+    const dlCanvas=await makeQRCardCanvas(p,700,960);
+
     const wrapper=document.createElement('div');
     wrapper.dataset.name=(p.nombre||'').toLowerCase();
     wrapper.dataset.id=(p.id||'').toLowerCase();
     wrapper.dataset.cong=(p.congregacion||'').toLowerCase();
     wrapper.dataset.cat=cat;
-    wrapper.style.cssText=`border-radius:12px;overflow:hidden;border:2px solid ${color}33;cursor:pointer;transition:transform .15s,border-color .15s;position:relative`;
-    wrapper.onmouseenter=()=>{wrapper.style.transform='scale(1.03)';wrapper.style.borderColor=color;};
-    wrapper.onmouseleave=()=>{wrapper.style.transform='';wrapper.style.borderColor=color+'33';};
-    // Canvas preview (scaled)
-    const preview=document.createElement('canvas');
-    preview.style.cssText='display:block;width:100%;height:auto';
-    preview.width=CARD_W;preview.height=CARD_H;
-    preview.getContext('2d').drawImage(cv,0,0);
-    // Name/ID label below the canvas (always visible)
-    const lbl=document.createElement('div');
-    lbl.style.cssText=`background:#0f1117;padding:8px 8px 10px;text-align:center;border-top:1px solid ${color}33`;
-    lbl.innerHTML=`<div style="font-size:12px;font-weight:700;color:#e8e8f0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;margin-bottom:2px">${p.nombre}</div>`
-      +`<div style="font-size:10px;color:${color};font-weight:600;margin-bottom:4px">${p.id}</div>`
-      +(p.congregacion?`<div style="font-size:9px;color:#7a7d95;margin-bottom:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${p.congregacion}</div>`:'<div style="margin-bottom:2px"></div>');
-    // Download button inside the label
+    wrapper.style.cssText=`border-radius:14px;overflow:hidden;border:2px solid ${color}55;background:#13161f;display:flex;flex-direction:column;transition:transform .15s,border-color .15s`;
+    wrapper.onmouseenter=()=>{wrapper.style.transform='scale(1.02)';wrapper.style.borderColor=color;};
+    wrapper.onmouseleave=()=>{wrapper.style.transform='';wrapper.style.borderColor=color+'55';};
+
+    // Top stripe
+    const stripe=document.createElement('div');
+    stripe.style.cssText=`background:${color};padding:7px 10px;text-align:center`;
+    stripe.innerHTML=`<span style="font-size:12px;font-weight:800;color:#000;letter-spacing:1.5px;text-transform:uppercase">${label}</span>`;
+
+    // QR image — fills full card width, always legible
+    const qrImg=document.createElement('img');
+    qrImg.src=qrUrl;
+    qrImg.style.cssText='display:block;width:100%;aspect-ratio:1/1;background:#fff';
+
+    // Info block
+    const info=document.createElement('div');
+    info.style.cssText=`padding:8px 10px 4px;text-align:center`;
+    info.innerHTML=
+      `<div style="font-size:13px;font-weight:700;color:#e8e8f0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${p.nombre}</div>`+
+      `<div style="font-size:11px;font-weight:600;color:${color};margin-top:2px">${p.id}</div>`+
+      (p.congregacion?`<div style="font-size:10px;color:#7a7d95;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-top:1px">${p.congregacion}</div>`:'');
+
+    // Download button
     const dlBtn=document.createElement('button');
     dlBtn.textContent='⬇ Descargar';
-    dlBtn.style.cssText=`background:${color};color:#000;border:none;padding:5px 14px;border-radius:7px;font-weight:700;font-size:11px;cursor:pointer;font-family:'DM Sans',sans-serif;white-space:nowrap;width:100%;transition:opacity .15s`;
-    wrapper.onmouseenter=()=>{wrapper.style.transform='scale(1.03)';wrapper.style.borderColor=color;};
-    wrapper.onmouseleave=()=>{wrapper.style.transform='';wrapper.style.borderColor=color+'33';};
+    dlBtn.style.cssText=`margin:6px 10px 10px;background:${color};color:#000;border:none;padding:7px 0;border-radius:8px;font-weight:700;font-size:12px;cursor:pointer;font-family:'DM Sans',sans-serif;display:block;width:calc(100% - 20px)`;
     dlBtn.onclick=(e)=>{
       e.stopPropagation();
       const a=document.createElement('a');
-      a.href=cv.toDataURL('image/png');
+      a.href=dlCanvas.toDataURL('image/png');
       a.download=`QR_${p.id}_${p.nombre.replace(/\s+/g,'_')}.png`;
       a.click();
     };
-    lbl.appendChild(dlBtn);
-    wrapper.appendChild(preview);
-    wrapper.appendChild(lbl);
+
+    wrapper.appendChild(stripe);
+    wrapper.appendChild(qrImg);
+    wrapper.appendChild(info);
+    wrapper.appendChild(dlBtn);
     cards.push(wrapper);
   }
   grid.innerHTML='';
