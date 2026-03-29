@@ -1170,15 +1170,13 @@ function makeQRDataURL(text){
 async function makeQRCardCanvas(p, W, H, qrUrl){
   const cat   = getCategoria(p.edad);
   const color = getCatColor(cat);
-  const label = getCatLabel(cat);
   if(!qrUrl) qrUrl = await makeQRDataURL(buildQRUrl(p.id));
 
   const cv = document.createElement('canvas');
   cv.width=W; cv.height=H;
   const ctx=cv.getContext('2d');
-  const r=20; // corner radius px
+  const r=18;
 
-  // Rounded rect helper
   function rr(x,y,w,h,rad,fill){
     ctx.beginPath();
     ctx.moveTo(x+rad,y);ctx.lineTo(x+w-rad,y);ctx.quadraticCurveTo(x+w,y,x+w,y+rad);
@@ -1189,74 +1187,78 @@ async function makeQRCardCanvas(p, W, H, qrUrl){
     if(fill){ctx.fillStyle=fill;ctx.fill();}
   }
 
-  // Card bg
+  // Card background
   rr(0,0,W,H,r,'#13161f');
 
-  // Top stripe
-  const stripeH=Math.round(H*0.11);
+  // Thin top accent bar (no label)
+  const barH = Math.round(H*0.022);
   ctx.fillStyle=color;
   ctx.beginPath();
   ctx.moveTo(r,0);ctx.lineTo(W-r,0);ctx.quadraticCurveTo(W,0,W,r);
-  ctx.lineTo(W,stripeH);ctx.lineTo(0,stripeH);ctx.lineTo(0,r);
+  ctx.lineTo(W,barH);ctx.lineTo(0,barH);ctx.lineTo(0,r);
   ctx.quadraticCurveTo(0,0,r,0);ctx.closePath();ctx.fill();
 
-  // Stripe label
-  ctx.fillStyle='rgba(0,0,0,0.7)';
-  ctx.font=`bold ${Math.round(stripeH*0.52)}px 'DM Sans',sans-serif`;
-  ctx.textAlign='center';ctx.textBaseline='middle';
-  ctx.fillText(label.toUpperCase(), W/2, stripeH*0.52);
+  // QR: 62% of card height, centered horizontally
+  const pad    = Math.round(W*0.07);
+  const qrSize = Math.min(W - pad*2, Math.round(H*0.60));
+  const qrX    = Math.round((W - qrSize)/2);
+  const qrY    = barH + Math.round(H*0.025);
 
-  // QR image
-  const pad=Math.round(W*0.06);
-  const qrSize=W - pad*2;
-  const qrY=stripeH + Math.round(H*0.03);
+  const qrPad=6;
+  rr(qrX-qrPad, qrY-qrPad, qrSize+qrPad*2, qrSize+qrPad*2, 8, '#ffffff');
+
   if(qrUrl){
     const img=new Image();
     await new Promise(res=>{img.onload=res;img.src=qrUrl;});
-    // white bg for QR
-    const qrPad=4;
-    rr(pad-qrPad, qrY-qrPad, qrSize+qrPad*2, qrSize+qrPad*2, 6, '#ffffff');
-    ctx.drawImage(img, pad, qrY, qrSize, qrSize);
+    ctx.drawImage(img, qrX, qrY, qrSize, qrSize);
   }
 
-  // Info block
-  const infoTop = qrY + qrSize + Math.round(H*0.025);
-  const lineH   = Math.round(H*0.062);
-
-  // ID
-  ctx.fillStyle=color;
-  ctx.font=`bold ${Math.round(lineH*0.72)}px 'DM Sans',sans-serif`;
-  ctx.textAlign='center';ctx.textBaseline='top';
-  ctx.fillText(p.id, W/2, infoTop);
+  // Info area: space between bottom of QR and bottom of card
+  const infoTop  = qrY + qrSize + Math.round(H*0.028);
+  const botBarH  = Math.round(H*0.022);
+  const infoAvail= H - infoTop - botBarH - Math.round(H*0.02);
 
   // Nombre
+  const nombreSz = Math.max(18, Math.round(infoAvail*0.32));
+  ctx.font=`700 ${nombreSz}px 'DM Sans',sans-serif`;
   ctx.fillStyle='#e8e8f0';
-  ctx.font=`bold ${Math.round(lineH*0.88)}px 'DM Sans',sans-serif`;
-  // wrap if needed
+  ctx.textAlign='center';ctx.textBaseline='top';
   const maxW=W-pad*2;
   let nombre=p.nombre;
+  let nombreEndY=infoTop;
   if(ctx.measureText(nombre).width>maxW){
-    // two lines
     const words=nombre.split(' ');let l1='',l2='';
-    for(const w of words){ if(ctx.measureText(l1+' '+w).width<maxW) l1=(l1?l1+' ':'')+w; else l2=(l2?l2+' ':'')+w; }
-    ctx.fillText(l1.trim(), W/2, infoTop+lineH*1.1);
-    ctx.fillText(l2.trim(), W/2, infoTop+lineH*2.1);
+    for(const w of words){
+      if(ctx.measureText((l1?l1+' ':'')+w).width<maxW) l1=(l1?l1+' ':'')+w;
+      else l2=(l2?l2+' ':'')+w;
+    }
+    ctx.fillText(l1.trim(), W/2, infoTop);
+    ctx.fillText(l2.trim(), W/2, infoTop+nombreSz*1.2);
+    nombreEndY=infoTop+nombreSz*1.2+nombreSz;
   } else {
-    ctx.fillText(nombre, W/2, infoTop+lineH*1.1);
+    ctx.fillText(nombre, W/2, infoTop);
+    nombreEndY=infoTop+nombreSz;
   }
 
-  // Congregación
-  ctx.fillStyle='#7a7d95';
-  ctx.font=`${Math.round(lineH*0.7)}px 'DM Sans',sans-serif`;
-  ctx.fillText(p.congregacion||'—', W/2, infoTop+lineH*2.9);
+  // ID
+  const idSz = Math.max(14, Math.round(infoAvail*0.24));
+  ctx.font=`700 ${idSz}px 'DM Sans',sans-serif`;
+  ctx.fillStyle=color;
+  const idY=nombreEndY+Math.round(infoAvail*0.06);
+  ctx.fillText(p.id, W/2, idY);
 
-  // Bottom stripe
-  const botH=Math.round(H*0.055);
+  // Congregación
+  const congSz = Math.max(12, Math.round(infoAvail*0.18));
+  ctx.font=`${congSz}px 'DM Sans',sans-serif`;
+  ctx.fillStyle='#7a7d95';
+  ctx.fillText(p.congregacion||'—', W/2, idY+idSz+Math.round(infoAvail*0.05));
+
+  // Thin bottom accent bar
   ctx.fillStyle=color;
   ctx.beginPath();
-  ctx.moveTo(0,H-botH);ctx.lineTo(W,H-botH);ctx.lineTo(W,H-r);
+  ctx.moveTo(0,H-botBarH);ctx.lineTo(W,H-botBarH);ctx.lineTo(W,H-r);
   ctx.quadraticCurveTo(W,H,W-r,H);ctx.lineTo(r,H);
-  ctx.quadraticCurveTo(0,H,0,H-r);ctx.lineTo(0,H-botH);
+  ctx.quadraticCurveTo(0,H,0,H-r);ctx.lineTo(0,H-botBarH);
   ctx.closePath();ctx.fill();
 
   return cv;
@@ -1281,7 +1283,7 @@ async function buildGallery(){
     const cat=getCategoria(p.edad);
     const color=getCatColor(cat);
     const qrUrl=await makeQRDataURL(buildQRUrl(p.id));
-    const dlCanvas=await makeQRCardCanvas(p,700,960,qrUrl);
+    const dlCanvas=await makeQRCardCanvas(p,700,1050,qrUrl);
 
     const wrapper=document.createElement('div');
     wrapper.dataset.name=(p.nombre||'').toLowerCase();
@@ -1295,7 +1297,7 @@ async function buildGallery(){
     // Full card preview — uses the same canvas as download, correct aspect ratio guaranteed
     const preview=document.createElement('img');
     preview.src=dlCanvas.toDataURL('image/png');
-    preview.style.cssText='display:block;width:100%;height:auto;aspect-ratio:700/960';
+    preview.style.cssText='display:block;width:100%;height:auto;aspect-ratio:700/1050';
 
     // Download button
     const dlBtn=document.createElement('button');
@@ -1340,9 +1342,9 @@ async function downloadAllQRPdf(){
   btn.textContent='⏳ Generando PDF...'; btn.disabled=true;
 
   const { jsPDF } = window.jspdf;
-  // A4 portrait: 210 x 297 mm — 3 cols x 4 rows = 12 per page
+  // A4 portrait: 210 x 297 mm — 4 cols x 5 rows = 20 per page
   const PW=210, PH=297;
-  const COLS=3, ROWS=4;
+  const COLS=4, ROWS=5;
   const MARGIN=5;
   const GAP=4;
   const CARD_W=(PW - MARGIN*2 - GAP*(COLS-1))/COLS;   // ~60mm
@@ -1413,7 +1415,7 @@ async function downloadAllQRPdf(){
 
   doc.save('CRPTG11_QR_Comidas.pdf');
   btn.textContent='📄 Descargar PDF'; btn.disabled=false;
-  showToast(`✅ PDF con ${DATA.length} QR (${Math.ceil(DATA.length/12)} páginas)`);
+  showToast(`✅ PDF con ${DATA.length} QR (${Math.ceil(DATA.length/20)} páginas)`);
 }
 
 // ═══════════════════ MODAL CLOSE ═══════════════════
