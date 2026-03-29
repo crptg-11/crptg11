@@ -168,16 +168,15 @@ tr:last-child td{border-bottom:none}tr:hover td{background:rgba(232,168,56,.02)}
 </head>
 <body>
 
-<!-- ADMIN LOGIN MODAL (solo para edición) -->
-<div id="overlay" style="display:none">
+<!-- ACCESS MODAL -->
+<div id="overlay" style="display:flex">
   <div class="obox">
-    <div style="font-size:2.2rem;margin-bottom:10px">🔑</div>
-    <h2>Acceso de Administrador</h2>
-    <p>Ingresa la contraseña para activar el modo de edición.</p>
-    <input type="password" class="oinput" id="pw-inp" placeholder="••••••••" onkeydown="if(event.key==='Enter')tryAuth()">
-    <button class="obtn" onclick="tryAuth()">Ingresar</button>
+    <div style="font-size:2.2rem;margin-bottom:10px" id="ov-icon">&#x1F37D;&#xFE0F;</div>
+    <h2 id="ov-title">Acceso Requerido</h2>
+    <p id="ov-desc">Ingresa la contrase&#xF1;a para acceder a la Hoja de Comidas.</p>
+    <input type="password" class="oinput" id="pw-inp" placeholder="&#x2022;&#x2022;&#x2022;&#x2022;&#x2022;&#x2022;&#x2022;&#x2022;" onkeydown="if(event.key==='Enter')tryAuth()">
+    <button class="obtn" onclick="tryAuth()" id="ov-btn">Ingresar</button>
     <div class="oerr" id="pw-err"></div>
-    <button class="olink" onclick="closeOverlay()">Cancelar →</button>
   </div>
 </div>
 
@@ -191,6 +190,28 @@ tr:last-child td{border-bottom:none}tr:hover td{background:rgba(232,168,56,.02)}
     <button class="qscn" id="qr-retbtn" style="display:none" onclick="openRetiroFromQR()">✅ Registrar Retiro (Admin)</button>
     <button class="qcls" onclick="closeQR()">Cerrar</button>
   </div>
+</div>
+
+
+<!-- QR GALLERY MODAL -->
+<div id="gallery-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.96);z-index:8500;flex-direction:column">
+  <div style="background:var(--surface);border-bottom:1px solid var(--border);padding:12px 20px;display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;flex-shrink:0">
+    <div style="display:flex;align-items:center;gap:10px">
+      <span style="font-family:'Playfair Display',serif;font-size:1rem">🔲 Todos los QR</span>
+      <span id="gallery-count" style="font-size:12px;color:var(--muted)"></span>
+    </div>
+    <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
+      <input id="gallery-search" type="text" placeholder="Buscar..." oninput="filterGallery()" style="background:var(--surface2);border:1px solid var(--border);color:var(--text);font-family:'DM Sans',sans-serif;font-size:12px;padding:5px 10px;border-radius:8px;outline:none;width:150px">
+      <select id="gallery-cat" onchange="filterGallery()" style="background:var(--surface2);border:1px solid var(--border);color:var(--text);font-family:'DM Sans',sans-serif;font-size:12px;padding:5px 10px;border-radius:8px;outline:none;cursor:pointer">
+        <option value="">Todas</option>
+        <option value="adulto">Adulto</option>
+        <option value="joven">Joven</option>
+        <option value="nino">Niño/a</option>
+      </select>
+      <button onclick="closeGallery()" style="background:none;border:1px solid var(--border);color:var(--muted);padding:5px 14px;border-radius:8px;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:12px">✕ Cerrar</button>
+    </div>
+  </div>
+  <div id="gallery-grid" style="flex:1;overflow-y:auto;padding:16px;display:grid;grid-template-columns:repeat(auto-fill,minmax(175px,1fr));gap:12px;align-content:start"></div>
 </div>
 
 <!-- RETIRO MODAL -->
@@ -223,8 +244,10 @@ tr:last-child td{border-bottom:none}tr:hover td{background:rgba(232,168,56,.02)}
   </div>
   <div style="display:flex;gap:6px;align-items:center">
     <button id="scan-btn" class="tbtn scan" onclick="openScan()" style="display:none">📷 Modo Escáner</button>
-    <button id="pdf-btn" class="tbtn" onclick="downloadAllQRPdf()" style="background:rgba(139,127,232,.1);border-color:rgba(139,127,232,.35);color:var(--lav)">📄 Descargar QR PDF</button>
+    <button id="gallery-btn" class="tbtn" onclick="openGallery()" style="background:rgba(62,207,184,.08);border-color:rgba(62,207,184,.3);color:var(--teal)">🔲 Ver QR</button>
+    <button id="pdf-btn" class="tbtn" onclick="downloadAllQRPdf()" style="background:rgba(139,127,232,.1);border-color:rgba(139,127,232,.35);color:var(--lav)">📄 Descargar PDF</button>
     <button id="admin-btn" class="tbtn" onclick="openAdminLogin()" style="display:inline">🔑 Admin</button>
+    <button id="viewer-btn" class="tbtn" onclick="switchToViewer()" style="display:none;border-color:rgba(122,125,149,.3);color:var(--muted)">👁️ Modo Vista</button>
     <button id="logout-btn" class="tbtn" onclick="logout()" style="display:none">Cerrar sesión</button>
   </div>
 </div>
@@ -269,6 +292,7 @@ tr:last-child td{border-bottom:none}tr:hover td{background:rgba(232,168,56,.02)}
 // ═══════════════════ CONFIG ═══════════════════
 const SHEET_CSV = "https://docs.google.com/spreadsheets/d/e/2PACX-1vS-FHGAAPJvj_dQEHyN09G1xVJWfblbjGrDgjCREmoi19ucjl1cuPLm5fR0ZHvcmZZ6PPdrEQ7g1pSV/pub?gid=1479802457&single=true&output=csv";
 const ADMIN_PASS = "AlimentosRestaurados";
+const VIEWER_PASS = "IglesiaRestaurada2026";
 const FB_PATH = "comidas";
 
 // ═══════════════════ MEALS STRUCTURE ═══════════════════
@@ -294,26 +318,56 @@ let sortCol = -1, sortDir = 1;
 let currentQRId = null;
 
 // ═══════════════════ AUTH ═══════════════════
+// overlayMode: 'access' (initial gate) | 'admin' (upgrade to admin)
+let overlayMode = 'access';
+
 document.addEventListener('DOMContentLoaded', function(){
   const s = localStorage.getItem('crptg11-comidas-auth');
-  if(s==='admin'){ isAdmin=true; }
-  // Always show app immediately in viewer mode (or admin if saved)
-  showApp();
+  if(s==='admin'){ isAdmin=true; showApp(); }
+  else if(s==='viewer'){ showApp(); }
+  else { showAccessOverlay(); }
 });
-function openAdminLogin(){
+
+function showAccessOverlay(){
+  overlayMode='access';
+  document.getElementById('ov-icon').textContent='🍽️';
+  document.getElementById('ov-title').textContent='Acceso Requerido';
+  document.getElementById('ov-desc').textContent='Ingresa la contraseña para acceder a la Hoja de Comidas.';
+  document.getElementById('ov-btn').textContent='Ingresar';
   document.getElementById('pw-inp').value='';
   document.getElementById('pw-err').textContent='';
   document.getElementById('overlay').style.display='flex';
 }
-function closeOverlay(){
-  document.getElementById('overlay').style.display='none';
+
+function openAdminLogin(){
+  overlayMode='admin';
+  document.getElementById('ov-icon').textContent='🔑';
+  document.getElementById('ov-title').textContent='Acceso de Administrador';
+  document.getElementById('ov-desc').textContent='Ingresa la contraseña para activar el modo de edición.';
+  document.getElementById('ov-btn').textContent='Ingresar como Admin';
+  document.getElementById('pw-inp').value='';
+  document.getElementById('pw-err').textContent='';
+  document.getElementById('overlay').style.display='flex';
 }
+
+function closeOverlay(){
+  // Only allow closing if already authenticated
+  const s=localStorage.getItem('crptg11-comidas-auth');
+  if(s==='admin'||s==='viewer') document.getElementById('overlay').style.display='none';
+}
+
 function tryAuth(){
   const v=document.getElementById('pw-inp').value.trim();
-  if(v===ADMIN_PASS){ isAdmin=true; localStorage.setItem('crptg11-comidas-auth','admin'); closeOverlay(); showApp(); }
-  else { document.getElementById('pw-err').textContent='Contraseña incorrecta'; }
+  if(overlayMode==='access'){
+    if(v===ADMIN_PASS){ isAdmin=true; localStorage.setItem('crptg11-comidas-auth','admin'); document.getElementById('overlay').style.display='none'; showApp(); }
+    else if(v===VIEWER_PASS){ isAdmin=false; localStorage.setItem('crptg11-comidas-auth','viewer'); document.getElementById('overlay').style.display='none'; showApp(); }
+    else { document.getElementById('pw-err').textContent='Contraseña incorrecta'; }
+  } else {
+    if(v===ADMIN_PASS){ isAdmin=true; localStorage.setItem('crptg11-comidas-auth','admin'); document.getElementById('overlay').style.display='none'; showApp(); }
+    else { document.getElementById('pw-err').textContent='Contraseña incorrecta'; }
+  }
 }
-function viewOnly(){ isAdmin=false; localStorage.removeItem('crptg11-comidas-auth'); showApp(); }
+
 function showApp(){
   document.getElementById('overlay').style.display='none';
   document.getElementById('auth-badge').textContent = isAdmin?'🔑 Administrador':'👁️ Solo lectura';
@@ -321,17 +375,20 @@ function showApp(){
   if(isAdmin){
     document.getElementById('scan-btn').style.display='';
     document.getElementById('admin-btn').style.display='none';
+    document.getElementById('viewer-btn').style.display='inline';
     document.getElementById('logout-btn').style.display='inline';
     document.getElementById('nf-sub').textContent='Administradores pueden asignar comidas desde aquí.';
   } else {
     document.getElementById('scan-btn').style.display='none';
     document.getElementById('admin-btn').style.display='inline';
+    document.getElementById('viewer-btn').style.display='none';
     document.getElementById('logout-btn').style.display='none';
   }
   if(!DATA.length) init();
   else { buildDayTabs(); renderMain(); renderNoFood(); updateStats(); }
 }
-function logout(){ localStorage.removeItem('crptg11-comidas-auth'); isAdmin=false; showApp(); }
+function switchToViewer(){ isAdmin=false; localStorage.setItem('crptg11-comidas-auth','viewer'); showApp(); }
+function logout(){ localStorage.removeItem('crptg11-comidas-auth'); isAdmin=false; showAccessOverlay(); }
 
 // ═══════════════════ FIREBASE ═══════════════════
 function waitFB(cb){ if(window._firebaseReady) cb(); else window.addEventListener('firebaseReady',cb,{once:true}); }
@@ -701,43 +758,207 @@ function getCatLabel(cat){
   return 'Adulto';
 }
 
+// ═══════════════════ QR CANVAS HELPER ═══════════════════
+function makeQRDataURL(text){
+  return new Promise(resolve=>{
+    const div=document.createElement('div');
+    div.style.cssText='position:fixed;left:-9999px;top:-9999px;background:#fff';
+    document.body.appendChild(div);
+    new QRCode(div,{text,width:512,height:512,colorDark:'#000000',colorLight:'#ffffff',correctLevel:QRCode.CorrectLevel.H});
+    setTimeout(()=>{
+      const img=div.querySelector('img')||div.querySelector('canvas');
+      let url='';
+      if(img&&img.tagName==='CANVAS') url=img.toDataURL('image/png');
+      else if(img&&img.tagName==='IMG') url=img.src;
+      document.body.removeChild(div);
+      resolve(url);
+    },120);
+  });
+}
+
+// Draw a styled QR card onto a canvas and return it
+async function makeQRCardCanvas(p, W, H){
+  const cat   = getCategoria(p.edad);
+  const color = getCatColor(cat);
+  const label = getCatLabel(cat);
+  const qrUrl = await makeQRDataURL(JSON.stringify({id:p.id,app:'crptg11-comidas'}));
+
+  const cv = document.createElement('canvas');
+  cv.width=W; cv.height=H;
+  const ctx=cv.getContext('2d');
+  const r=20; // corner radius px
+
+  // Rounded rect helper
+  function rr(x,y,w,h,rad,fill){
+    ctx.beginPath();
+    ctx.moveTo(x+rad,y);ctx.lineTo(x+w-rad,y);ctx.quadraticCurveTo(x+w,y,x+w,y+rad);
+    ctx.lineTo(x+w,y+h-rad);ctx.quadraticCurveTo(x+w,y+h,x+w-rad,y+h);
+    ctx.lineTo(x+rad,y+h);ctx.quadraticCurveTo(x,y+h,x,y+h-rad);
+    ctx.lineTo(x,y+rad);ctx.quadraticCurveTo(x,y,x+rad,y);
+    ctx.closePath();
+    if(fill){ctx.fillStyle=fill;ctx.fill();}
+  }
+
+  // Card bg
+  rr(0,0,W,H,r,'#13161f');
+
+  // Top stripe
+  const stripeH=Math.round(H*0.11);
+  ctx.fillStyle=color;
+  ctx.beginPath();
+  ctx.moveTo(r,0);ctx.lineTo(W-r,0);ctx.quadraticCurveTo(W,0,W,r);
+  ctx.lineTo(W,stripeH);ctx.lineTo(0,stripeH);ctx.lineTo(0,r);
+  ctx.quadraticCurveTo(0,0,r,0);ctx.closePath();ctx.fill();
+
+  // Stripe label
+  ctx.fillStyle='rgba(0,0,0,0.7)';
+  ctx.font=`bold ${Math.round(stripeH*0.52)}px 'DM Sans',sans-serif`;
+  ctx.textAlign='center';ctx.textBaseline='middle';
+  ctx.fillText(label.toUpperCase(), W/2, stripeH*0.52);
+
+  // QR image
+  const pad=Math.round(W*0.06);
+  const qrSize=W - pad*2;
+  const qrY=stripeH + Math.round(H*0.03);
+  if(qrUrl){
+    const img=new Image();
+    await new Promise(res=>{img.onload=res;img.src=qrUrl;});
+    // white bg for QR
+    const qrPad=4;
+    rr(pad-qrPad, qrY-qrPad, qrSize+qrPad*2, qrSize+qrPad*2, 6, '#ffffff');
+    ctx.drawImage(img, pad, qrY, qrSize, qrSize);
+  }
+
+  // Info block
+  const infoTop = qrY + qrSize + Math.round(H*0.025);
+  const lineH   = Math.round(H*0.062);
+
+  // ID
+  ctx.fillStyle=color;
+  ctx.font=`bold ${Math.round(lineH*0.72)}px 'DM Sans',sans-serif`;
+  ctx.textAlign='center';ctx.textBaseline='top';
+  ctx.fillText(p.id, W/2, infoTop);
+
+  // Nombre
+  ctx.fillStyle='#e8e8f0';
+  ctx.font=`bold ${Math.round(lineH*0.88)}px 'DM Sans',sans-serif`;
+  // wrap if needed
+  const maxW=W-pad*2;
+  let nombre=p.nombre;
+  if(ctx.measureText(nombre).width>maxW){
+    // two lines
+    const words=nombre.split(' ');let l1='',l2='';
+    for(const w of words){ if(ctx.measureText(l1+' '+w).width<maxW) l1=(l1?l1+' ':'')+w; else l2=(l2?l2+' ':'')+w; }
+    ctx.fillText(l1.trim(), W/2, infoTop+lineH*1.1);
+    ctx.fillText(l2.trim(), W/2, infoTop+lineH*2.1);
+  } else {
+    ctx.fillText(nombre, W/2, infoTop+lineH*1.1);
+  }
+
+  // Congregación
+  ctx.fillStyle='#7a7d95';
+  ctx.font=`${Math.round(lineH*0.7)}px 'DM Sans',sans-serif`;
+  ctx.fillText(p.congregacion||'—', W/2, infoTop+lineH*2.9);
+
+  // Bottom stripe
+  const botH=Math.round(H*0.055);
+  ctx.fillStyle=color;
+  ctx.beginPath();
+  ctx.moveTo(0,H-botH);ctx.lineTo(W,H-botH);ctx.lineTo(W,H-r);
+  ctx.quadraticCurveTo(W,H,W-r,H);ctx.lineTo(r,H);
+  ctx.quadraticCurveTo(0,H,0,H-r);ctx.lineTo(0,H-botH);
+  ctx.closePath();ctx.fill();
+
+  return cv;
+}
+
+// ═══════════════════ GALLERY ═══════════════════
+let _galleryBuilt = false;
+async function openGallery(){
+  if(!DATA.length){ showToast('⏳ Cargando datos...'); return; }
+  const modal = document.getElementById('gallery-modal');
+  modal.style.display='flex';
+  if(!_galleryBuilt){ await buildGallery(); _galleryBuilt=true; }
+  filterGallery();
+}
+function closeGallery(){ document.getElementById('gallery-modal').style.display='none'; }
+
+async function buildGallery(){
+  const grid = document.getElementById('gallery-grid');
+  grid.innerHTML='<div style="color:var(--muted);font-size:13px;padding:20px;grid-column:1/-1;text-align:center">⏳ Generando tarjetas...</div>';
+  const CARD_W=350, CARD_H=480;
+  const cards=[];
+  for(const p of DATA){
+    const cv = await makeQRCardCanvas(p, CARD_W, CARD_H);
+    const cat=getCategoria(p.edad);
+    const color=getCatColor(cat);
+    const wrapper=document.createElement('div');
+    wrapper.dataset.name=(p.nombre||'').toLowerCase();
+    wrapper.dataset.id=(p.id||'').toLowerCase();
+    wrapper.dataset.cong=(p.congregacion||'').toLowerCase();
+    wrapper.dataset.cat=cat;
+    wrapper.style.cssText=`border-radius:12px;overflow:hidden;border:2px solid ${color}33;cursor:pointer;transition:transform .15s,border-color .15s;position:relative`;
+    wrapper.onmouseenter=()=>{wrapper.style.transform='scale(1.03)';wrapper.style.borderColor=color;};
+    wrapper.onmouseleave=()=>{wrapper.style.transform='';wrapper.style.borderColor=color+'33';};
+    // Canvas preview (scaled)
+    const preview=document.createElement('canvas');
+    preview.style.cssText='display:block;width:100%;height:auto';
+    preview.width=CARD_W;preview.height=CARD_H;
+    preview.getContext('2d').drawImage(cv,0,0);
+    // Download button
+    const dlBtn=document.createElement('button');
+    dlBtn.textContent='⬇ Descargar';
+    dlBtn.style.cssText=`position:absolute;bottom:8px;left:50%;transform:translateX(-50%);background:${color};color:#000;border:none;padding:5px 14px;border-radius:8px;font-weight:700;font-size:11px;cursor:pointer;font-family:'DM Sans',sans-serif;white-space:nowrap;opacity:0;transition:opacity .2s`;
+    wrapper.onmouseenter=()=>{wrapper.style.transform='scale(1.03)';wrapper.style.borderColor=color;dlBtn.style.opacity='1';};
+    wrapper.onmouseleave=()=>{wrapper.style.transform='';wrapper.style.borderColor=color+'33';dlBtn.style.opacity='0';};
+    dlBtn.onclick=(e)=>{
+      e.stopPropagation();
+      const a=document.createElement('a');
+      a.href=cv.toDataURL('image/png');
+      a.download=`QR_${p.id}_${p.nombre.replace(/\s+/g,'_')}.png`;
+      a.click();
+    };
+    wrapper.appendChild(preview);
+    wrapper.appendChild(dlBtn);
+    cards.push(wrapper);
+  }
+  grid.innerHTML='';
+  cards.forEach(c=>grid.appendChild(c));
+  document.getElementById('gallery-count').textContent=`${DATA.length} participantes`;
+}
+
+function filterGallery(){
+  const q=(document.getElementById('gallery-search').value||'').toLowerCase().trim();
+  const cat=(document.getElementById('gallery-cat').value||'');
+  const grid=document.getElementById('gallery-grid');
+  let shown=0;
+  Array.from(grid.children).forEach(el=>{
+    if(!el.dataset) return;
+    const matchQ=!q||(el.dataset.name||'').includes(q)||(el.dataset.id||'').includes(q)||(el.dataset.cong||'').includes(q);
+    const matchC=!cat||(el.dataset.cat===cat);
+    el.style.display=(matchQ&&matchC)?'':'none';
+    if(matchQ&&matchC) shown++;
+  });
+  document.getElementById('gallery-count').textContent=`${shown} de ${DATA.length} participantes`;
+}
+
 // ═══════════════════ PDF QR DOWNLOAD ═══════════════════
 async function downloadAllQRPdf(){
   if(!DATA.length){ showToast('⏳ Cargando datos...'); return; }
   const btn = document.getElementById('pdf-btn');
-  btn.textContent='⏳ Generando...'; btn.disabled=true;
+  btn.textContent='⏳ Generando PDF...'; btn.disabled=true;
 
   const { jsPDF } = window.jspdf;
-
-  // A4 landscape in mm: 297 x 210
-  // We'll do portrait A4: 210 x 297
-  // 4 QR cards per page (2 cols x 2 rows), each card ~95x130mm
+  // A4 portrait: 210 x 297 mm — 3 cols x 4 rows = 12 per page
   const PW=210, PH=297;
-  const COLS=2, ROWS=2;
-  const MARGIN=8;
-  const CARD_W=(PW-MARGIN*(COLS+1))/COLS;   // ~94mm
-  const CARD_H=(PH-MARGIN*(ROWS+1))/ROWS;   // ~135mm
-  const QR_SIZE=65; // mm, square QR
+  const COLS=3, ROWS=4;
+  const MARGIN=5;
+  const GAP=4;
+  const CARD_W=(PW - MARGIN*2 - GAP*(COLS-1))/COLS;   // ~60mm
+  const CARD_H=(PH - MARGIN*2 - GAP*(ROWS-1))/ROWS;   // ~70mm
+  const QR_PX=400;
 
   const doc = new jsPDF({ orientation:'portrait', unit:'mm', format:'a4' });
-
-  // Helper: generate QR as base64 PNG via hidden canvas
-  function makeQRDataURL(text){
-    return new Promise(resolve=>{
-      const div=document.createElement('div');
-      div.style.cssText='position:fixed;left:-9999px;top:-9999px;background:#fff';
-      document.body.appendChild(div);
-      const qr=new QRCode(div,{text,width:512,height:512,colorDark:'#000000',colorLight:'#ffffff',correctLevel:QRCode.CorrectLevel.H});
-      setTimeout(()=>{
-        const img=div.querySelector('img')||div.querySelector('canvas');
-        let url='';
-        if(img && img.tagName==='CANVAS') url=img.toDataURL('image/png');
-        else if(img && img.tagName==='IMG') url=img.src;
-        document.body.removeChild(div);
-        resolve(url);
-      },120);
-    });
-  }
 
   let i=0;
   for(const p of DATA){
@@ -745,82 +966,72 @@ async function downloadAllQRPdf(){
     const row = Math.floor(i/COLS)%ROWS;
     if(i>0 && col===0 && row===0) doc.addPage();
 
-    const x = MARGIN + col*(CARD_W+MARGIN);
-    const y = MARGIN + row*(CARD_H+MARGIN);
+    const x = MARGIN + col*(CARD_W+GAP);
+    const y = MARGIN + row*(CARD_H+GAP);
 
-    const cat    = getCategoria(p.edad);
-    const color  = getCatColor(cat);
-    const rHex   = parseInt(color.slice(1,3),16);
-    const gHex   = parseInt(color.slice(3,5),16);
-    const bHex   = parseInt(color.slice(5,7),16);
+    const cat   = getCategoria(p.edad);
+    const color = getCatColor(cat);
+    const R=parseInt(color.slice(1,3),16);
+    const G=parseInt(color.slice(3,5),16);
+    const B=parseInt(color.slice(5,7),16);
 
-    // Card background
-    doc.setFillColor(20,22,31);
-    doc.roundedRect(x, y, CARD_W, CARD_H, 4, 4, 'F');
+    // Card bg
+    doc.setFillColor(19,22,31);
+    doc.roundedRect(x,y,CARD_W,CARD_H,2,2,'F');
 
-    // Category stripe at top (6mm tall)
-    doc.setFillColor(rHex, gHex, bHex);
-    doc.roundedRect(x, y, CARD_W, 6, 4, 4, 'F');
-    doc.setFillColor(rHex, gHex, bHex);
-    doc.rect(x, y+3, CARD_W, 3, 'F'); // square bottom corners of stripe
+    // Top stripe
+    const strH=4.5;
+    doc.setFillColor(R,G,B);
+    doc.roundedRect(x,y,CARD_W,strH,2,2,'F');
+    doc.rect(x,y+2,CARD_W,strH-2,'F');
 
-    // Category label on stripe
+    // Cat label
     doc.setTextColor(10,10,10);
-    doc.setFontSize(7);
-    doc.setFont('helvetica','bold');
-    doc.text(getCatLabel(cat).toUpperCase(), x+CARD_W/2, y+4.2, {align:'center'});
+    doc.setFontSize(5);doc.setFont('helvetica','bold');
+    doc.text(getCatLabel(cat).toUpperCase(), x+CARD_W/2, y+3.3, {align:'center'});
 
-    // QR code image
+    // QR
     const qrUrl = await makeQRDataURL(JSON.stringify({id:p.id,app:'crptg11-comidas'}));
-    if(qrUrl){
-      const qrX = x+(CARD_W-QR_SIZE)/2;
-      const qrY = y+9;
-      // White background for QR
-      doc.setFillColor(255,255,255);
-      doc.roundedRect(qrX-2, qrY-2, QR_SIZE+4, QR_SIZE+4, 2, 2, 'F');
-      doc.addImage(qrUrl,'PNG', qrX, qrY, QR_SIZE, QR_SIZE);
-    }
+    const qrMM = CARD_W - 8;
+    const qrX  = x + (CARD_W-qrMM)/2;
+    const qrY  = y + strH + 1.5;
+    doc.setFillColor(255,255,255);
+    doc.roundedRect(qrX-1,qrY-1,qrMM+2,qrMM+2,1,1,'F');
+    doc.addImage(qrUrl,'PNG',qrX,qrY,qrMM,qrMM);
 
-    // Info block below QR
-    const infoY = y+9+QR_SIZE+6;
-
-    // ID
-    doc.setTextColor(rHex, gHex, bHex);
-    doc.setFontSize(7.5);
-    doc.setFont('helvetica','bold');
+    // Info
+    const infoY = qrY + qrMM + 2.5;
+    doc.setTextColor(R,G,B);
+    doc.setFontSize(5.5);doc.setFont('helvetica','bold');
     doc.text(p.id, x+CARD_W/2, infoY, {align:'center'});
 
-    // Nombre
-    doc.setTextColor(230,230,240);
-    doc.setFontSize(9.5);
-    doc.setFont('helvetica','bold');
-    const nombre = doc.splitTextToSize(p.nombre, CARD_W-6);
-    doc.text(nombre, x+CARD_W/2, infoY+5.5, {align:'center'});
+    doc.setTextColor(220,220,230);
+    doc.setFontSize(6.5);doc.setFont('helvetica','bold');
+    const nomLines=doc.splitTextToSize(p.nombre, CARD_W-4);
+    doc.text(nomLines, x+CARD_W/2, infoY+3.5, {align:'center'});
 
-    // Congregación
-    doc.setTextColor(120,125,149);
-    doc.setFontSize(7.5);
-    doc.setFont('helvetica','normal');
-    const cong = p.congregacion||'—';
-    const congLines = doc.splitTextToSize(cong, CARD_W-6);
-    doc.text(congLines, x+CARD_W/2, infoY+5.5+nombre.length*5+1, {align:'center'});
+    doc.setTextColor(110,115,140);
+    doc.setFontSize(5.2);doc.setFont('helvetica','normal');
+    const congLines=doc.splitTextToSize(p.congregacion||'—', CARD_W-4);
+    doc.text(congLines, x+CARD_W/2, infoY+3.5+nomLines.length*3.8, {align:'center'});
 
-    // Bottom color bar
-    doc.setFillColor(rHex, gHex, bHex);
-    doc.roundedRect(x, y+CARD_H-4, CARD_W, 4, 2, 2, 'F');
-    doc.rect(x, y+CARD_H-6, CARD_W, 3, 'F');
+    // Bottom stripe
+    doc.setFillColor(R,G,B);
+    doc.roundedRect(x,y+CARD_H-3,CARD_W,3,1,1,'F');
+    doc.rect(x,y+CARD_H-4.5,CARD_W,2,'F');
 
     i++;
   }
 
   doc.save('CRPTG11_QR_Comidas.pdf');
-  btn.textContent='📄 Descargar QR PDF'; btn.disabled=false;
-  showToast(`✅ PDF generado con ${DATA.length} QR`);
+  btn.textContent='📄 Descargar PDF'; btn.disabled=false;
+  showToast(`✅ PDF con ${DATA.length} QR (${Math.ceil(DATA.length/12)} páginas)`);
 }
 
 // ═══════════════════ MODAL CLOSE ═══════════════════
 document.getElementById('qr-modal').addEventListener('click',e=>{if(e.target===e.currentTarget)closeQR();});
 document.getElementById('ret-modal').addEventListener('click',e=>{if(e.target===e.currentTarget)closeRetiro();});
+document.getElementById('gallery-modal').addEventListener('keydown',e=>{if(e.key==='Escape')closeGallery();});
 </script>
 </body>
 </html>
