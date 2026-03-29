@@ -273,9 +273,9 @@ tr:last-child td{border-bottom:none}tr:hover td{background:rgba(232,168,56,.02)}
       <input id="gallery-search" type="text" placeholder="Buscar..." oninput="filterGallery()" style="background:var(--surface2);border:1px solid var(--border);color:var(--text);font-family:'DM Sans',sans-serif;font-size:12px;padding:5px 10px;border-radius:8px;outline:none;width:150px">
       <select id="gallery-cat" onchange="filterGallery()" style="background:var(--surface2);border:1px solid var(--border);color:var(--text);font-family:'DM Sans',sans-serif;font-size:12px;padding:5px 10px;border-radius:8px;outline:none;cursor:pointer">
         <option value="">Todas</option>
-        <option value="adulto">Adulto</option>
-        <option value="joven">Joven</option>
-        <option value="nino">Niño/a</option>
+        <option value="Adulto">Adulto</option>
+        <option value="Joven">Joven</option>
+        <option value="Menor">Menor</option>
       </select>
       <button onclick="closeGallery()" style="background:none;border:1px solid var(--border);color:var(--muted);padding:5px 14px;border-radius:8px;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:12px">✕ Cerrar</button>
     </div>
@@ -562,7 +562,7 @@ async function saveMeal(id,key,val){ waitFB(async()=>{ await window._update(wind
 async function saveRetiro(id,key,val){ waitFB(async()=>{ await window._update(window._ref(window._db,`${FB_PATH}/${id}/retirado`),{[key]:val}); }); }
 
 // ═══════════════════ CSV PARSE ═══════════════════
-const COL_MAP={id:["ID","id","Código","codigo"],nombre:["Nombre completo","nombre","Nombre"],sexo:["Sexo","sexo"],edad:["Edad","edad"],congregacion:["Congregación","congregacion","Congregacion"],alimentacion:["¿Necesita alimentación?","Alimentación","alimentacion","Comida"]};
+const COL_MAP={id:["ID","id","Código","codigo"],nombre:["Nombre completo","nombre","Nombre"],sexo:["Sexo","sexo"],edad:["Edad","edad"],congregacion:["Congregación","congregacion","Congregacion"],alimentacion:["¿Necesita alimentación?","Alimentación","alimentacion","Comida"],categoria:["CategoriaE","Categoría","categoria","Categoria"]};
 function findCol(hdr,keys){ for(const k of keys){const i=hdr.findIndex(h=>h.trim()===k);if(i!==-1)return i;} return -1;}
 function parseCSV(text){
   const rows=[];let cur="",inQ=false,row=[];
@@ -576,7 +576,7 @@ function parseCSV(text){
   const hdr=rows[0].map(h=>h.replace(/^"|"$/g,"").trim());
   const idx={};for(const [f,k] of Object.entries(COL_MAP))idx[f]=findCol(hdr,k);
   const out=[];
-  for(let i=1;i<rows.length;i++){const cells=rows[i];const get=f=>idx[f]!==-1?(cells[idx[f]]||"").replace(/^"|"$/g,"").trim():"";if(!get("nombre"))continue;let id=get("id");if(!id)id="CR-11"+String(1000+i).slice(1);out.push({id,nombre:get("nombre"),sexo:get("sexo"),edad:parseInt(get("edad"))||0,congregacion:get("congregacion"),quiere_comida:/^s[ií]/i.test(get("alimentacion"))});}
+  for(let i=1;i<rows.length;i++){const cells=rows[i];const get=f=>idx[f]!==-1?(cells[idx[f]]||"").replace(/^"|"$/g,"").trim():"";if(!get("nombre"))continue;let id=get("id");if(!id)id="CR-11"+String(1000+i).slice(1);let cat=get("categoria");cat=cat.charAt(0).toUpperCase()+cat.slice(1).toLowerCase();if(!["Adulto","Joven","Menor"].includes(cat)){const edad=parseInt(get("edad"))||0;cat=edad<7?"Menor":edad<18?"Joven":"Adulto";}out.push({id,nombre:get("nombre"),sexo:get("sexo"),edad:parseInt(get("edad"))||0,congregacion:get("congregacion"),quiere_comida:/^s[ií]/i.test(get("alimentacion")),categoria:cat});}
   return out;
 }
 
@@ -1134,23 +1134,16 @@ document.getElementById('add-modal').addEventListener('click',e=>{if(e.target===
 function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');clearTimeout(t._to);t._to=setTimeout(()=>t.classList.remove('show'),2500);}
 
 // ═══════════════════ CATEGORIA ═══════════════════
-function getCategoria(edad){
-  if(!edad||edad<=0) return 'adulto';
-  if(edad<12) return 'nino';
-  if(edad<=25) return 'joven';
-  return 'adulto';
-}
+// Colores exactos de participantes.html:
+// Adulto → lav    #8b7fe8  (lavanda)
+// Joven  → gold   #e8a838  (dorado)
+// Menor  → orange #d4773e  (naranja)
 function getCatColor(cat){
-  // Returns hex color for the category stripe
-  if(cat==='nino')  return '#3ecfb8'; // teal  — niño
-  if(cat==='joven') return '#8b7fe8'; // lav   — joven
-  return '#e8a838';                   // gold  — adulto
+  if(cat==='Joven')  return '#e8a838';
+  if(cat==='Menor')  return '#d4773e';
+  return '#8b7fe8'; // Adulto
 }
-function getCatLabel(cat){
-  if(cat==='nino')  return 'Niño/a';
-  if(cat==='joven') return 'Joven';
-  return 'Adulto';
-}
+function getCatLabel(cat){ return cat||'Adulto'; }
 
 // ═══════════════════ QR CANVAS HELPER ═══════════════════
 function buildQRUrl(id){
@@ -1170,7 +1163,7 @@ function makeQRDataURL(text){
 // Draw a styled QR card onto a canvas — same design as the PDF
 // W=400, H=520 mirrors the PDF card proportions (~60mm x 70mm at 96dpi equivalent)
 async function makeQRCardCanvas(p, W, H, qrUrl){
-  const cat   = getCategoria(p.edad);
+  const cat   = p.categoria||'Adulto';
   const color = getCatColor(cat);
   if(!qrUrl) qrUrl = await makeQRDataURL(buildQRUrl(p.id));
 
@@ -1280,7 +1273,7 @@ async function buildGallery(){
   grid.innerHTML='<div style="color:var(--muted);font-size:13px;padding:20px;width:100%;text-align:center">⏳ Generando tarjetas...</div>';
   const cards=[];
   for(const p of DATA){
-    const cat=getCategoria(p.edad);
+    const cat=p.categoria||'Adulto';
     const color=getCatColor(cat);
     const qrUrl=await makeQRDataURL(buildQRUrl(p.id));
     // Canvas only for PNG download (full resolution)
@@ -1398,7 +1391,7 @@ async function downloadAllQRPdf(){
     const x = MARGIN + col*(CARD_W+GAP);
     const y = MARGIN + row*(CARD_H+GAP);
 
-    const cat   = getCategoria(p.edad);
+    const cat   = p.categoria||'Adulto';
     const color = getCatColor(cat);
     const R=parseInt(color.slice(1,3),16);
     const G=parseInt(color.slice(3,5),16);
