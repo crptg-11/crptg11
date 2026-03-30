@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CRPTG 11 — Hoja de Cuentas</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+  import { getDatabase, ref, get, onValue, set, update } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+  const app = initializeApp({ databaseURL: "https://crptg-11-default-rtdb.firebaseio.com/" });
+  const db = getDatabase(app);
+  window._db=db; window._ref=ref; window._get=get; window._onValue=onValue; window._set=set; window._update=update;
+  window._firebaseReady=true;
+  window.dispatchEvent(new Event('firebaseReady'));
+</script>
+
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#0f1117;--surface:#181b24;--surface2:#1f2333;
+  --border:#2a2d40;--text:#e8e8f0;--muted:#7a7d95;
+  --gold:#e8a838;--teal:#3ecfb8;--rose:#e86b8b;--lav:#8b7fe8;
+  --green:#3ecf6a;
+}
+body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min-height:100vh}
+
+/* ── ACCESS OVERLAY ── */
+#overlay{position:fixed;inset:0;background:rgba(11,13,19,.97);z-index:9999;display:flex;align-items:center;justify-content:center}
+.obox{background:#13161f;border:1px solid #22263a;border-radius:24px;padding:36px 40px;text-align:center;max-width:360px;width:90%;box-shadow:0 24px 64px rgba(0,0,0,.6)}
+.obox h2{font-family:'Playfair Display',serif;font-size:1.25rem;margin-bottom:6px}
+.obox p{color:var(--muted);font-size:13px;margin-bottom:20px;line-height:1.5}
+.oinput{width:100%;background:#0b0d13;border:1px solid #22263a;color:var(--text);font-family:'DM Sans',sans-serif;font-size:15px;padding:11px 16px;border-radius:12px;outline:none;text-align:center;letter-spacing:3px;margin-bottom:10px;transition:border-color .2s}
+.oinput:focus{border-color:var(--gold)}
+.obtn{width:100%;padding:12px;border-radius:12px;border:none;background:var(--gold);color:#000;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:700;cursor:pointer}
+.obtn:hover{opacity:.85}
+.oerr{color:var(--rose);font-size:12px;margin-top:8px;min-height:16px}
+
+/* ── TOPBAR ── */
+.topbar{background:var(--surface);border-bottom:1px solid var(--border);padding:10px 22px;display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}
+.topbar a{color:var(--muted);font-size:13px;text-decoration:none}.topbar a:hover{color:var(--gold)}
+.badge{display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600}
+.badge.admin{background:rgba(62,207,184,.15);color:var(--teal)}.badge.viewer{background:rgba(122,125,149,.12);color:var(--muted)}
+
+/* ── PAGE HEADER ── */
+.ph{padding:24px 22px 0;max-width:1440px;margin:0 auto}
+.ph h1{font-family:'Playfair Display',serif;font-size:1.7rem}
+.ph p{color:var(--muted);font-size:13px;margin-top:2px}
+
+/* ── SUMMARY CARDS ── */
+.summary{max-width:1440px;margin:20px auto 0;padding:0 22px;display:flex;flex-wrap:wrap;gap:10px}
+.sc{background:var(--surface);border:2px solid var(--border);border-radius:14px;padding:16px 18px;flex:1;min-width:140px;text-align:center}
+.sc .sn{font-family:'Playfair Display',serif;font-size:1.7rem;font-weight:900;line-height:1}
+.sc .sl{font-size:10px;color:var(--muted);margin-top:3px;font-weight:500;text-transform:uppercase;letter-spacing:.5px}
+.sc.gold{border-color:rgba(232,168,56,.3)}.sc.gold .sn{color:var(--gold)}
+.sc.teal{border-color:rgba(62,207,184,.3)}.sc.teal .sn{color:var(--teal)}
+.sc.lav{border-color:rgba(139,127,232,.3)}.sc.lav .sn{color:var(--lav)}
+.sc.green{border-color:rgba(62,207,106,.3)}.sc.green .sn{color:var(--green)}
+.sc.rose{border-color:rgba(232,107,139,.3)}.sc.rose .sn{color:var(--rose)}
+
+/* ── CONTROLS ── */
+.controls{max-width:1440px;margin:14px auto 0;padding:0 22px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.sw{position:relative;flex:1;min-width:200px}
+.sw input{width:100%;background:var(--surface);border:1px solid var(--border);color:var(--text);font-family:'DM Sans',sans-serif;font-size:13px;padding:8px 11px 8px 30px;border-radius:8px;outline:none;transition:border-color .2s}
+.sw input:focus{border-color:var(--gold)}.sw::before{content:'🔍';position:absolute;left:9px;top:50%;transform:translateY(-50%);font-size:11px;opacity:.38}
+.fbtn{background:var(--surface);border:1px solid var(--border);color:var(--muted);padding:7px 13px;border-radius:8px;cursor:pointer;font-size:11px;font-family:'DM Sans',sans-serif;transition:all .15s}
+.fbtn:hover,.fbtn.on{border-color:var(--gold);color:var(--gold)}.fbtn.on{background:rgba(232,168,56,.07)}
+.edit-mode-badge{display:none;background:rgba(62,207,184,.15);border:1px solid var(--teal);color:var(--teal);padding:5px 12px;border-radius:8px;font-size:11px;font-weight:600}
+.edit-mode-badge.show{display:inline-flex;align-items:center;gap:5px}
+
+/* ── TABLE ── */
+.tw{max-width:1440px;margin:12px auto 40px;padding:0 22px}
+.tbox{background:var(--surface);border:1px solid var(--border);border-radius:13px;overflow:auto;-webkit-overflow-scrolling:touch}
+table{width:100%;border-collapse:collapse;min-width:820px}
+thead{position:sticky;top:0;z-index:2}
+th{background:var(--surface2);color:var(--muted);font-size:10px;font-weight:600;letter-spacing:.8px;text-transform:uppercase;padding:9px 12px;text-align:left;border-bottom:1px solid var(--border);white-space:nowrap;cursor:pointer;user-select:none;transition:color .15s}
+th:hover{color:var(--gold)}th.asc::after{content:' ↑';color:var(--gold)}th.desc::after{content:' ↓';color:var(--gold)}
+th.ns{cursor:default}th.ns:hover{color:var(--muted)}
+td{padding:8px 12px;font-size:12px;border-bottom:1px solid rgba(42,45,64,.45);vertical-align:middle}
+tr:last-child td{border-bottom:none}tr:hover td{background:rgba(232,168,56,.02)}
+.nm{font-weight:500}
+.monto-input{background:transparent;border:1px solid transparent;color:var(--text);font-family:'DM Sans',sans-serif;font-size:12px;padding:3px 6px;border-radius:6px;width:90px;text-align:right;transition:all .15s}
+.edit-active .monto-input{background:#0b0d13;border-color:var(--border);cursor:text}
+.edit-active .monto-input:focus{border-color:var(--gold);outline:none}
+.monto-input:not(:focus){cursor:default}
+.total-cell{font-weight:700;color:var(--gold)}
+.b{display:inline-block;padding:2px 8px;border-radius:100px;font-size:10px;font-weight:600}
+.bsi{background:rgba(62,207,184,.15);color:var(--teal)}.bno{background:rgba(122,125,149,.12);color:var(--muted)}
+.bcedros{background:rgba(62,207,184,.15);color:var(--teal)}.bgosen{background:rgba(139,127,232,.15);color:var(--lav)}
+.bsin{background:rgba(42,45,64,.5);color:var(--muted)}
+.pag{display:flex;gap:5px;margin-top:11px;flex-wrap:wrap;align-items:center;padding:0 22px}
+.pgb{background:var(--surface);border:1px solid var(--border);color:var(--text);padding:5px 11px;border-radius:6px;cursor:pointer;font-size:12px;transition:all .15s;font-family:'DM Sans',sans-serif}
+.pgb:hover{border-color:var(--gold);color:var(--gold)}.pgb.on{background:var(--gold);color:#000;border-color:var(--gold);font-weight:700}.pgb:disabled{opacity:.3;cursor:default}
+.pinfo{color:var(--muted);font-size:12px;margin-top:7px;padding:0 22px 20px}
+
+/* ── TOAST ── */
+.toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%);background:var(--teal);color:#000;padding:9px 20px;border-radius:20px;font-weight:600;font-size:13px;z-index:20000;opacity:0;transition:opacity .3s;pointer-events:none;white-space:nowrap}
+.toast.show{opacity:1}
+
+/* ── SUBTOTALS ROW ── */
+.subtot{background:rgba(232,168,56,.04);border-top:2px solid rgba(232,168,56,.2)!important}
+.subtot td{font-weight:600;color:var(--muted);font-size:11px}
+
+@media(max-width:680px){
+  .summary,.controls,.tw,.ph{padding-left:10px;padding-right:10px}
+  .summary{grid-template-columns:1fr 1fr;display:grid}
+  .sc{min-width:0}
+}
+</style>
+</head>
+<body>
+
+<!-- ACCESS OVERLAY -->
+<div id="overlay">
+  <div class="obox">
+    <div style="font-size:2rem;margin-bottom:10px">📊</div>
+    <h2>Hoja de Cuentas</h2>
+    <p>Ingresa el código de acceso para ver esta página.</p>
+    <input type="password" class="oinput" id="pw-inp" placeholder="••••••••" onkeydown="if(event.key==='Enter')tryAuth()">
+    <button class="obtn" onclick="tryAuth()">Ingresar</button>
+    <div class="oerr" id="pw-err"></div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<!-- TOPBAR -->
+<div class="topbar">
+  <div style="display:flex;align-items:center;gap:12px">
+    <a href="index.html">← Inicio</a>
+    <span id="auth-badge" class="badge viewer">👁 Solo lectura</span>
+  </div>
+  <div style="display:flex;gap:6px;align-items:center">
+    <span class="edit-mode-badge" id="edit-badge">✏️ Modo edición activo</span>
+    <button class="fbtn" onclick="exportCSV()" style="background:rgba(139,127,232,.08);border-color:rgba(139,127,232,.3);color:var(--lav)">⬇ Exportar CSV</button>
+  </div>
+</div>
+
+<!-- PAGE HEADER -->
+<div class="ph">
+  <h1>📊 Hoja de Cuentas</h1>
+  <p id="status-lbl">Cargando datos…</p>
+</div>
+
+<!-- SUMMARY CARDS -->
+<div class="summary">
+  <div class="sc gold"><div class="sn" id="tot-total">—</div><div class="sl">Total recaudado</div></div>
+  <div class="sc teal"><div class="sn" id="tot-part">—</div><div class="sl">Por participación</div></div>
+  <div class="sc lav"><div class="sn" id="tot-alim">—</div><div class="sl">Por alimentación</div></div>
+  <div class="sc green"><div class="sn" id="tot-cedros">—</div><div class="sl">Hosp. Cedros</div></div>
+  <div class="sc rose"><div class="sn" id="tot-gosen">—</div><div class="sl">Hosp. Gosén</div></div>
+</div>
+
+<!-- CONTROLS -->
+<div class="controls">
+  <div class="sw"><input type="text" id="search" placeholder="Buscar nombre, ID, congregación…" oninput="renderTable()"></div>
+  <button class="fbtn on" id="f-todos" onclick="setFilter('todos',this)">Todos</button>
+  <button class="fbtn" id="f-alim" onclick="setFilter('alim',this)">🍽 Con alimentación</button>
+  <button class="fbtn" id="f-cedros" onclick="setFilter('cedros',this)">🌿 Cedros</button>
+  <button class="fbtn" id="f-gosen" onclick="setFilter('gosen',this)">🏠 Gosén</button>
+  <button class="fbtn" id="f-sin-hosp" onclick="setFilter('sin-hosp',this)">Sin hospedaje</button>
+</div>
+
+<!-- TABLE -->
+<div class="tw">
+  <div class="tbox">
+    <table>
+      <thead>
+        <tr>
+          <th onclick="sortBy('id')" id="th-id">ID</th>
+          <th onclick="sortBy('nombre')" id="th-nombre">Nombre</th>
+          <th onclick="sortBy('congregacion')" id="th-congregacion">Congregación</th>
+          <th class="ns">Alimentación</th>
+          <th class="ns">Hospedaje</th>
+          <th onclick="sortBy('mont_part')" id="th-mont_part">Participación ₡</th>
+          <th onclick="sortBy('mont_alim')" id="th-mont_alim">Alimentación ₡</th>
+          <th onclick="sortBy('mont_hosp')" id="th-mont_hosp">Hospedaje ₡</th>
+          <th onclick="sortBy('total')" id="th-total">Total ₡</th>
+        </tr>
+      </thead>
+      <tbody id="tbody"></tbody>
+    </table>
+  </div>
+</div>
+<div class="pag" id="pag"></div>
+<div class="pinfo" id="pinfo"></div>
+
+<script>
+// ── PASSWORDS ────────────────────────────────────────────────
+const PASS_VIEW  = "CuentasClaras";
+const PASS_EDIT  = "ClaridadTotal";
+
+// ── SHEET ────────────────────────────────────────────────────
+const SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vS-FHGAAPJvj_dQEHyN09G1xVJWfblbjGrDgjCREmoi19ucjl1cuPLm5fR0ZHvcmZZ6PPdrEQ7g1pSV/pub?gid=1479802457&single=true&output=csv";
+const PROXIES = [
+  "https://corsproxy.io/?url="+encodeURIComponent(SHEET_CSV_URL),
+  "https://api.allorigins.win/raw?url="+encodeURIComponent(SHEET_CSV_URL),
+  "https://thingproxy.freeboard.io/fetch/"+SHEET_CSV_URL,
+  "https://api.codetabs.com/v1/proxy?quest="+encodeURIComponent(SHEET_CSV_URL),
+];
+
+// ── STATE ────────────────────────────────────────────────────
+let DATA = [];         // parsed participants
+let HOSPEDAJE = {};    // { id: { lugar: "Cedros"|"Gosén"|"" } }
+let MONTOS = {};       // { id: { part, alim, hosp } } — overrides from Firebase
+let canEdit = false;
+let curFilter = 'todos';
+let sortCol = 'nombre', sortDir = 1;
+let curPage = 1;
+const PER = 25;
+
+// ── AUTH ─────────────────────────────────────────────────────
+function tryAuth(){
+  const v = document.getElementById('pw-inp').value.trim();
+  const err = document.getElementById('pw-err');
+  if(v === PASS_EDIT){
+    canEdit = true;
+    document.getElementById('auth-badge').className = 'badge admin';
+    document.getElementById('auth-badge').textContent = '✏️ Editor';
+    document.getElementById('edit-badge').classList.add('show');
+    document.getElementById('overlay').style.display = 'none';
+    document.body.classList.add('edit-active');
+    loadAll();
+  } else if(v === PASS_VIEW){
+    canEdit = false;
+    document.getElementById('overlay').style.display = 'none';
+    loadAll();
+  } else {
+    err.textContent = 'Código incorrecto';
+    document.getElementById('pw-inp').value = '';
+    document.getElementById('pw-inp').focus();
+  }
+}
+
+// ── LOAD ─────────────────────────────────────────────────────
+function loadAll(){
+  document.getElementById('status-lbl').textContent = 'Cargando participantes y hospedaje…';
+  // Load Firebase hospedaje + montos overrides
+  const waitFB = new Promise(res=>{
+    if(window._firebaseReady) res();
+    else window.addEventListener('firebaseReady', res, {once:true});
+  });
+  waitFB.then(()=>{
+    // Load hospedaje assignments
+    window._onValue(window._ref(window._db,"hospedaje"), snap=>{
+      const raw = snap.val()||{};
+      HOSPEDAJE = {};
+      for(const [id, val] of Object.entries(raw)){
+        HOSPEDAJE[id] = { lugar: val.lugar||'' };
+      }
+      // Load montos overrides
+      window._get(window._ref(window._db,"cuentas_montos")).then(s=>{
+        MONTOS = s.val()||{};
+        // Now load CSV
+        loadCSV();
+      }).catch(()=>{ MONTOS={}; loadCSV(); });
+    });
+  });
+}
+
+function loadCSV(){
+  tryProxy(0);
+}
+async function tryProxy(i){
+  if(i>=PROXIES.length){ document.getElementById('status-lbl').textContent='Error al cargar datos.'; return; }
+  try{
+    const r = await fetch(PROXIES[i]);
+    if(!r.ok) throw new Error(r.status);
+    const txt = await r.text();
+    parseParticipants(txt);
+  } catch(e){ tryProxy(i+1); }
+}
+
+function parseCSV(text){
+  const rows=[]; let cur='', inQ=false, row=[];
+  for(let i=0;i<text.length;i++){
+    const ch=text[i];
+    if(ch==='"'){if(inQ&&text[i+1]==='"'){cur+='"';i++;}else inQ=!inQ;}
+    else if(ch===','&&!inQ){row.push(cur);cur='';}
+    else if((ch==='\n'||(ch==='\r'&&text[i+1]==='\n'))&&!inQ){
+      if(ch==='\r')i++;row.push(cur);rows.push(row);cur='';row=[];
+    } else cur+=ch;
+  }
+  if(cur||row.length){row.push(cur);rows.push(row);}
+  return rows;
+}
+
+function col(headers,...names){
+  for(const n of names){const i=headers.findIndex(h=>h.trim()===n);if(i!==-1)return i;}return -1;
+}
+
+function parseParticipants(txt){
+  const rows = parseCSV(txt);
+  const headers = rows[0].map(x=>x.replace(/^"|"$/g,'').trim());
+  const iID   = col(headers,"ID","id");
+  const iNom  = col(headers,"Nombre completo","Nombre","nombre");
+  const iCong = col(headers,"Congregación","congregacion","Congregacion");
+  const iAlim = col(headers,"¿Necesita alimentación?","Alimentación","alimentacion","Comida");
+  const iHosp = col(headers,"¿Necesita hospedaje?","Hospedaje","hospedaje","Cama");
+  const iCat  = col(headers,"CategoriaE","Categoría","categoria");
+
+  DATA = [];
+  for(let i=1;i<rows.length;i++){
+    const r=rows[i];
+    const g=f=>f!==-1?(r[f]||'').replace(/^"|"$/g,'').trim():'';
+    const id=g(iID); if(!id)continue;
+    const quiere_alim = /^s[ií]/i.test(g(iAlim));
+    const quiere_hosp = /^s[ií]/i.test(g(iHosp));
+    DATA.push({
+      id, nombre:g(iNom), congregacion:g(iCong),
+      categoria:g(iCat)||'Adulto',
+      quiere_alim, quiere_hosp,
+    });
+  }
+  document.getElementById('status-lbl').textContent = `CRPTG 11 — ${DATA.length} participantes cargados`;
+  renderTable();
+  updateSummary();
+}
+
+// ── MONTOS HELPERS ────────────────────────────────────────────
+function getMontos(p){
+  const override = MONTOS[p.id]||{};
+  const lugar = HOSPEDAJE[p.id]?.lugar||'';
+  return {
+    part: override.part !== undefined ? override.part : 15000,
+    alim: override.alim !== undefined ? override.alim : (p.quiere_alim ? 15000 : 0),
+    hosp: override.hosp !== undefined ? override.hosp : (p.quiere_hosp && lugar ? 15000 : 0),
+  };
+}
+function getTotal(p){
+  const m=getMontos(p); return m.part+m.alim+m.hosp;
+}
+
+// ── SUMMARY ───────────────────────────────────────────────────
+function fmt(n){ return '₡'+n.toLocaleString('es-CR'); }
+function updateSummary(){
+  let totPart=0,totAlim=0,totCedros=0,totGosen=0;
+  DATA.forEach(p=>{
+    const m=getMontos(p);
+    const lugar=HOSPEDAJE[p.id]?.lugar||'';
+    totPart+=m.part;
+    totAlim+=m.alim;
+    if(lugar==='Cedros')totCedros+=m.hosp;
+    else if(lugar==='Gosén')totGosen+=m.hosp;
+  });
+  const grand=totPart+totAlim+totCedros+totGosen;
+  document.getElementById('tot-total').textContent=fmt(grand);
+  document.getElementById('tot-part').textContent=fmt(totPart);
+  document.getElementById('tot-alim').textContent=fmt(totAlim);
+  document.getElementById('tot-cedros').textContent=fmt(totCedros);
+  document.getElementById('tot-gosen').textContent=fmt(totGosen);
+}
+
+// ── FILTER & SORT ─────────────────────────────────────────────
+let activeFilter = 'todos';
+function setFilter(k, el){
+  activeFilter=k; curPage=1;
+  document.querySelectorAll('.fbtn').forEach(b=>b.classList.remove('on'));
+  el.classList.add('on');
+  renderTable();
+}
+function getFiltered(){
+  const q=(document.getElementById('search').value||'').toLowerCase().trim();
+  return DATA.filter(p=>{
+    if(q && !p.nombre.toLowerCase().includes(q) && !p.id.toLowerCase().includes(q) && !p.congregacion.toLowerCase().includes(q)) return false;
+    const lugar=HOSPEDAJE[p.id]?.lugar||'';
+    if(activeFilter==='alim' && !p.quiere_alim) return false;
+    if(activeFilter==='cedros' && lugar!=='Cedros') return false;
+    if(activeFilter==='gosen' && lugar!=='Gosén') return false;
+    if(activeFilter==='sin-hosp' && p.quiere_hosp) return false;
+    return true;
+  });
+}
+function getSorted(arr){
+  return [...arr].sort((a,b)=>{
+    let av,bv;
+    if(sortCol==='total'){av=getTotal(a);bv=getTotal(b);}
+    else if(sortCol==='mont_part'){av=getMontos(a).part;bv=getMontos(b).part;}
+    else if(sortCol==='mont_alim'){av=getMontos(a).alim;bv=getMontos(b).alim;}
+    else if(sortCol==='mont_hosp'){av=getMontos(a).hosp;bv=getMontos(b).hosp;}
+    else{av=a[sortCol]||'';bv=b[sortCol]||'';}
+    if(typeof av==='number') return (av-bv)*sortDir;
+    return String(av).localeCompare(String(bv))*sortDir;
+  });
+}
+function sortBy(col){
+  if(sortCol===col) sortDir=-sortDir; else {sortCol=col;sortDir=1;}
+  document.querySelectorAll('th[id^="th-"]').forEach(th=>{th.classList.remove('asc','desc');});
+  const th=document.getElementById('th-'+col);
+  if(th) th.classList.add(sortDir===1?'asc':'desc');
+  renderTable();
+}
+
+// ── RENDER ────────────────────────────────────────────────────
+function renderTable(){
+  const filtered=getFiltered(), sorted=getSorted(filtered), total=sorted.length;
+  const pages=Math.max(1,Math.ceil(total/PER));
+  if(curPage>pages)curPage=1;
+  const slice=sorted.slice((curPage-1)*PER, curPage*PER);
+
+  const tbody=document.getElementById('tbody');
+  if(!slice.length){
+    tbody.innerHTML=`<tr><td colspan="9" style="text-align:center;padding:38px;color:var(--muted)">Sin resultados</td></tr>`;
+  } else {
+    tbody.innerHTML = slice.map(p=>{
+      const m=getMontos(p);
+      const tot=m.part+m.alim+m.hosp;
+      const lugar=HOSPEDAJE[p.id]?.lugar||'';
+      const lugarBadge=lugar==='Cedros'?`<span class="b bcedros">🌿 Cedros</span>`:lugar==='Gosén'?`<span class="b bgosen">🏠 Gosén</span>`:`<span class="b bsin">—</span>`;
+      const alimentBadge=p.quiere_alim?`<span class="b bsi">Sí</span>`:`<span class="b bno">No</span>`;
+      return `<tr>
+        <td style="font-size:11px;color:var(--muted)">${p.id}</td>
+        <td><div class="nm">${p.nombre}</div><div style="font-size:10px;color:var(--muted);margin-top:1px">${p.categoria}</div></td>
+        <td style="font-size:11px">${p.congregacion}</td>
+        <td>${alimentBadge}</td>
+        <td>${lugarBadge}</td>
+        <td style="text-align:right"><input type="number" class="monto-input" data-id="${p.id}" data-campo="part" value="${m.part}" onchange="saveMonto('${p.id}','part',this.value)" ${canEdit?'':'readonly'}></td>
+        <td style="text-align:right"><input type="number" class="monto-input" data-id="${p.id}" data-campo="alim" value="${m.alim}" onchange="saveMonto('${p.id}','alim',this.value)" ${canEdit?'':'readonly'}></td>
+        <td style="text-align:right"><input type="number" class="monto-input" data-id="${p.id}" data-campo="hosp" value="${m.hosp}" onchange="saveMonto('${p.id}','hosp',this.value)" ${canEdit?'':'readonly'}></td>
+        <td class="total-cell" style="text-align:right">₡${tot.toLocaleString('es-CR')}</td>
+      </tr>`;
+    }).join('') + renderSubtotRow(sorted);
+  }
+
+  // Pagination
+  const pag=document.getElementById('pag');
+  document.getElementById('pinfo').textContent=`Mostrando ${Math.min((curPage-1)*PER+1,total)}–${Math.min(curPage*PER,total)} de ${total} registros`;
+  if(pages<=1){pag.innerHTML='';return;}
+  let h=`<button class="pgb" onclick="goP(${curPage-1},${pages})" ${curPage===1?'disabled':''}>‹</button>`;
+  for(let i=1;i<=pages;i++){
+    if(i===1||i===pages||Math.abs(i-curPage)<=1)h+=`<button class="pgb${i===curPage?' on':''}" onclick="goP(${i},${pages})">${i}</button>`;
+    else if(Math.abs(i-curPage)===2)h+=`<span style="color:var(--muted);padding:0 3px">…</span>`;
+  }
+  h+=`<button class="pgb" onclick="goP(${curPage+1},${pages})" ${curPage===pages?'disabled':''}>›</button>`;
+  pag.innerHTML=h;
+}
+
+function renderSubtotRow(sorted){
+  let tPart=0,tAlim=0,tHosp=0,tTot=0;
+  sorted.forEach(p=>{const m=getMontos(p);tPart+=m.part;tAlim+=m.alim;tHosp+=m.hosp;tTot+=m.part+m.alim+m.hosp;});
+  return `<tr class="subtot"><td colspan="5" style="font-size:11px;text-align:right;padding-right:12px">Subtotal filtro activo →</td>
+    <td style="text-align:right;font-weight:700">₡${tPart.toLocaleString('es-CR')}</td>
+    <td style="text-align:right;font-weight:700">₡${tAlim.toLocaleString('es-CR')}</td>
+    <td style="text-align:right;font-weight:700">₡${tHosp.toLocaleString('es-CR')}</td>
+    <td class="total-cell" style="text-align:right">₡${tTot.toLocaleString('es-CR')}</td></tr>`;
+}
+
+function goP(p,pages){if(p>=1&&p<=pages){curPage=p;renderTable();}}
+
+// ── SAVE MONTO ────────────────────────────────────────────────
+async function saveMonto(id, campo, valor){
+  if(!canEdit) return;
+  const v = parseInt(valor)||0;
+  if(!MONTOS[id]) MONTOS[id]={};
+  MONTOS[id][campo]=v;
+  // Update row total display immediately
+  renderTable();
+  updateSummary();
+  // Persist to Firebase
+  try{
+    await window._update(window._ref(window._db,`cuentas_montos/${id}`), {[campo]:v});
+    showToast('✅ Guardado');
+  } catch(e){ showToast('⚠️ Error al guardar'); }
+}
+
+// ── EXPORT CSV ────────────────────────────────────────────────
+function exportCSV(){
+  const rows=[['ID','Nombre','Congregación','Categoría','Alimentación','Hospedaje','Participación','Alimentación ₡','Hospedaje ₡','Total ₡']];
+  DATA.forEach(p=>{
+    const m=getMontos(p);
+    const lugar=HOSPEDAJE[p.id]?.lugar||'Sin asignar';
+    rows.push([p.id,p.nombre,p.congregacion,p.categoria,p.quiere_alim?'Sí':'No',lugar,m.part,m.alim,m.hosp,m.part+m.alim+m.hosp]);
+  });
+  const csv=rows.map(r=>r.map(c=>`"${c}"`).join(',')).join('\n');
+  const a=document.createElement('a');
+  a.href='data:text/csv;charset=utf-8,\uFEFF'+encodeURIComponent(csv);
+  a.download='CRPTG11_Cuentas.csv';a.click();
+}
+
+// ── TOAST ─────────────────────────────────────────────────────
+let toastTimer;
+function showToast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg;t.classList.add('show');
+  clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.classList.remove('show'),2200);
+}
+</script>
+</body>
+</html>
