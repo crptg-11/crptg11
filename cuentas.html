@@ -23,11 +23,11 @@
   --bg:#0f1117;--surface:#181b24;--surface2:#1f2333;
   --border:#2a2d40;--text:#e8e8f0;--muted:#7a7d95;
   --gold:#e8a838;--teal:#3ecfb8;--rose:#e86b8b;--lav:#8b7fe8;
-  --green:#3ecf6a;
+  --green:#3ecf6a;--emerald:#10b981;
 }
 body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min-height:100vh}
 
-/* ── ACCESS OVERLAY ── */
+/* ── OVERLAY ── */
 #overlay{position:fixed;inset:0;background:rgba(11,13,19,.97);z-index:9999;display:flex;align-items:center;justify-content:center}
 .obox{background:#13161f;border:1px solid #22263a;border-radius:24px;padding:36px 40px;text-align:center;max-width:360px;width:90%;box-shadow:0 24px 64px rgba(0,0,0,.6)}
 .obox h2{font-family:'Playfair Display',serif;font-size:1.25rem;margin-bottom:6px}
@@ -38,11 +38,28 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min
 .obtn:hover{opacity:.85}
 .oerr{color:var(--rose);font-size:12px;margin-top:8px;min-height:16px}
 
+/* ── EDITOR MODAL ── */
+#edit-modal{position:fixed;inset:0;background:rgba(11,13,19,.88);z-index:8888;display:none;align-items:center;justify-content:center}
+#edit-modal.open{display:flex}
+.ebox{background:#13161f;border:1px solid rgba(62,207,184,.3);border-radius:22px;padding:32px 36px;text-align:center;max-width:340px;width:90%;box-shadow:0 16px 56px rgba(0,0,0,.7)}
+.ebox .ico{font-size:2rem;margin-bottom:10px}
+.ebox h2{font-family:'Playfair Display',serif;font-size:1.1rem;margin-bottom:5px;color:var(--teal)}
+.ebox p{color:var(--muted);font-size:13px;margin-bottom:18px;line-height:1.5}
+.ebox-row{display:flex;gap:8px;margin-top:4px}
+.ecancelbtn{flex:1;padding:11px;border-radius:10px;border:1px solid var(--border);background:transparent;color:var(--muted);font-family:'DM Sans',sans-serif;font-size:13px;cursor:pointer;transition:all .15s}
+.ecancelbtn:hover{border-color:var(--muted);color:var(--text)}
+.econfirmbtn{flex:2;padding:11px;border-radius:10px;border:none;background:var(--teal);color:#000;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:700;cursor:pointer;transition:opacity .15s}
+.econfirmbtn:hover{opacity:.85}
+
 /* ── TOPBAR ── */
 .topbar{background:var(--surface);border-bottom:1px solid var(--border);padding:10px 22px;display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}
 .topbar a{color:var(--muted);font-size:13px;text-decoration:none}.topbar a:hover{color:var(--gold)}
 .badge{display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600}
 .badge.admin{background:rgba(62,207,184,.15);color:var(--teal)}.badge.viewer{background:rgba(122,125,149,.12);color:var(--muted)}
+.edit-mode-badge{display:none;background:rgba(62,207,184,.15);border:1px solid var(--teal);color:var(--teal);padding:5px 12px;border-radius:8px;font-size:11px;font-weight:600}
+.edit-mode-badge.show{display:inline-flex;align-items:center;gap:5px}
+.editor-btn{background:rgba(62,207,184,.1);border:1px solid rgba(62,207,184,.3);color:var(--teal);padding:6px 14px;border-radius:8px;cursor:pointer;font-size:12px;font-family:'DM Sans',sans-serif;font-weight:600;transition:all .15s}
+.editor-btn:hover{background:rgba(62,207,184,.2);border-color:var(--teal)}
 
 /* ── PAGE HEADER ── */
 .ph{padding:24px 22px 0;max-width:1440px;margin:0 auto}
@@ -51,14 +68,15 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min
 
 /* ── SUMMARY CARDS ── */
 .summary{max-width:1440px;margin:20px auto 0;padding:0 22px;display:flex;flex-wrap:wrap;gap:10px}
-.sc{background:var(--surface);border:2px solid var(--border);border-radius:14px;padding:16px 18px;flex:1;min-width:140px;text-align:center}
-.sc .sn{font-family:'Playfair Display',serif;font-size:1.7rem;font-weight:900;line-height:1}
+.sc{background:var(--surface);border:2px solid var(--border);border-radius:14px;padding:16px 18px;flex:1;min-width:130px;text-align:center}
+.sc .sn{font-family:'Playfair Display',serif;font-size:1.6rem;font-weight:900;line-height:1}
 .sc .sl{font-size:10px;color:var(--muted);margin-top:3px;font-weight:500;text-transform:uppercase;letter-spacing:.5px}
 .sc.gold{border-color:rgba(232,168,56,.3)}.sc.gold .sn{color:var(--gold)}
 .sc.teal{border-color:rgba(62,207,184,.3)}.sc.teal .sn{color:var(--teal)}
 .sc.lav{border-color:rgba(139,127,232,.3)}.sc.lav .sn{color:var(--lav)}
 .sc.green{border-color:rgba(62,207,106,.3)}.sc.green .sn{color:var(--green)}
 .sc.rose{border-color:rgba(232,107,139,.3)}.sc.rose .sn{color:var(--rose)}
+.sc.emerald{border-color:rgba(16,185,129,.3)}.sc.emerald .sn{color:var(--emerald)}
 
 /* ── CONTROLS ── */
 .controls{max-width:1440px;margin:14px auto 0;padding:0 22px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
@@ -67,13 +85,11 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min
 .sw input:focus{border-color:var(--gold)}.sw::before{content:'🔍';position:absolute;left:9px;top:50%;transform:translateY(-50%);font-size:11px;opacity:.38}
 .fbtn{background:var(--surface);border:1px solid var(--border);color:var(--muted);padding:7px 13px;border-radius:8px;cursor:pointer;font-size:11px;font-family:'DM Sans',sans-serif;transition:all .15s}
 .fbtn:hover,.fbtn.on{border-color:var(--gold);color:var(--gold)}.fbtn.on{background:rgba(232,168,56,.07)}
-.edit-mode-badge{display:none;background:rgba(62,207,184,.15);border:1px solid var(--teal);color:var(--teal);padding:5px 12px;border-radius:8px;font-size:11px;font-weight:600}
-.edit-mode-badge.show{display:inline-flex;align-items:center;gap:5px}
 
 /* ── TABLE ── */
 .tw{max-width:1440px;margin:12px auto 40px;padding:0 22px}
 .tbox{background:var(--surface);border:1px solid var(--border);border-radius:13px;overflow:auto;-webkit-overflow-scrolling:touch}
-table{width:100%;border-collapse:collapse;min-width:820px}
+table{width:100%;border-collapse:collapse;min-width:940px}
 thead{position:sticky;top:0;z-index:2}
 th{background:var(--surface2);color:var(--muted);font-size:10px;font-weight:600;letter-spacing:.8px;text-transform:uppercase;padding:9px 12px;text-align:left;border-bottom:1px solid var(--border);white-space:nowrap;cursor:pointer;user-select:none;transition:color .15s}
 th:hover{color:var(--gold)}th.asc::after{content:' ↑';color:var(--gold)}th.desc::after{content:' ↓';color:var(--gold)}
@@ -99,16 +115,19 @@ tr:last-child td{border-bottom:none}tr:hover td{background:rgba(232,168,56,.02)}
 .toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%);background:var(--teal);color:#000;padding:9px 20px;border-radius:20px;font-weight:600;font-size:13px;z-index:20000;opacity:0;transition:opacity .3s;pointer-events:none;white-space:nowrap}
 .toast.show{opacity:1}
 
-/* ── DOWNLOAD BTN ── */
-.dl-btn{background:rgba(139,127,232,.12);border:1px solid rgba(139,127,232,.3);color:var(--lav);padding:4px 10px;border-radius:7px;cursor:pointer;font-size:11px;font-family:'DM Sans',sans-serif;font-weight:600;transition:all .15s;white-space:nowrap}
-.dl-btn:hover{background:rgba(139,127,232,.25);border-color:var(--lav)}
+/* ── ESTADO PAGO DROPDOWN ── */
+.estado-sel{appearance:none;-webkit-appearance:none;border-radius:8px;padding:5px 22px 5px 9px;font-family:'DM Sans',sans-serif;font-size:11px;font-weight:600;cursor:pointer;transition:all .2s;border:1px solid;background-repeat:no-repeat;background-position:right 6px center;background-size:9px;min-width:108px}
+.estado-sel:focus{outline:none}
+.estado-sel.pagado{background-color:rgba(16,185,129,.15);color:#10b981;border-color:rgba(16,185,129,.4);background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 10'%3E%3Cpath d='M2 4l3 3 3-3' stroke='%2310b981' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E")}
+.estado-sel.parcial{background-color:rgba(232,168,56,.13);color:#e8a838;border-color:rgba(232,168,56,.4);background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 10'%3E%3Cpath d='M2 4l3 3 3-3' stroke='%23e8a838' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E")}
+.estado-sel.pendiente{background-color:rgba(232,107,139,.12);color:#e86b8b;border-color:rgba(232,107,139,.4);background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 10'%3E%3Cpath d='M2 4l3 3 3-3' stroke='%23e86b8b' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E")}
+.estado-sel:disabled{opacity:.55;cursor:default}
+.estado-sel option{background:#1f2333;color:var(--text)}
 
-/* ── CHECKBOX PAGO ── */
-.chk-wrap{display:inline-flex;align-items:center;justify-content:center;cursor:pointer;line-height:1}
-.chk-wrap input[type=checkbox]{position:absolute;opacity:0;width:0;height:0;pointer-events:none}
-.chk-wrap input[type=checkbox]:disabled ~ .chk-box{cursor:default;opacity:.7}
-.chk-box{font-size:18px;transition:transform .1s}
-.chk-wrap:not(:has(input:disabled)):hover .chk-box{transform:scale(1.2)}
+/* ── DOWNLOAD BTN ── */
+.dl-btn{display:inline-flex;align-items:center;gap:4px;background:rgba(139,127,232,.14);border:1px solid rgba(139,127,232,.35);color:var(--lav);padding:5px 11px;border-radius:7px;cursor:pointer;font-size:11px;font-family:'DM Sans',sans-serif;font-weight:600;transition:all .15s;white-space:nowrap}
+.dl-btn:hover{background:rgba(139,127,232,.28);border-color:var(--lav);transform:translateY(-1px)}
+.dl-btn:active{transform:none}
 
 /* ── SUBTOTALS ROW ── */
 .subtot{background:rgba(232,168,56,.04);border-top:2px solid rgba(232,168,56,.2)!important}
@@ -135,6 +154,22 @@ tr:last-child td{border-bottom:none}tr:hover td{background:rgba(232,168,56,.02)}
   </div>
 </div>
 
+<!-- EDITOR MODAL -->
+<div id="edit-modal">
+  <div class="ebox">
+    <div class="ico">🔐</div>
+    <h2>Modo Editor</h2>
+    <p>Ingresa la contraseña de administrador para habilitar la edición.</p>
+    <input type="password" class="oinput" id="edit-pw-inp" placeholder="••••••••"
+      onkeydown="if(event.key==='Enter')tryEditAuth();if(event.key==='Escape')closeEditModal()">
+    <div class="oerr" id="edit-pw-err"></div>
+    <div class="ebox-row">
+      <button class="ecancelbtn" onclick="closeEditModal()">Cancelar</button>
+      <button class="econfirmbtn" onclick="tryEditAuth()">Activar editor</button>
+    </div>
+  </div>
+</div>
+
 <!-- TOAST -->
 <div class="toast" id="toast"></div>
 
@@ -144,8 +179,9 @@ tr:last-child td{border-bottom:none}tr:hover td{background:rgba(232,168,56,.02)}
     <a href="index.html">← Inicio</a>
     <span id="auth-badge" class="badge viewer">👁 Solo lectura</span>
   </div>
-  <div style="display:flex;gap:6px;align-items:center">
+  <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
     <span class="edit-mode-badge" id="edit-badge">✏️ Modo edición activo</span>
+    <button class="editor-btn" id="editor-btn" onclick="openEditModal()" style="display:none">🔓 Modo editor</button>
     <button class="fbtn" onclick="exportCSV()" style="background:rgba(139,127,232,.08);border-color:rgba(139,127,232,.3);color:var(--lav)">⬇ Exportar CSV</button>
   </div>
 </div>
@@ -158,12 +194,16 @@ tr:last-child td{border-bottom:none}tr:hover td{background:rgba(232,168,56,.02)}
 
 <!-- SUMMARY CARDS -->
 <div class="summary">
-  <div class="sc gold"><div class="sn" id="tot-total">—</div><div class="sl">Total recaudado</div></div>
+  <div class="sc gold"><div class="sn" id="tot-total">—</div><div class="sl">Total esperado</div></div>
+  <div class="sc emerald"><div class="sn" id="tot-pagado-real">—</div><div class="sl">Total pagado</div></div>
   <div class="sc teal"><div class="sn" id="tot-part">—</div><div class="sl">Por participación</div></div>
   <div class="sc lav"><div class="sn" id="tot-alim">—</div><div class="sl">Por alimentación</div></div>
   <div class="sc green"><div class="sn" id="tot-cedros">—</div><div class="sl">Hosp. Cedros</div></div>
   <div class="sc rose"><div class="sn" id="tot-gosen">—</div><div class="sl">Hosp. Gosén</div></div>
-  <div class="sc" style="border-color:rgba(62,207,106,.3)"><div class="sn" id="tot-pagaron" style="color:var(--green)">—</div><div class="sl">Han pagado</div></div>
+  <div class="sc" style="border-color:rgba(16,185,129,.3)">
+    <div class="sn" id="tot-estados" style="font-size:1rem;line-height:1.6">—</div>
+    <div class="sl">Estado de pagos</div>
+  </div>
 </div>
 
 <!-- CONTROLS -->
@@ -174,8 +214,9 @@ tr:last-child td{border-bottom:none}tr:hover td{background:rgba(232,168,56,.02)}
   <button class="fbtn" id="f-cedros" onclick="setFilter('cedros',this)">🌿 Cedros</button>
   <button class="fbtn" id="f-gosen" onclick="setFilter('gosen',this)">🏠 Gosén</button>
   <button class="fbtn" id="f-sin-hosp" onclick="setFilter('sin-hosp',this)">Sin hospedaje</button>
-  <button class="fbtn" id="f-pagados" onclick="setFilter('pagados',this)">✅ Pagaron</button>
-  <button class="fbtn" id="f-pendientes" onclick="setFilter('pendientes',this)">⏳ Pendientes</button>
+  <button class="fbtn" id="f-pagados" onclick="setFilter('pagados',this)">✅ Pagado</button>
+  <button class="fbtn" id="f-parcial" onclick="setFilter('parcial',this)">🟡 Parcial</button>
+  <button class="fbtn" id="f-pendientes" onclick="setFilter('pendientes',this)">⏳ Pendiente</button>
 </div>
 
 <!-- TABLE -->
@@ -193,7 +234,7 @@ tr:last-child td{border-bottom:none}tr:hover td{background:rgba(232,168,56,.02)}
           <th onclick="sortBy('mont_alim')" id="th-mont_alim">Alimentación ₡</th>
           <th onclick="sortBy('mont_hosp')" id="th-mont_hosp">Hospedaje ₡</th>
           <th onclick="sortBy('total')" id="th-total">Total ₡</th>
-          <th class="ns" style="text-align:center">Pagó</th>
+          <th class="ns" style="text-align:center;min-width:120px">Estado</th>
           <th class="ns" style="text-align:center">Factura</th>
         </tr>
       </thead>
@@ -205,11 +246,11 @@ tr:last-child td{border-bottom:none}tr:hover td{background:rgba(232,168,56,.02)}
 <div class="pinfo" id="pinfo"></div>
 
 <script>
-// ── PASSWORDS ────────────────────────────────────────────────
-const PASS_VIEW  = "CuentasClaras";
-const PASS_EDIT  = "ClaridadTotal";
+// ── CONFIG ──────────────────────────────────────────────────
+const PASS_VIEW = "CuentasClaras";
+const PASS_EDIT = "ClaridadTotal";
+const LS_KEY    = "crptg11_auth_v1";
 
-// ── SHEET ────────────────────────────────────────────────────
 const SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vS-FHGAAPJvj_dQEHyN09G1xVJWfblbjGrDgjCREmoi19ucjl1cuPLm5fR0ZHvcmZZ6PPdrEQ7g1pSV/pub?gid=1479802457&single=true&output=csv";
 const PROXIES = [
   "https://corsproxy.io/?url="+encodeURIComponent(SHEET_CSV_URL),
@@ -218,183 +259,187 @@ const PROXIES = [
   "https://api.codetabs.com/v1/proxy?quest="+encodeURIComponent(SHEET_CSV_URL),
 ];
 
-// ── STATE ────────────────────────────────────────────────────
-let DATA = [];         // parsed participants
-let HOSPEDAJE = {};    // { id: { lugar: "Cedros"|"Gosén"|"" } }
-let MONTOS = {};       // { id: { part, alim, hosp } } — overrides from Firebase
-let PAGOS = {};        // { id: true/false } — quién ha pagado
-let canEdit = false;
-let curFilter = 'todos';
-let sortCol = 'nombre', sortDir = 1;
-let curPage = 1;
-const PER = 25;
+// ── STATE ──────────────────────────────────────────────────
+let DATA=[], HOSPEDAJE={}, MONTOS={}, PAGOS={};
+let canEdit=false, sortCol='nombre', sortDir=1, curPage=1, activeFilter='todos';
+const PER=25;
 
-// ── AUTH ─────────────────────────────────────────────────────
+// ── BOOT: skip overlay if already authenticated ─────────────
+(function boot(){
+  if(localStorage.getItem(LS_KEY)==='view'){
+    document.getElementById('overlay').style.display='none';
+    document.getElementById('editor-btn').style.display='';
+    loadAll();
+  }
+})();
+
+// ── AUTH (overlay) ─────────────────────────────────────────
 function tryAuth(){
-  const v = document.getElementById('pw-inp').value.trim();
-  const err = document.getElementById('pw-err');
-  if(v === PASS_EDIT){
-    canEdit = true;
-    document.getElementById('auth-badge').className = 'badge admin';
-    document.getElementById('auth-badge').textContent = '✏️ Editor';
-    document.getElementById('edit-badge').classList.add('show');
-    document.getElementById('overlay').style.display = 'none';
-    document.body.classList.add('edit-active');
-    loadAll();
-  } else if(v === PASS_VIEW){
-    canEdit = false;
-    document.getElementById('overlay').style.display = 'none';
-    loadAll();
+  const v=document.getElementById('pw-inp').value.trim();
+  const err=document.getElementById('pw-err');
+  if(v===PASS_VIEW||v===PASS_EDIT){
+    localStorage.setItem(LS_KEY,'view');
+    document.getElementById('overlay').style.display='none';
+    document.getElementById('editor-btn').style.display='';
+    if(v===PASS_EDIT){ activateEditor(); } else { loadAll(); }
   } else {
-    err.textContent = 'Código incorrecto';
-    document.getElementById('pw-inp').value = '';
+    err.textContent='Código incorrecto';
+    document.getElementById('pw-inp').value='';
     document.getElementById('pw-inp').focus();
   }
 }
 
-// ── LOAD ─────────────────────────────────────────────────────
+// ── EDITOR MODAL ───────────────────────────────────────────
+function openEditModal(){
+  if(canEdit) return;
+  document.getElementById('edit-pw-inp').value='';
+  document.getElementById('edit-pw-err').textContent='';
+  document.getElementById('edit-modal').classList.add('open');
+  setTimeout(()=>document.getElementById('edit-pw-inp').focus(),80);
+}
+function closeEditModal(){
+  document.getElementById('edit-modal').classList.remove('open');
+}
+function tryEditAuth(){
+  const v=document.getElementById('edit-pw-inp').value.trim();
+  if(v===PASS_EDIT){
+    closeEditModal();
+    activateEditor();
+  } else {
+    document.getElementById('edit-pw-err').textContent='Contraseña incorrecta';
+    document.getElementById('edit-pw-inp').value='';
+    document.getElementById('edit-pw-inp').focus();
+  }
+}
+function activateEditor(){
+  canEdit=true;
+  document.getElementById('auth-badge').className='badge admin';
+  document.getElementById('auth-badge').textContent='✏️ Editor';
+  document.getElementById('edit-badge').classList.add('show');
+  document.getElementById('editor-btn').style.display='none';
+  document.body.classList.add('edit-active');
+  if(!DATA.length) loadAll(); else renderTable();
+}
+
+// ── LOAD ───────────────────────────────────────────────────
 function loadAll(){
-  document.getElementById('status-lbl').textContent = 'Cargando participantes y hospedaje…';
-  // Load Firebase hospedaje + montos overrides
-  const waitFB = new Promise(res=>{
-    if(window._firebaseReady) res();
-    else window.addEventListener('firebaseReady', res, {once:true});
-  });
+  document.getElementById('status-lbl').textContent='Cargando participantes y hospedaje…';
+  const waitFB=new Promise(res=>{ if(window._firebaseReady)res(); else window.addEventListener('firebaseReady',res,{once:true}); });
   waitFB.then(()=>{
-    // Load hospedaje assignments
-    window._onValue(window._ref(window._db,"hospedaje"), snap=>{
-      const raw = snap.val()||{};
-      HOSPEDAJE = {};
-      for(const [id, val] of Object.entries(raw)){
-        HOSPEDAJE[id] = { lugar: val.lugar||'' };
-      }
-      // Load montos overrides
-      window._get(window._ref(window._db,"cuentas_montos")).then(s=>{
-        MONTOS = s.val()||{};
-        // Load pagos
-        window._get(window._ref(window._db,"cuentas_pagos")).then(sp=>{
-          PAGOS = sp.val()||{};
+    window._onValue(window._ref(window._db,'hospedaje'),snap=>{
+      const raw=snap.val()||{};
+      HOSPEDAJE={};
+      for(const [id,val] of Object.entries(raw)) HOSPEDAJE[id]={lugar:val.lugar||''};
+      window._get(window._ref(window._db,'cuentas_montos')).then(s=>{
+        MONTOS=s.val()||{};
+        window._get(window._ref(window._db,'cuentas_pagos')).then(sp=>{
+          PAGOS=sp.val()||{};
           loadCSV();
-        }).catch(()=>{ PAGOS={}; loadCSV(); });
-      }).catch(()=>{ MONTOS={}; PAGOS={}; loadCSV(); });
+        }).catch(()=>{PAGOS={};loadCSV();});
+      }).catch(()=>{MONTOS={};PAGOS={};loadCSV();});
     });
   });
 }
-
-function loadCSV(){
-  tryProxy(0);
-}
+function loadCSV(){ tryProxy(0); }
 async function tryProxy(i){
-  if(i>=PROXIES.length){ document.getElementById('status-lbl').textContent='Error al cargar datos.'; return; }
+  if(i>=PROXIES.length){document.getElementById('status-lbl').textContent='Error al cargar datos.';return;}
   try{
-    const r = await fetch(PROXIES[i]);
+    const r=await fetch(PROXIES[i]);
     if(!r.ok) throw new Error(r.status);
-    const txt = await r.text();
-    parseParticipants(txt);
+    parseParticipants(await r.text());
   } catch(e){ tryProxy(i+1); }
 }
 
+// ── PARSE CSV ──────────────────────────────────────────────
 function parseCSV(text){
-  const rows=[]; let cur='', inQ=false, row=[];
+  const rows=[];let cur='',inQ=false,row=[];
   for(let i=0;i<text.length;i++){
     const ch=text[i];
     if(ch==='"'){if(inQ&&text[i+1]==='"'){cur+='"';i++;}else inQ=!inQ;}
     else if(ch===','&&!inQ){row.push(cur);cur='';}
-    else if((ch==='\n'||(ch==='\r'&&text[i+1]==='\n'))&&!inQ){
-      if(ch==='\r')i++;row.push(cur);rows.push(row);cur='';row=[];
-    } else cur+=ch;
+    else if((ch==='\n'||(ch==='\r'&&text[i+1]==='\n'))&&!inQ){if(ch==='\r')i++;row.push(cur);rows.push(row);cur='';row=[];}
+    else cur+=ch;
   }
   if(cur||row.length){row.push(cur);rows.push(row);}
   return rows;
 }
-
-function col(headers,...names){
-  for(const n of names){const i=headers.findIndex(h=>h.trim()===n);if(i!==-1)return i;}return -1;
-}
-
+function col(h,...ns){for(const n of ns){const i=h.findIndex(x=>x.trim()===n);if(i!==-1)return i;}return -1;}
 function parseParticipants(txt){
-  const rows = parseCSV(txt);
-  const headers = rows[0].map(x=>x.replace(/^"|"$/g,'').trim());
-  const iID   = col(headers,"ID","id");
-  const iNom  = col(headers,"Nombre completo","Nombre","nombre");
-  const iCong = col(headers,"Congregación","congregacion","Congregacion");
-  const iAlim = col(headers,"¿Necesita alimentación?","Alimentación","alimentacion","Comida");
-  const iHosp = col(headers,"¿Necesita hospedaje?","Hospedaje","hospedaje","Cama");
-  const iCat  = col(headers,"CategoriaE","Categoría","categoria");
-
-  DATA = [];
+  const rows=parseCSV(txt);
+  const h=rows[0].map(x=>x.replace(/^"|"$/g,'').trim());
+  const iID=col(h,'ID','id'),iNom=col(h,'Nombre completo','Nombre','nombre'),
+        iCong=col(h,'Congregación','congregacion','Congregacion'),
+        iAlim=col(h,'¿Necesita alimentación?','Alimentación','alimentacion','Comida'),
+        iHosp=col(h,'¿Necesita hospedaje?','Hospedaje','hospedaje','Cama'),
+        iCat=col(h,'CategoriaE','Categoría','categoria');
+  DATA=[];
   for(let i=1;i<rows.length;i++){
     const r=rows[i];
     const g=f=>f!==-1?(r[f]||'').replace(/^"|"$/g,'').trim():'';
     const id=g(iID); if(!id)continue;
-    const quiere_alim = /^s[ií]/i.test(g(iAlim));
-    const quiere_hosp = /^s[ií]/i.test(g(iHosp));
-    DATA.push({
-      id, nombre:g(iNom), congregacion:g(iCong),
-      categoria:g(iCat)||'Adulto',
-      quiere_alim, quiere_hosp,
-    });
+    DATA.push({id,nombre:g(iNom),congregacion:g(iCong),categoria:g(iCat)||'Adulto',
+               quiere_alim:/^s[ií]/i.test(g(iAlim)),quiere_hosp:/^s[ií]/i.test(g(iHosp))});
   }
-  document.getElementById('status-lbl').textContent = `CRPTG 11 — ${DATA.length} participantes cargados`;
-  renderTable();
-  updateSummary();
+  document.getElementById('status-lbl').textContent=`CRPTG 11 — ${DATA.length} participantes cargados`;
+  renderTable(); updateSummary();
 }
 
-// ── MONTOS HELPERS ────────────────────────────────────────────
+// ── HELPERS ────────────────────────────────────────────────
 function getMontos(p){
-  const override = MONTOS[p.id]||{};
-  const lugar = HOSPEDAJE[p.id]?.lugar||'';
+  const o=MONTOS[p.id]||{}, lugar=HOSPEDAJE[p.id]?.lugar||'';
   return {
-    part: override.part !== undefined ? override.part : 15000,
-    alim: override.alim !== undefined ? override.alim : (p.quiere_alim ? 15000 : 0),
-    hosp: override.hosp !== undefined ? override.hosp : (p.quiere_hosp && lugar ? 15000 : 0),
+    part: o.part!==undefined?o.part:15000,
+    alim: o.alim!==undefined?o.alim:(p.quiere_alim?15000:0),
+    hosp: o.hosp!==undefined?o.hosp:(p.quiere_hosp&&lugar?15000:0),
   };
 }
-function getTotal(p){
-  const m=getMontos(p); return m.part+m.alim+m.hosp;
-}
+function getTotal(p){const m=getMontos(p);return m.part+m.alim+m.hosp;}
+function getEstado(id){return PAGOS[id]||'pendiente';}
+function fmt(n){return '₡'+n.toLocaleString('es-CR');}
 
-// ── SUMMARY ───────────────────────────────────────────────────
-function fmt(n){ return '₡'+n.toLocaleString('es-CR'); }
+// ── SUMMARY ────────────────────────────────────────────────
 function updateSummary(){
-  let totPart=0,totAlim=0,totCedros=0,totGosen=0;
+  let totPart=0,totAlim=0,totCedros=0,totGosen=0,totPagado=0,cPag=0,cParc=0,cPend=0;
   DATA.forEach(p=>{
-    const m=getMontos(p);
-    const lugar=HOSPEDAJE[p.id]?.lugar||'';
-    totPart+=m.part;
-    totAlim+=m.alim;
-    if(lugar==='Cedros')totCedros+=m.hosp;
-    else if(lugar==='Gosén')totGosen+=m.hosp;
+    const m=getMontos(p),lugar=HOSPEDAJE[p.id]?.lugar||'',est=getEstado(p.id);
+    const tot=m.part+m.alim+m.hosp;
+    totPart+=m.part; totAlim+=m.alim;
+    if(lugar==='Cedros')totCedros+=m.hosp; else if(lugar==='Gosén')totGosen+=m.hosp;
+    if(est==='pagado'){totPagado+=tot;cPag++;}
+    else if(est==='parcial'){cParc++;}
+    else cPend++;
   });
   const grand=totPart+totAlim+totCedros+totGosen;
   document.getElementById('tot-total').textContent=fmt(grand);
+  document.getElementById('tot-pagado-real').textContent=fmt(totPagado);
   document.getElementById('tot-part').textContent=fmt(totPart);
   document.getElementById('tot-alim').textContent=fmt(totAlim);
   document.getElementById('tot-cedros').textContent=fmt(totCedros);
   document.getElementById('tot-gosen').textContent=fmt(totGosen);
-  const pagaron = DATA.filter(p=>PAGOS[p.id]).length;
-  document.getElementById('tot-pagaron').textContent=`${pagaron} / ${DATA.length}`;
+  document.getElementById('tot-estados').innerHTML=
+    `<span style="color:var(--emerald)">✅ ${cPag}</span>&nbsp;&nbsp;`+
+    `<span style="color:var(--gold)">🟡 ${cParc}</span>&nbsp;&nbsp;`+
+    `<span style="color:var(--rose)">⏳ ${cPend}</span>`;
 }
 
-// ── FILTER & SORT ─────────────────────────────────────────────
-let activeFilter = 'todos';
-function setFilter(k, el){
-  activeFilter=k; curPage=1;
+// ── FILTER & SORT ──────────────────────────────────────────
+function setFilter(k,el){
+  activeFilter=k;curPage=1;
   document.querySelectorAll('.fbtn').forEach(b=>b.classList.remove('on'));
-  el.classList.add('on');
-  renderTable();
+  el.classList.add('on'); renderTable();
 }
 function getFiltered(){
   const q=(document.getElementById('search').value||'').toLowerCase().trim();
   return DATA.filter(p=>{
-    if(q && !p.nombre.toLowerCase().includes(q) && !p.id.toLowerCase().includes(q) && !p.congregacion.toLowerCase().includes(q)) return false;
-    const lugar=HOSPEDAJE[p.id]?.lugar||'';
-    if(activeFilter==='alim' && !p.quiere_alim) return false;
-    if(activeFilter==='cedros' && lugar!=='Cedros') return false;
-    if(activeFilter==='gosen' && lugar!=='Gosén') return false;
-    if(activeFilter==='sin-hosp' && p.quiere_hosp) return false;
-    if(activeFilter==='pagados' && !PAGOS[p.id]) return false;
-    if(activeFilter==='pendientes' && PAGOS[p.id]) return false;
+    if(q&&!p.nombre.toLowerCase().includes(q)&&!p.id.toLowerCase().includes(q)&&!p.congregacion.toLowerCase().includes(q))return false;
+    const lugar=HOSPEDAJE[p.id]?.lugar||'', est=getEstado(p.id);
+    if(activeFilter==='alim'&&!p.quiere_alim)return false;
+    if(activeFilter==='cedros'&&lugar!=='Cedros')return false;
+    if(activeFilter==='gosen'&&lugar!=='Gosén')return false;
+    if(activeFilter==='sin-hosp'&&p.quiere_hosp)return false;
+    if(activeFilter==='pagados'&&est!=='pagado')return false;
+    if(activeFilter==='parcial'&&est!=='parcial')return false;
+    if(activeFilter==='pendientes'&&est!=='pendiente')return false;
     return true;
   });
 }
@@ -406,59 +451,59 @@ function getSorted(arr){
     else if(sortCol==='mont_alim'){av=getMontos(a).alim;bv=getMontos(b).alim;}
     else if(sortCol==='mont_hosp'){av=getMontos(a).hosp;bv=getMontos(b).hosp;}
     else{av=a[sortCol]||'';bv=b[sortCol]||'';}
-    if(typeof av==='number') return (av-bv)*sortDir;
+    if(typeof av==='number')return(av-bv)*sortDir;
     return String(av).localeCompare(String(bv))*sortDir;
   });
 }
-function sortBy(col){
-  if(sortCol===col) sortDir=-sortDir; else {sortCol=col;sortDir=1;}
-  document.querySelectorAll('th[id^="th-"]').forEach(th=>{th.classList.remove('asc','desc');});
-  const th=document.getElementById('th-'+col);
-  if(th) th.classList.add(sortDir===1?'asc':'desc');
+function sortBy(c){
+  if(sortCol===c)sortDir=-sortDir;else{sortCol=c;sortDir=1;}
+  document.querySelectorAll('th[id^="th-"]').forEach(th=>th.classList.remove('asc','desc'));
+  const th=document.getElementById('th-'+c);
+  if(th)th.classList.add(sortDir===1?'asc':'desc');
   renderTable();
 }
 
-// ── RENDER ────────────────────────────────────────────────────
+// ── RENDER ─────────────────────────────────────────────────
 function renderTable(){
-  const filtered=getFiltered(), sorted=getSorted(filtered), total=sorted.length;
+  const filtered=getFiltered(),sorted=getSorted(filtered),total=sorted.length;
   const pages=Math.max(1,Math.ceil(total/PER));
   if(curPage>pages)curPage=1;
-  const slice=sorted.slice((curPage-1)*PER, curPage*PER);
-
+  const slice=sorted.slice((curPage-1)*PER,curPage*PER);
   const tbody=document.getElementById('tbody');
   if(!slice.length){
     tbody.innerHTML=`<tr><td colspan="11" style="text-align:center;padding:38px;color:var(--muted)">Sin resultados</td></tr>`;
   } else {
-    tbody.innerHTML = slice.map(p=>{
-      const m=getMontos(p);
-      const tot=m.part+m.alim+m.hosp;
+    tbody.innerHTML=slice.map(p=>{
+      const m=getMontos(p),tot=m.part+m.alim+m.hosp;
       const lugar=HOSPEDAJE[p.id]?.lugar||'';
+      const est=getEstado(p.id);
       const lugarBadge=lugar==='Cedros'?`<span class="b bcedros">🌿 Cedros</span>`:lugar==='Gosén'?`<span class="b bgosen">🏠 Gosén</span>`:`<span class="b bsin">—</span>`;
       const alimentBadge=p.quiere_alim?`<span class="b bsi">Sí</span>`:`<span class="b bno">No</span>`;
+      const sid=p.id.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
       return `<tr>
         <td style="font-size:11px;color:var(--muted)">${p.id}</td>
         <td><div class="nm">${p.nombre}</div><div style="font-size:10px;color:var(--muted);margin-top:1px">${p.categoria}</div></td>
         <td style="font-size:11px">${p.congregacion}</td>
         <td>${alimentBadge}</td>
         <td>${lugarBadge}</td>
-        <td style="text-align:right"><input type="number" class="monto-input" data-id="${p.id}" data-campo="part" value="${m.part}" onchange="saveMonto('${p.id}','part',this.value)" ${canEdit?'':'readonly'}></td>
-        <td style="text-align:right"><input type="number" class="monto-input" data-id="${p.id}" data-campo="alim" value="${m.alim}" onchange="saveMonto('${p.id}','alim',this.value)" ${canEdit?'':'readonly'}></td>
-        <td style="text-align:right"><input type="number" class="monto-input" data-id="${p.id}" data-campo="hosp" value="${m.hosp}" onchange="saveMonto('${p.id}','hosp',this.value)" ${canEdit?'':'readonly'}></td>
+        <td style="text-align:right"><input type="number" class="monto-input" value="${m.part}" onchange="saveMonto('${sid}','part',this.value)" ${canEdit?'':'readonly'}></td>
+        <td style="text-align:right"><input type="number" class="monto-input" value="${m.alim}" onchange="saveMonto('${sid}','alim',this.value)" ${canEdit?'':'readonly'}></td>
+        <td style="text-align:right"><input type="number" class="monto-input" value="${m.hosp}" onchange="saveMonto('${sid}','hosp',this.value)" ${canEdit?'':'readonly'}></td>
         <td class="total-cell" style="text-align:right">₡${tot.toLocaleString('es-CR')}</td>
         <td style="text-align:center">
-          <label class="chk-wrap" title="${canEdit?'Marcar como pagado':'Solo lectura'}">
-            <input type="checkbox" class="pago-chk" data-id="${p.id}" ${PAGOS[p.id]?'checked':''} ${canEdit?'':'disabled'} onchange="savePago('${p.id}',this.checked)">
-            <span class="chk-box">${PAGOS[p.id]?'✅':'⬜'}</span>
-          </label>
+          <select class="estado-sel ${est}" ${canEdit?'':'disabled'}
+            onchange="saveEstado('${sid}',this.value);this.className='estado-sel '+this.value">
+            <option value="pagado"   ${est==='pagado'  ?'selected':''}>✅ Pagado</option>
+            <option value="parcial"  ${est==='parcial' ?'selected':''}>🟡 Parcial</option>
+            <option value="pendiente"${est==='pendiente'?'selected':''}>⏳ Pendiente</option>
+          </select>
         </td>
         <td style="text-align:center">
-          <button class="dl-btn" onclick="downloadFactura('${p.id}')" title="Descargar factura de ${p.nombre}">⬇ PDF</button>
+          <button class="dl-btn" onclick="downloadFactura('${sid}')">⬇ PDF</button>
         </td>
       </tr>`;
-    }).join('') + renderSubtotRow(sorted);
+    }).join('')+renderSubtotRow(sorted);
   }
-
-  // Pagination
   const pag=document.getElementById('pag');
   document.getElementById('pinfo').textContent=`Mostrando ${Math.min((curPage-1)*PER+1,total)}–${Math.min(curPage*PER,total)} de ${total} registros`;
   if(pages<=1){pag.innerHTML='';return;}
@@ -470,55 +515,49 @@ function renderTable(){
   h+=`<button class="pgb" onclick="goP(${curPage+1},${pages})" ${curPage===pages?'disabled':''}>›</button>`;
   pag.innerHTML=h;
 }
-
 function renderSubtotRow(sorted){
-  let tPart=0,tAlim=0,tHosp=0,tTot=0;
-  sorted.forEach(p=>{const m=getMontos(p);tPart+=m.part;tAlim+=m.alim;tHosp+=m.hosp;tTot+=m.part+m.alim+m.hosp;});
+  let tP=0,tA=0,tH=0,tT=0;
+  sorted.forEach(p=>{const m=getMontos(p);tP+=m.part;tA+=m.alim;tH+=m.hosp;tT+=m.part+m.alim+m.hosp;});
   return `<tr class="subtot"><td colspan="5" style="font-size:11px;text-align:right;padding-right:12px">Subtotal filtro activo →</td>
-    <td style="text-align:right;font-weight:700">₡${tPart.toLocaleString('es-CR')}</td>
-    <td style="text-align:right;font-weight:700">₡${tAlim.toLocaleString('es-CR')}</td>
-    <td style="text-align:right;font-weight:700">₡${tHosp.toLocaleString('es-CR')}</td>
-    <td class="total-cell" style="text-align:right">₡${tTot.toLocaleString('es-CR')}</td>
+    <td style="text-align:right;font-weight:700">₡${tP.toLocaleString('es-CR')}</td>
+    <td style="text-align:right;font-weight:700">₡${tA.toLocaleString('es-CR')}</td>
+    <td style="text-align:right;font-weight:700">₡${tH.toLocaleString('es-CR')}</td>
+    <td class="total-cell" style="text-align:right">₡${tT.toLocaleString('es-CR')}</td>
     <td></td><td></td></tr>`;
 }
-
 function goP(p,pages){if(p>=1&&p<=pages){curPage=p;renderTable();}}
 
-// ── SAVE PAGO ─────────────────────────────────────────────────
-async function savePago(id, paid){
-  if(!canEdit) return;
-  PAGOS[id] = paid;
-  renderTable();
+// ── SAVE ESTADO ────────────────────────────────────────────
+async function saveEstado(id,estado){
+  if(!canEdit)return;
+  PAGOS[id]=estado;
   updateSummary();
+  const lbl={pagado:'✅ Pagado registrado',parcial:'🟡 Pago parcial registrado',pendiente:'⏳ Marcado como pendiente'};
   try{
-    await window._set(window._ref(window._db,`cuentas_pagos/${id}`), paid);
-    showToast(paid ? '✅ Pago registrado' : '↩️ Pago removido');
-  } catch(e){ showToast('⚠️ Error al guardar'); }
+    await window._set(window._ref(window._db,`cuentas_pagos/${id}`),estado);
+    showToast(lbl[estado]||'✅ Guardado');
+  } catch(e){showToast('⚠️ Error al guardar');}
 }
 
-// ── SAVE MONTO ────────────────────────────────────────────────
-async function saveMonto(id, campo, valor){
-  if(!canEdit) return;
-  const v = parseInt(valor)||0;
-  if(!MONTOS[id]) MONTOS[id]={};
+// ── SAVE MONTO ─────────────────────────────────────────────
+async function saveMonto(id,campo,valor){
+  if(!canEdit)return;
+  const v=parseInt(valor)||0;
+  if(!MONTOS[id])MONTOS[id]={};
   MONTOS[id][campo]=v;
-  // Update row total display immediately
-  renderTable();
-  updateSummary();
-  // Persist to Firebase
+  renderTable(); updateSummary();
   try{
-    await window._update(window._ref(window._db,`cuentas_montos/${id}`), {[campo]:v});
+    await window._update(window._ref(window._db,`cuentas_montos/${id}`),{[campo]:v});
     showToast('✅ Guardado');
-  } catch(e){ showToast('⚠️ Error al guardar'); }
+  } catch(e){showToast('⚠️ Error al guardar');}
 }
 
-// ── EXPORT CSV ────────────────────────────────────────────────
+// ── EXPORT CSV ─────────────────────────────────────────────
 function exportCSV(){
-  const rows=[['ID','Nombre','Congregación','Categoría','Alimentación','Hospedaje','Participación','Alimentación ₡','Hospedaje ₡','Total ₡','Pagó']];
+  const rows=[['ID','Nombre','Congregación','Categoría','Alimentación','Hospedaje','Participación ₡','Alimentación ₡','Hospedaje ₡','Total ₡','Estado Pago']];
   DATA.forEach(p=>{
-    const m=getMontos(p);
-    const lugar=HOSPEDAJE[p.id]?.lugar||'Sin asignar';
-    rows.push([p.id,p.nombre,p.congregacion,p.categoria,p.quiere_alim?'Sí':'No',lugar,m.part,m.alim,m.hosp,m.part+m.alim+m.hosp,PAGOS[p.id]?'Sí':'No']);
+    const m=getMontos(p),lugar=HOSPEDAJE[p.id]?.lugar||'Sin asignar';
+    rows.push([p.id,p.nombre,p.congregacion,p.categoria,p.quiere_alim?'Sí':'No',lugar,m.part,m.alim,m.hosp,m.part+m.alim+m.hosp,getEstado(p.id)]);
   });
   const csv=rows.map(r=>r.map(c=>`"${c}"`).join(',')).join('\n');
   const a=document.createElement('a');
@@ -526,218 +565,161 @@ function exportCSV(){
   a.download='CRPTG11_Cuentas.csv';a.click();
 }
 
-// ── FACTURA PDF ───────────────────────────────────────────────
+// ── FACTURA PDF ────────────────────────────────────────────
 function downloadFactura(id){
-  const p = DATA.find(x=>x.id===id);
-  if(!p){ showToast('⚠️ Participante no encontrado'); return; }
+  const p=DATA.find(x=>x.id===id);
+  if(!p){showToast('⚠️ Participante no encontrado');return;}
+  if(!window.jspdf){showToast('⚠️ jsPDF no cargó, recarga la página');return;}
 
-  const { jsPDF } = window.jspdf;
-  const doc = new jsPDF({ unit:'mm', format:'a4' });
-  const W = 210, M = 18;
-  const cw = W - M*2;
+  const {jsPDF}=window.jspdf;
+  const doc=new jsPDF({unit:'mm',format:'a4'});
+  const W=210,M=18,cw=W-M*2;
 
-  // ── Color palette ──
-  const DARK   = [15, 17, 23];
-  const SURF   = [24, 27, 36];
-  const GOLD   = [232, 168, 56];
-  const TEAL   = [62, 207, 184];
-  const MUTED  = [122, 125, 149];
-  const WHITE  = [232, 232, 240];
-  const GREEN  = [62, 207, 106];
-  const LAV    = [139, 127, 232];
+  // Palette
+  const DARK =[15,17,23],SURF=[24,27,36],SURF2=[20,22,32];
+  const GOLD =[232,168,56],TEAL=[62,207,184],MUTED=[122,125,149];
+  const WHITE=[232,232,240],EMERALD=[16,185,129],LAV=[139,127,232],ROSE=[232,107,139];
 
-  // ── Background ──
-  doc.setFillColor(...DARK);
-  doc.rect(0, 0, W, 297, 'F');
+  const estado=getEstado(p.id);
+  const [estCol,estTxt]=
+    estado==='pagado' ?[EMERALD,'PAGADO']:
+    estado==='parcial'?[GOLD,   'PARCIAL']:
+                       [ROSE,   'PENDIENTE'];
 
-  // ── Header band ──
-  doc.setFillColor(...SURF);
-  doc.roundedRect(M, 12, cw, 38, 4, 4, 'F');
+  // Background
+  doc.setFillColor(...DARK);doc.rect(0,0,W,297,'F');
 
-  // ── Gold accent line ──
-  doc.setFillColor(...GOLD);
-  doc.rect(M, 12, 3, 38, 'F');
+  // Header band
+  doc.setFillColor(...SURF);doc.roundedRect(M,12,cw,42,4,4,'F');
+  doc.setFillColor(...GOLD);doc.rect(M,12,3,42,'F');
 
-  // ── Event name ──
-  doc.setFont('helvetica','bold');
-  doc.setFontSize(18);
-  doc.setTextColor(...GOLD);
-  doc.text('CRPTG 11', M+10, 26);
+  // Title
+  doc.setFont('helvetica','bold');doc.setFontSize(20);doc.setTextColor(...GOLD);
+  doc.text('CRPTG 11',M+10,28);
+  doc.setFont('helvetica','normal');doc.setFontSize(9);doc.setTextColor(...MUTED);
+  doc.text('Comprobante de Pago',M+10,36);
 
-  // ── Subtitle ──
-  doc.setFont('helvetica','normal');
-  doc.setFontSize(9);
-  doc.setTextColor(...MUTED);
-  doc.text('Hoja de Cuentas — Comprobante de Pago', M+10, 33);
+  // Date / ID
+  const today=new Date();
+  const dateStr=today.toLocaleDateString('es-CR',{day:'2-digit',month:'long',year:'numeric'});
+  doc.setFont('helvetica','bold');doc.setFontSize(8);doc.setTextColor(...MUTED);
+  doc.text(`Fecha: ${dateStr}`,W-M,26,{align:'right'});
+  doc.text(`ID: ${p.id}`,W-M,34,{align:'right'});
 
-  // ── Invoice number & date ──
-  const today = new Date();
-  const dateStr = today.toLocaleDateString('es-CR',{day:'2-digit',month:'long',year:'numeric'});
-  doc.setFont('helvetica','bold');
-  doc.setFontSize(8);
-  doc.setTextColor(...MUTED);
-  doc.text(`Fecha: ${dateStr}`, W-M, 26, {align:'right'});
-  doc.text(`ID: ${p.id}`, W-M, 33, {align:'right'});
+  // Status badge
+  doc.setFillColor(...estCol);doc.roundedRect(W-M-32,41,32,10,2,2,'F');
+  doc.setFont('helvetica','bold');doc.setFontSize(8);doc.setTextColor(0,0,0);
+  doc.text(estTxt,W-M-16,47.2,{align:'center'});
 
-  // ── Paid badge ──
-  const pagado = !!PAGOS[p.id];
-  const badgeCol = pagado ? GREEN : [232,107,139];
-  const badgeTxt = pagado ? 'PAGADO' : 'PENDIENTE';
-  doc.setFillColor(...badgeCol);
-  doc.roundedRect(W-M-28, 38, 28, 8, 2, 2, 'F');
-  doc.setFont('helvetica','bold');
-  doc.setFontSize(7);
-  doc.setTextColor(0,0,0);
-  doc.text(badgeTxt, W-M-14, 43.5, {align:'center'});
+  // Participant card
+  let y=64;
+  doc.setFillColor(...SURF);doc.roundedRect(M,y,cw,38,3,3,'F');
+  doc.setFillColor(...GOLD);doc.roundedRect(M,y,3,38,2,0,'F');doc.rect(M+1,y,2,38,'F');
+  doc.setFont('helvetica','bold');doc.setFontSize(14);doc.setTextColor(...WHITE);
+  const nombre=p.nombre.length>52?p.nombre.slice(0,50)+'…':p.nombre;
+  doc.text(nombre,M+10,y+14);
+  doc.setFont('helvetica','normal');doc.setFontSize(9);doc.setTextColor(...MUTED);
+  doc.text(`Congregación: ${p.congregacion}`,M+10,y+24);
+  doc.text(`Categoría: ${p.categoria}`,M+10,y+32);
 
-  // ── Participant info card ──
-  let y = 60;
-  doc.setFillColor(...SURF);
-  doc.roundedRect(M, y, cw, 34, 3, 3, 'F');
+  // Detalle header
+  y=112;
+  doc.setFont('helvetica','bold');doc.setFontSize(8.5);doc.setTextColor(...GOLD);
+  doc.text('DETALLE DE COBRO',M,y);
+  doc.setFillColor(...GOLD);doc.rect(M,y+3,cw,0.5,'F');
 
-  doc.setFont('helvetica','bold');
-  doc.setFontSize(14);
-  doc.setTextColor(...WHITE);
-  doc.text(p.nombre, M+8, y+12);
+  // Table header row
+  y+=10;
+  doc.setFillColor(...SURF);doc.rect(M,y,cw,9,'F');
+  doc.setFont('helvetica','bold');doc.setFontSize(8);doc.setTextColor(...MUTED);
+  doc.text('Concepto',M+5,y+6);
+  doc.text('Incluye',M+92,y+6);
+  doc.text('Monto',W-M-5,y+6,{align:'right'});
 
-  doc.setFont('helvetica','normal');
-  doc.setFontSize(9);
-  doc.setTextColor(...MUTED);
-  doc.text(`Congregación: ${p.congregacion}`, M+8, y+21);
-  doc.text(`Categoría: ${p.categoria}`, M+8, y+28);
-
-  // ── Section title: Detalle ──
-  y = 104;
-  doc.setFont('helvetica','bold');
-  doc.setFontSize(8);
-  doc.setTextColor(...GOLD);
-  doc.text('DETALLE DE COBRO', M, y);
-  doc.setFillColor(...GOLD);
-  doc.rect(M, y+2, cw, 0.4, 'F');
-
-  // ── Table header ──
-  y += 7;
-  doc.setFillColor(...SURF);
-  doc.rect(M, y, cw, 8, 'F');
-  doc.setFont('helvetica','bold');
-  doc.setFontSize(8);
-  doc.setTextColor(...MUTED);
-  doc.text('Concepto', M+4, y+5.5);
-  doc.text('Incluye', M+90, y+5.5);
-  doc.text('Monto', W-M-4, y+5.5, {align:'right'});
-
-  // ── Table rows ──
-  const m = getMontos(p);
-  const lugar = HOSPEDAJE[p.id]?.lugar||'Sin asignar';
-  const rows = [
-    { label:'Participación', include:'Sí', amount:m.part },
-    { label:'Alimentación', include:p.quiere_alim?'Sí':'No', amount:m.alim },
-    { label:`Hospedaje (${lugar||'Sin asignar'})`, include:p.quiere_hosp?(lugar||'Pendiente'):'No', amount:m.hosp },
+  // Concept rows
+  const m=getMontos(p);
+  const lugar=HOSPEDAJE[p.id]?.lugar||'';
+  const itemRows=[
+    {label:'Participación',include:'Sí',amount:m.part},
+    {label:'Alimentación',include:p.quiere_alim?'Sí':'No',amount:m.alim},
+    {label:`Hospedaje${lugar?' ('+lugar+')':''}`,include:p.quiere_hosp?(lugar||'Pend.'):'No',amount:m.hosp},
   ];
-
-  rows.forEach((row, i)=>{
-    y += 8;
-    if(i%2===1){
-      doc.setFillColor(20, 22, 32);
-      doc.rect(M, y, cw, 8, 'F');
-    }
-    doc.setFont('helvetica','normal');
-    doc.setFontSize(9);
-    doc.setTextColor(...WHITE);
-    doc.text(row.label, M+4, y+5.5);
-
-    // Include badge
-    const incCol = row.include==='Sí' ? TEAL : (row.include==='No' ? MUTED : LAV);
-    doc.setFont('helvetica','bold');
-    doc.setFontSize(8);
-    doc.setTextColor(...incCol);
-    doc.text(row.include, M+90, y+5.5);
-
-    doc.setFont('helvetica','normal');
-    doc.setFontSize(9);
-    doc.setTextColor(...WHITE);
-    doc.text(`\u20a1${row.amount.toLocaleString('es-CR')}`, W-M-4, y+5.5, {align:'right'});
+  itemRows.forEach((row,i)=>{
+    y+=9;
+    if(i%2===0){doc.setFillColor(...SURF2);doc.rect(M,y,cw,9,'F');}
+    doc.setFont('helvetica','normal');doc.setFontSize(9.5);doc.setTextColor(...WHITE);
+    doc.text(row.label,M+5,y+6.3);
+    const iCol=row.include==='Sí'?TEAL:row.include==='No'?MUTED:LAV;
+    doc.setFont('helvetica','bold');doc.setFontSize(8.5);doc.setTextColor(...iCol);
+    doc.text(row.include,M+92,y+6.3);
+    doc.setFont('helvetica','normal');doc.setFontSize(9.5);doc.setTextColor(...WHITE);
+    doc.text(`\u20a1${row.amount.toLocaleString('es-CR')}`,W-M-5,y+6.3,{align:'right'});
   });
 
-  // ── Divider ──
-  y += 10;
-  doc.setFillColor(...MUTED);
-  doc.rect(M, y, cw, 0.3, 'F');
+  // Divider
+  y+=12;doc.setFillColor(42,45,64);doc.rect(M,y,cw,0.5,'F');
 
-  // ── Total ──
-  y += 6;
-  const total = m.part + m.alim + m.hosp;
-  doc.setFillColor(...GOLD);
-  doc.setFillColor(30, 25, 10);
-  doc.roundedRect(M, y, cw, 12, 2, 2, 'F');
-  doc.setFillColor(...GOLD);
-  doc.roundedRect(M, y, 3, 12, 2, 0, 'F');
-  doc.rect(M+1, y, 2, 12, 'F');
+  // Total
+  y+=5;const total=m.part+m.alim+m.hosp;
+  doc.setFillColor(28,22,8);doc.roundedRect(M,y,cw,14,2,2,'F');
+  doc.setFillColor(...GOLD);doc.roundedRect(M,y,3,14,2,0,'F');doc.rect(M+1,y,2,14,'F');
+  doc.setFont('helvetica','bold');doc.setFontSize(10);doc.setTextColor(...MUTED);
+  doc.text('TOTAL A PAGAR',M+9,y+9.5);
+  doc.setFont('helvetica','bold');doc.setFontSize(14);doc.setTextColor(...GOLD);
+  doc.text(`\u20a1${total.toLocaleString('es-CR')}`,W-M-5,y+10,{align:'right'});
 
-  doc.setFont('helvetica','bold');
-  doc.setFontSize(10);
-  doc.setTextColor(...MUTED);
-  doc.text('TOTAL A PAGAR', M+8, y+8);
-
-  doc.setFont('helvetica','bold');
-  doc.setFontSize(13);
-  doc.setTextColor(...GOLD);
-  doc.text(`\u20a1${total.toLocaleString('es-CR')}`, W-M-4, y+8.5, {align:'right'});
-
-  // ── Services summary icons ──
-  y += 22;
-  doc.setFont('helvetica','bold');
-  doc.setFontSize(8);
-  doc.setTextColor(...GOLD);
-  doc.text('SERVICIOS INCLUIDOS', M, y);
-  doc.setFillColor(...GOLD);
-  doc.rect(M, y+2, cw, 0.4, 'F');
-
-  y += 8;
-  const services = [
-    { label:'Alimentación', active:p.quiere_alim },
-    { label:'Hospedaje', active:p.quiere_hosp && !!lugar },
-    { label:`Lugar: ${lugar||'Sin asignar'}`, active:!!lugar },
+  // Services
+  y+=24;
+  doc.setFont('helvetica','bold');doc.setFontSize(8.5);doc.setTextColor(...GOLD);
+  doc.text('SERVICIOS INCLUIDOS',M,y);
+  doc.setFillColor(...GOLD);doc.rect(M,y+3,cw,0.5,'F');
+  y+=10;
+  const svcs=[
+    {label:'Alimentación',sub:p.quiere_alim?'Incluida':'No incluida',active:p.quiere_alim},
+    {label:'Hospedaje',sub:p.quiere_hosp?(lugar||'Sin asignar'):'No incluido',active:p.quiere_hosp&&!!lugar},
+    {label:'Lugar',sub:lugar||'Sin asignar',active:!!lugar},
   ];
-  services.forEach((s,i)=>{
-    const sx = M + i*(cw/3);
-    doc.setFillColor(...SURF);
-    doc.roundedRect(sx, y, cw/3-3, 16, 2, 2, 'F');
-    const dotCol = s.active ? GREEN : MUTED;
-    doc.setFillColor(...dotCol);
-    doc.circle(sx+8, y+8, 2.5, 'F');
-    doc.setFont('helvetica', s.active?'bold':'normal');
-    doc.setFontSize(8);
-    doc.setTextColor(...WHITE);
-    doc.text(s.label, sx+14, y+8.5);
-    doc.setFont('helvetica','normal');
-    doc.setFontSize(7);
-    doc.setTextColor(...dotCol);
-    doc.text(s.active?'Incluido':'No incluido', sx+14, y+13);
+  svcs.forEach((s,i)=>{
+    const sx=M+i*(cw/3);
+    doc.setFillColor(...SURF);doc.roundedRect(sx,y,cw/3-4,20,2,2,'F');
+    const dc=s.active?EMERALD:MUTED;
+    doc.setFillColor(...dc);doc.circle(sx+8,y+10,3,'F');
+    doc.setFont('helvetica','bold');doc.setFontSize(8.5);doc.setTextColor(...WHITE);
+    doc.text(s.label,sx+14,y+9);
+    doc.setFont('helvetica','normal');doc.setFontSize(7.5);doc.setTextColor(...dc);
+    doc.text(s.sub,sx+14,y+15);
   });
 
-  // ── Footer ──
-  y = 270;
-  doc.setFillColor(...SURF);
-  doc.rect(M, y, cw, 0.4, 'F');
-  doc.setFont('helvetica','normal');
-  doc.setFontSize(7.5);
-  doc.setTextColor(...MUTED);
-  doc.text('Este documento es un comprobante generado por el sistema de cuentas CRPTG 11.', W/2, y+6, {align:'center'});
-  doc.text(`Generado el ${dateStr}`, W/2, y+11, {align:'center'});
+  // Estado box
+  y+=28;
+  const [ebg,etxt,esub]=
+    estado==='pagado' ?[[8,30,22], 'Pago Completado','El pago total ha sido recibido.']:
+    estado==='parcial'?[[30,25,5], 'Pago Parcial',   'Se ha recibido un abono parcial.']:
+                       [[30,8,15], 'Pago Pendiente',  'No se ha registrado pago aún.'];
+  doc.setFillColor(...ebg);doc.roundedRect(M,y,cw,18,3,3,'F');
+  doc.setFillColor(...estCol);doc.roundedRect(M,y,3,18,2,0,'F');doc.rect(M+1,y,2,18,'F');
+  doc.setFont('helvetica','bold');doc.setFontSize(10);doc.setTextColor(...estCol);
+  doc.text(etxt,M+10,y+8.5);
+  doc.setFont('helvetica','normal');doc.setFontSize(8);doc.setTextColor(...MUTED);
+  doc.text(esub,M+10,y+14.5);
 
-  // ── Save ──
-  const safeName = p.nombre.replace(/[^a-zA-Z0-9\s]/g,'').replace(/\s+/g,'_');
-  doc.save(`Factura_${p.id}_${safeName}.pdf`);
-  showToast(`📄 Factura de ${p.nombre} descargada`);
+  // Footer
+  y=275;doc.setFillColor(42,45,64);doc.rect(M,y,cw,0.4,'F');
+  doc.setFont('helvetica','normal');doc.setFontSize(7.5);doc.setTextColor(...MUTED);
+  doc.text('Comprobante generado por el sistema de cuentas CRPTG 11.',W/2,y+6,{align:'center'});
+  doc.text(`Generado el ${dateStr}`,W/2,y+12,{align:'center'});
+
+  const safe=p.nombre.normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-zA-Z0-9 ]/g,'').trim().replace(/\s+/g,'_');
+  doc.save(`Factura_${p.id}_${safe}.pdf`);
+  showToast(`📄 Factura de ${p.nombre.split(' ')[0]} descargada`);
 }
 
-// ── TOAST ─────────────────────────────────────────────────────
+// ── TOAST ──────────────────────────────────────────────────
 let toastTimer;
 function showToast(msg){
   const t=document.getElementById('toast');
   t.textContent=msg;t.classList.add('show');
-  clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.classList.remove('show'),2200);
+  clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.classList.remove('show'),2500);
 }
 </script>
 </body>
