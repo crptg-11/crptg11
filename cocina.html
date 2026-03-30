@@ -134,6 +134,12 @@ tr:last-child td{border-bottom:none}tr:hover td{background:rgba(62,207,184,.03)}
     </div>
   </div>
   <span id="sync-indicator" style="font-size:11px;color:var(--muted);font-weight:500">☁️ Conectando…</span>
+  <span id="btn-reparar-sab" style="display:none">
+    <button onclick="migrarSabado().then(ok=>mostrarAlerta(ok?'✅ Sábado reparado':'⚠️ Sin claves que reparar',!ok))"
+      style="padding:6px 14px;border-radius:100px;border:1px solid rgba(232,107,139,.5);background:rgba(232,107,139,.12);color:var(--rose);font-size:11px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif">
+      🔧 Reparar datos Sábado
+    </button>
+  </span>
   <button id="btn-editar" onclick="toggleEdicion()"
     style="padding:6px 18px;border-radius:100px;border:1px solid rgba(232,107,139,.4);background:transparent;color:var(--rose);font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .15s">
     🔒 Editar
@@ -479,38 +485,32 @@ onValue(ref(db, DB_PATH), snap => {
 })();
 
 // ── LIMPIEZA DE CLAVES BASURA ay_sab_*** ─────────────────────
-// En versiones anteriores, los slots del sábado se guardaban en `asignaciones`
-// con prefijo "ay_sab_" en vez de en `asignSab` con prefijo "sab_".
-// Esta función limpia esas claves basura de Firebase automáticamente.
-(async () => {
+// Los slots del sábado deben vivir en `asignSab` (nodo "sab", claves "sab_aux_***").
+// Si existen claves "ay_sab_***" en `asig`, son datos del sábado guardados en el
+// lugar equivocado. Los migramos a "sab" (sobreescribiendo) y los borramos de "asig".
+async function migrarSabado(){
   try {
     const snap = await get(ref(db, DB_PATH));
-    if(!snap.exists()) return;
+    if(!snap.exists()) return false;
     const data = snap.val();
-    const asig = data.asig || {};
-    const sab  = data.sab  || {};
+    const asig = {...(data.asig || {})};
 
     // Detectar claves ay_sab_*** en asig
     const clavesBasura = Object.keys(asig).filter(k => k.startsWith("ay_sab_"));
-    if(!clavesBasura.length) return; // nada que limpiar
+    if(!clavesBasura.length) return false; // nada que limpiar
 
-    // Si asignSab (sab) está vacío, migrar los valores antes de borrar
-    const sabVacio = !Object.values(sab).some(v => v);
-    if(sabVacio){
-      const nuevoSab = {...sab};
-      clavesBasura.forEach(k => {
-        // ay_sab_aux_des_0 → sab_aux_des_0  |  ay_sab_des_0 → sab_aux_des_0
-        // Mapeamos: ay_sab_des_N → sab_aux_des_N, ay_sab_alm_N → sab_aux_alm_N, ay_sab_cen_N → sab_aux_cen_N
-        const sinPrefijo = k.replace(/^ay_sab_/, "");
-        let nuevaKey = "";
-        if(sinPrefijo.startsWith("des_"))      nuevaKey = `sab_aux_des_${sinPrefijo.replace("des_","")}`;
-        else if(sinPrefijo.startsWith("alm_")) nuevaKey = `sab_aux_alm_${sinPrefijo.replace("alm_","")}`;
-        else if(sinPrefijo.startsWith("cen_")) nuevaKey = `sab_aux_cen_${sinPrefijo.replace("cen_","")}`;
-        else if(sinPrefijo.startsWith("aux_")) nuevaKey = `sab_${sinPrefijo}`;
-        if(nuevaKey && asig[k]) nuevoSab[nuevaKey] = asig[k];
-      });
-      asignSab = nuevoSab;
-    }
+    // Migrar SIEMPRE ay_sab_*** → sab_aux_*** (sobreescribe sab aunque tenga datos)
+    const nuevoSab = {};
+    clavesBasura.forEach(k => {
+      const sinPrefijo = k.replace(/^ay_sab_/, "");
+      let nuevaKey = "";
+      if(sinPrefijo.startsWith("des_"))      nuevaKey = `sab_aux_des_${sinPrefijo.replace("des_","")}`;
+      else if(sinPrefijo.startsWith("alm_")) nuevaKey = `sab_aux_alm_${sinPrefijo.replace("alm_","")}`;
+      else if(sinPrefijo.startsWith("cen_")) nuevaKey = `sab_aux_cen_${sinPrefijo.replace("cen_","")}`;
+      else if(sinPrefijo.startsWith("aux_")) nuevaKey = `sab_${sinPrefijo}`;
+      if(nuevaKey && asig[k]) nuevoSab[nuevaKey] = asig[k];
+    });
+    asignSab = nuevoSab;
 
     // Borrar claves basura de asignaciones
     clavesBasura.forEach(k => delete asig[k]);
@@ -531,9 +531,25 @@ onValue(ref(db, DB_PATH), snap => {
     localStorage.setItem("crptg11-cocina-asig", JSON.stringify(asignaciones));
     localStorage.setItem("crptg11-cocina-sab",  JSON.stringify(asignSab));
     renderTodo();
-    console.log(`✅ Migración sábado: ${clavesBasura.length} claves ay_sab_*** limpiadas de Firebase`);
-  } catch(e){ console.warn("Limpieza ay_sab:", e); }
-})();
+    console.log(`✅ Migración sábado: ${clavesBasura.length} claves ay_sab_*** migradas y limpiadas`);
+    return true;
+  } catch(e){ console.warn("Limpieza ay_sab:", e); return false; }
+}
+// Ejecutar automáticamente al cargar
+migrarSabado().then(huboMigracion => {
+  // Si no había nada que migrar, verificar de todas formas si quedan claves ay_sab_
+  // mostrando el botón de reparación como precaución
+  get(ref(db, DB_PATH)).then(snap => {
+    if(!snap.exists()) return;
+    const asig = snap.val().asig || {};
+    const hayBasura = Object.keys(asig).some(k => k.startsWith("ay_sab_"));
+    const btnRep = document.getElementById("btn-reparar-sab");
+    if(btnRep) btnRep.style.display = hayBasura ? "inline" : "none";
+  }).catch(()=>{});
+});
+
+// Exponer para uso manual desde consola o botón
+window.migrarSabado = migrarSabado;
 
 // Devuelve el equipo de ayudantes activo para un día
 function getEquipoDia(dia){
