@@ -269,7 +269,7 @@ const COMIDAS = [
 // ── PARTICIPANTES — cargados dinámicamente desde Google Sheets ───────────────
 // Sábado: Angelina e Ipís | Viernes: Valle la Estrella y Tucurrique
 // Jueves: Bribrí y Santa Marta | Miércoles: Limoncito y Río Banano
-// Picadores: cualquier congregación (jueves y viernes)
+// Picadores: cualquier congregación (todos los días)
 
 const SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vS-FHGAAPJvj_dQEHyN09G1xVJWfblbjGrDgjCREmoi19ucjl1cuPLm5fR0ZHvcmZZ6PPdrEQ7g1pSV/pub?gid=1479802457&single=true&output=csv";
 
@@ -823,20 +823,14 @@ function renderEquipoSelectorHTML(){
   const sel = new Set(equipoDia[dia] || []);
   const equipo = getEquipoDia(dia);
   const editar = puedeEditar();
-  const hayEquipo = equipo.length > 0;
-  const banner = "";
-
-  // Si el CSV aún no cargó, mostrar aviso
+  // Reintentar cada 800ms si el CSV aún no cargó para este día
   const csvPendiente = congs.some(c => (PARTICIPANTES[c]||[]).length === 0);
-  if(csvPendiente && editar){
-    setTimeout(()=>renderSeccionDia(), 800); // reintentar en 800ms
-  }
+  if(csvPendiente) setTimeout(()=>renderSeccionDia(), 800);
 
-  // Listado de personas de las congregaciones del día para seleccionar
-  const personasHTML = editar ? (csvPendiente
-    ? `<div style="color:var(--muted);font-size:13px;padding:10px 0">⏳ Cargando participantes desde Google Sheets…</div>`
-    : congs.map(cong => {
+  // Checkboxes por congregación — cada una se renderiza independientemente
+  const personasHTML = editar ? congs.map(cong => {
     const miembros = (PARTICIPANTES[cong]||[]).filter(p=>p.cat!=="N");
+    if(!miembros.length) return `<div style="color:var(--muted);font-size:13px;padding:6px 0">⏳ Cargando ${cong}…</div>`;
     return `<div style="margin-bottom:12px">
       <div style="font-size:10px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:var(--muted);margin-bottom:6px;display:flex;align-items:center;justify-content:space-between">
         <span>📍 ${cong}</span>
@@ -851,7 +845,7 @@ function renderEquipoSelectorHTML(){
           return `<label style="display:flex;align-items:center;gap:7px;padding:6px 9px;border-radius:7px;
             background:${marcado?'rgba(62,207,184,.08)':'#1a1d2a'};
             border:1px solid ${marcado?'rgba(62,207,184,.3)':'var(--border)'};cursor:pointer;transition:all .15s">
-            <input type="checkbox" ${marcado?'checked':''} onchange="toggleEquipoDia('${dia}','${p.nombre.replace(/'/g,"\\'")}',this.checked)"
+            <input type="checkbox" ${marcado?'checked':''} onchange="toggleEquipoDia('${dia}','${p.nombre.replace(/'/g,"\'")}',this.checked)"
               style="accent-color:var(--accent);width:13px;height:13px">
             <div style="flex:1;min-width:0">
               <div style="font-size:12px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${p.nombre}</div>
@@ -861,7 +855,7 @@ function renderEquipoSelectorHTML(){
         }).join("")}
       </div>
     </div>`;
-  }).join("")) : "";
+  }).join("") : "";
 
   const extrasHTML = editar ? `
     <div style="margin-top:8px;display:flex;gap:8px;align-items:center;flex-wrap:wrap">
@@ -886,7 +880,6 @@ function renderEquipoSelectorHTML(){
       <span>🙌 Equipo de Ayudantes — ${DIAS.find(d=>d.id===dia)?.label}</span>
       <span style="font-size:11px;color:var(--muted);font-family:'DM Sans',sans-serif;font-weight:400">${equipo.length} seleccionados · Congregaciones: ${congs.join(" & ")}</span>
     </div>
-    ${banner}
     ${editar ? `<div style="margin-bottom:12px">${personasHTML}${extrasHTML}${buscarPanelHTML}</div>` : ""}
   </div>`;
 }
@@ -954,7 +947,7 @@ function renderAyudantesHTML(){
   </div>`;
 }
 
-// ── PICADORES (Jue y Vie, + cualquier congregación) ───────────
+// ── PICADORES (Jue y Vie, checkboxes, cualquier congregación) ────────
 function buildOptsPicadores(keySelected){
   let opts = `<option value="">— Sin asignar —</option>`;
   TODAS_CONG.forEach(cong => {
@@ -977,7 +970,6 @@ function renderPicadoresHTML(){
   const equipoPic = getEquipoPicadores(diaActivo);
   const maxPic = 5;
 
-  // Panel de selección de picadores por checkbox (todas las congregaciones)
   const panelSelPic = editar ? `
     <div style="background:#181b24;border:1px solid rgba(139,127,232,.2);border-radius:10px;padding:14px;margin-bottom:16px">
       <div style="font-size:11px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:var(--lav);margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px">
@@ -1020,7 +1012,6 @@ function renderPicadoresHTML(){
       }).join("")}
     </div>` : "";
 
-  // Slots de asignación de picadores
   const slotsHTML = Array.from({length:5},(_,i)=>{
     const k = `${key}_${i}`;
     const asig = asignaciones[k] || "";
@@ -1073,7 +1064,7 @@ function renderPicadoresHTML(){
 }
 function asignar(k,v){ asignaciones[k]=v; guardar(); renderSeccionDia(); renderEquipo(); mostrarAlerta(v?`✅ ${v.split("__")[0]} asignado`:"↩ Slot liberado"); }
 
-// ── GESTIÓN PICADORES (checkbox, genérico por día) ──────────────
+// ── GESTIÓN PICADORES (genérico por día) ─────────────────────
 function togglePicador(dia, nombre, checked){
   if(!picadoresEquipo[dia]) picadoresEquipo[dia]=[];
   const maxPic = 5;
@@ -1089,8 +1080,6 @@ function togglePicador(dia, nombre, checked){
   }
   guardar(); renderSeccionDia();
 }
-
-// Alias para compatibilidad con código anterior
 function togglePicadorJue(nombre, checked){ togglePicador("jue", nombre, checked); }
 
 function selTodosPicadores(dia){
@@ -1140,7 +1129,7 @@ function limpiarPicadoresJue(){
 // Roles del equipo de cocina para sábado:
 // - 3 auxiliares de cocina (mañana) → Angelina e Ipís
 // - 3 auxiliares de cocina (tarde)  → Angelina e Ipís
-
+// - 5 picadores (cualquier congregación)
 
 const ROLES_SAB = [
   { id:"aux_des", label:"🙌 Auxiliares — Desayuno", hora:"6:00–9:00", color:"accent", tipo:"aux", slots:3 },
@@ -1502,10 +1491,8 @@ function generarPropuestaDia(dia){
   // Picadores si aplica
   const diaObj = DIAS.find(d=>d.id===dia);
   if(diaObj?.picado){
-    // Para jueves: usar picadoresEquipo seleccionados; para viernes: todos
-    const poolPic = dia === "jue"
-      ? getEquipoPicadores("jue")
-      : todosParticipantes().filter(p=>p.cat!=="N");
+    // Usar picadoresEquipo seleccionados (mismo sistema para jueves y viernes)
+    const poolPic = getEquipoPicadores(dia);
     const usados = new Set();
     for(let i=0;i<5;i++){
       const sorted = poolPic.filter(p=>!usados.has(p.nombre));
@@ -1577,10 +1564,13 @@ function renderBuscarResultados(dia){
   if(!q){ el.innerHTML='<div class="buscar-empty">Escribe para buscar participantes</div>'; return; }
   const sel = new Set(equipoDia[dia] || []);
   const extras = new Set((ayudantesExtra[dia]||[]).map(p=>p.nombre));
-  const congsExcluidas = dia === "jue" ? new Set(["Valle la Estrella","Tucurrique"])
-    : dia === "vie" ? new Set(["Bribrí","Santa Marta","Limoncito","Río Banano","Angelina","Ipís"])
-    : dia === "sab" ? new Set(TODAS_CONG.filter(c => c !== "Angelina" && c !== "Ipís"))
-    : new Set();
+  const congsExcluidas = dia === "jue"
+    ? new Set(["Valle la Estrella","Tucurrique"])
+    : dia === "vie"
+      ? new Set(TODAS_CONG.filter(c => c !== "Valle la Estrella" && c !== "Tucurrique"))
+      : dia === "sab"
+        ? new Set(TODAS_CONG.filter(c => c !== "Angelina" && c !== "Ipís"))
+        : new Set();
   let resultados = [];
   TODAS_CONG.forEach(cong => {
     if(congsExcluidas.has(cong)) return;
