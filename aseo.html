@@ -108,6 +108,25 @@ tr:last-child td{border-bottom:none}tr:hover td{background:rgba(232,168,56,.03)}
 
 <div class="main">
 
+  <!-- CUADRO GENERAL -->
+  <div class="card" id="card-cuadro-general">
+    <div class="section-title">
+      <span>📋 Cuadro General — Todos los días</span>
+      <button onclick="toggleCuadroGeneral()" id="btn-toggle-cuadro"
+        style="padding:5px 14px;border-radius:100px;border:1px solid rgba(232,168,56,.4);background:transparent;color:var(--accent);font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif">
+        Ocultar
+      </button>
+    </div>
+    <div id="cuadro-general-content">
+      <div style="overflow-x:auto">
+        <table id="tabla-cuadro-general" style="min-width:900px">
+          <thead id="thead-cuadro"></thead>
+          <tbody id="tbody-cuadro"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
   <!-- SELECTOR DE DÍA GLOBAL -->
   <div style="margin-bottom:18px;display:flex;align-items:center;gap:10px;flex-wrap:wrap">
     <span style="font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--muted)">Día:</span>
@@ -622,19 +641,94 @@ function generarPropuesta(){
 }
 
 // ── RENDER SLOTS ──────────────────────────────────────────────
+// Picker de participantes con búsqueda
+let _pickerActivo = null; // { key, input, dropdown, pool }
+
+function abrirPicker(key, inputEl, pool){
+  // Cerrar cualquier picker abierto
+  if(_pickerActivo && _pickerActivo.key !== key){
+    _cerrarPicker(_pickerActivo);
+  }
+  const dd = inputEl.nextElementSibling;
+  _pickerActivo = { key, input: inputEl, dropdown: dd, pool };
+  _filtrarPicker("");
+  dd.classList.add("open");
+  inputEl.focus();
+}
+
+function _cerrarPicker(p){
+  if(!p) return;
+  p.dropdown.classList.remove("open");
+  _pickerActivo = null;
+}
+
+function _filtrarPicker(q){
+  if(!_pickerActivo) return;
+  const { dropdown, pool, key } = _pickerActivo;
+  const actual = asignaciones[key]||"";
+  const lower = q.toLowerCase();
+  const filtrados = pool.filter(p=> !q || p.nombre.toLowerCase().includes(lower));
+  dropdown.innerHTML =
+    `<div class="search-select-option${!actual?' sel':''}" onmousedown="elegirParticipante('${key}','')">
+       <span style="font-style:italic;color:var(--muted)">— sin asignar —</span>
+     </div>` +
+    filtrados.map(p=>{
+      const sel = p.nombre===actual?" sel":"";
+      const escNombre = p.nombre.replace(/'/g,"\\'");
+      return `<div class="search-select-option${sel}" onmousedown="elegirParticipante('${key}','${escNombre}')">
+        <span>${p.nombre}</span>
+        <span class="opt-cong">${p.cong||""}</span>
+      </div>`;
+    }).join("") || `<div class="search-select-option" style="color:var(--muted);pointer-events:none">Sin resultados</div>`;
+}
+
+function elegirParticipante(key, nombre){
+  asignaciones[key] = nombre;
+  guardar();
+  // Actualizar solo el input visualmente
+  const el = document.querySelector(`[data-picker-key="${key}"]`);
+  if(el){
+    el.value = nombre;
+    el.placeholder = nombre || "— sin asignar —";
+  }
+  if(_pickerActivo) _cerrarPicker(_pickerActivo);
+  renderEquipo();
+  renderCuadroGeneral();
+  mostrarAlerta(nombre ? `✅ ${nombre} asignado` : "↩ Slot liberado");
+}
+
+// Cerrar picker al hacer clic fuera
+document.addEventListener("click", e=>{
+  if(_pickerActivo && !_pickerActivo.input.closest(".search-select-wrap").contains(e.target)){
+    _cerrarPicker(_pickerActivo);
+  }
+});
+
 function renderSlots(baseKey, count, pool, badge, editar){
   let html="";
   for(let i=0;i<count;i++){
     const k=`${baseKey}_${i}`;
     const val=asignaciones[k]||"";
     if(editar){
-      const opts=["<option value=''>— sin asignar —</option>",
-        ...pool.map(p=>`<option value="${p.nombre}"${p.nombre===val?' selected':''}>${p.nombre}</option>`)
-      ].join("");
+      const escKey = k.replace(/'/g,"\\'");
+      const poolJson = JSON.stringify(pool.map(p=>({nombre:p.nombre,cong:p.cong||""}))).replace(/"/g,"&quot;");
       html+=`<div class="slot-row">
         <span class="slot-num">${i+1}</span>
         ${badge}
-        <select class="sel-aseo" onchange="asignar('${k}',this.value)">${opts}</select>
+        <div class="search-select-wrap" style="flex:1">
+          <input type="text"
+            class="search-select-input"
+            data-picker-key="${k}"
+            value="${val}"
+            placeholder="${val||'— sin asignar —'}"
+            autocomplete="off"
+            onfocus="abrirPicker('${escKey}',this,JSON.parse(this.dataset.pool))"
+            oninput="_filtrarPicker(this.value)"
+            data-pool="${poolJson}"
+            style="font-size:12px;padding:5px 8px"
+          >
+          <div class="search-select-dropdown"></div>
+        </div>
       </div>`;
     } else {
       html+=`<div class="slot-row">
@@ -658,7 +752,7 @@ function turnoCard(titulo, hora, key, slots_spec, editar){
   </div>`;
 }
 
-function asignar(k, v){ asignaciones[k]=v; guardar(); renderEquipo(); mostrarAlerta(v?`✅ ${v} asignado`:"↩ Slot liberado"); }
+function asignar(k, v){ asignaciones[k]=v; guardar(); renderEquipo(); renderCuadroGeneral(); mostrarAlerta(v?`✅ ${v} asignado`:"↩ Slot liberado"); }
 
 // ── RENDER ÁREAS ──────────────────────────────────────────────
 function getComidasDia(){
@@ -710,6 +804,157 @@ function renderBasura(){
     ? comidas.map(c=>turnoCard(`Post-${c.label}`,"Después de la comida",`basura_${diaActivo}_${c.id}`,
         [{id:"h",count:2,pool:hombres,badge:`<span class="tag-h">H</span>`}],editar)).join("")
     : `<div class="empty">No hay comidas programadas este día.</div>`;
+}
+
+// ── CUADRO GENERAL ────────────────────────────────────────────
+let cuadroVisible = true;
+function toggleCuadroGeneral(){
+  cuadroVisible = !cuadroVisible;
+  document.getElementById("cuadro-general-content").style.display = cuadroVisible ? "" : "none";
+  document.getElementById("btn-toggle-cuadro").textContent = cuadroVisible ? "Ocultar" : "Ver cuadro";
+}
+
+function renderCuadroGeneral(){
+  const editar = puedeEditar();
+
+  // Helper: genera el HTML de una celda con sus slots
+  function celdaSlots(slots, disponible){
+    // slots: [{key, val, pool}]
+    if(!disponible) return `<td style="text-align:center;color:var(--muted);font-size:10px;font-style:italic;border-bottom:1px solid rgba(42,45,64,.5)">—</td>`;
+    if(editar){
+      const inner = slots.map((s,i)=>{
+        const escKey = s.key.replace(/'/g,"\\'");
+        const poolJson = JSON.stringify(s.pool.map(p=>({nombre:p.nombre,cong:p.cong||""}))).replace(/"/g,"&quot;");
+        return `<div style="display:flex;align-items:center;gap:4px;margin-bottom:3px">
+          <span style="font-size:10px;color:var(--muted);width:12px;flex-shrink:0">${i+1}</span>
+          <div class="search-select-wrap" style="flex:1;min-width:0">
+            <input type="text"
+              class="search-select-input"
+              data-picker-key="${s.key}"
+              value="${s.val}"
+              placeholder="— sin asignar —"
+              autocomplete="off"
+              onfocus="abrirPicker('${escKey}',this,JSON.parse(this.dataset.pool))"
+              oninput="_filtrarPicker(this.value)"
+              data-pool="${poolJson}"
+              style="font-size:11px;padding:3px 6px;width:100%"
+            >
+            <div class="search-select-dropdown"></div>
+          </div>
+        </div>`;
+      }).join("");
+      return `<td style="padding:6px 8px;vertical-align:top;border-bottom:1px solid rgba(42,45,64,.5)">${inner}</td>`;
+    } else {
+      const names = slots.map(s=>s.val).filter(Boolean);
+      if(!names.length){
+        return `<td style="text-align:center;color:var(--muted);font-size:10px;font-style:italic;opacity:.5;border-bottom:1px solid rgba(42,45,64,.5)">Sin asignar</td>`;
+      }
+      return `<td style="font-size:11px;line-height:1.7;padding:6px 10px;border-bottom:1px solid rgba(42,45,64,.5)">${names.map(n=>`<span style="display:block">${n}</span>`).join("")}</td>`;
+    }
+  }
+
+  // Construir filas con slots explícitos
+  const filas = [];
+
+  TODAS_COMIDAS.forEach(c=>{
+    filas.push({
+      area:"🍳 Cocina", turno:`Post-${c.label}`,
+      getSlots:(diaId)=>{
+        const dia=DIAS.find(d=>d.id===diaId);
+        if(!dia||!dia.comidas.includes(c.id)) return null;
+        return Array.from({length:4},(_,i)=>({
+          key:`cocina_${diaId}_${c.id}_mix_${i}`,
+          val:asignaciones[`cocina_${diaId}_${c.id}_mix_${i}`]||"",
+          pool:equipoAseo
+        }));
+      }
+    });
+  });
+
+  TURNOS_BANOS.forEach(t=>{
+    filas.push({
+      area:"🚹 Baño H", turno:t.label,
+      getSlots:(diaId)=>[{
+        key:`banosh_${diaId}_${t.id}_h_0`,
+        val:asignaciones[`banosh_${diaId}_${t.id}_h_0`]||"",
+        pool:hombres()
+      }]
+    });
+    filas.push({
+      area:"🚺 Baño M", turno:t.label,
+      getSlots:(diaId)=>[{
+        key:`banoosm_${diaId}_${t.id}_m_0`,
+        val:asignaciones[`banoosm_${diaId}_${t.id}_m_0`]||"",
+        pool:mujeres()
+      }]
+    });
+  });
+
+  TODAS_COMIDAS.forEach(c=>{
+    ["antes","desp"].forEach(mo=>{
+      filas.push({
+        area:"🏛️ Salón", turno:`${mo==="antes"?"Antes":"Después"} ${c.label}`,
+        getSlots:(diaId)=>{
+          const dia=DIAS.find(d=>d.id===diaId);
+          if(!dia||!dia.comidas.includes(c.id)) return null;
+          const slots=[];
+          for(let i=0;i<3;i++) slots.push({key:`salon_${diaId}_${c.id}_${mo}_m_${i}`,val:asignaciones[`salon_${diaId}_${c.id}_${mo}_m_${i}`]||"",pool:mujeres()});
+          for(let i=0;i<2;i++) slots.push({key:`salon_${diaId}_${c.id}_${mo}_h_${i}`,val:asignaciones[`salon_${diaId}_${c.id}_${mo}_h_${i}`]||"",pool:hombres()});
+          return slots;
+        }
+      });
+    });
+  });
+
+  TODAS_COMIDAS.forEach(c=>{
+    filas.push({
+      area:"🗑️ Basura", turno:`Post-${c.label}`,
+      getSlots:(diaId)=>{
+        const dia=DIAS.find(d=>d.id===diaId);
+        if(!dia||!dia.comidas.includes(c.id)) return null;
+        return Array.from({length:2},(_,i)=>({
+          key:`basura_${diaId}_${c.id}_h_${i}`,
+          val:asignaciones[`basura_${diaId}_${c.id}_h_${i}`]||"",
+          pool:hombres()
+        }));
+      }
+    });
+  });
+
+  // Encabezado
+  const colWidth = editar ? "min-width:180px" : "min-width:140px";
+  document.getElementById("thead-cuadro").innerHTML = `<tr>
+    <th style="min-width:90px">Área</th>
+    <th style="min-width:120px">Turno</th>
+    ${DIAS.map(d=>`<th style="${colWidth};text-align:left">${d.label}</th>`).join("")}
+  </tr>`;
+
+  // Cuerpo con rowspan por área
+  const areaColors = {
+    "🍳 Cocina":"rgba(232,168,56,.06)","🚹 Baño H":"rgba(62,207,184,.05)",
+    "🚺 Baño M":"rgba(232,107,139,.05)","🏛️ Salón":"rgba(139,127,232,.05)","🗑️ Basura":"rgba(122,125,149,.06)"
+  };
+  const areaCount = {};
+  filas.forEach(f=>{ areaCount[f.area]=(areaCount[f.area]||0)+1; });
+  let areaAnterior="";
+  let html="";
+
+  filas.forEach(f=>{
+    const esPrimera = f.area !== areaAnterior;
+    areaAnterior = f.area;
+    html += `<tr style="background:${areaColors[f.area]||""}">`;
+    if(esPrimera){
+      html += `<td rowspan="${areaCount[f.area]}" style="font-weight:700;font-size:12px;color:var(--accent);vertical-align:middle;border-right:1px solid var(--border);white-space:nowrap;border-bottom:1px solid rgba(42,45,64,.5)">${f.area}</td>`;
+    }
+    html += `<td style="font-size:11px;color:var(--muted);white-space:nowrap;border-bottom:1px solid rgba(42,45,64,.5)">${f.turno}</td>`;
+    DIAS.forEach(d=>{
+      const slots = f.getSlots(d.id);
+      html += celdaSlots(slots, slots !== null);
+    });
+    html += `</tr>`;
+  });
+
+  document.getElementById("tbody-cuadro").innerHTML = html;
 }
 
 // ── TABS ──────────────────────────────────────────────────────
@@ -792,7 +1037,7 @@ function mostrarAlerta(msg,err=false){
 }
 
 // ── INIT ──────────────────────────────────────────────────────
-function renderTodo(){ renderTabs(); renderAreas(); renderEquipo(); renderNotas(); actualizarBtn(); }
+function renderTodo(){ renderTabs(); renderAreas(); renderEquipo(); renderNotas(); actualizarBtn(); renderCuadroGeneral(); }
 actualizarBtn();
 renderTodo();
 
@@ -802,6 +1047,7 @@ Object.assign(window, {
   seleccionarTodosCong, deseleccionarTodosCong, agregarSeleccionados,
   mostrarFormAgregar, agregarPersona, eliminarDelEquipo,
   generarPropuesta, asignar, selDia, agregarNota, eliminarNota, renderTodo,
+  toggleCuadroGeneral, abrirPicker, _filtrarPicker, elegirParticipante,
 });
 
 // Acceso overlay
