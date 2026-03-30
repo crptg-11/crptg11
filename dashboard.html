@@ -433,11 +433,13 @@ function renderDashboard() {
   const pct      = Math.round(totalRet / (totalMax||1) * 100) || 0;
 
   // Por categoría — cuenta PLATOS (slots) filtrados por vista, no personas
+  // Itera FB_COMIDAS directamente; cruza con DATA para categoría; sin match → "Adulto"
+  const catPorIdLive = {};
+  DATA_TOTAL.forEach(d => { catPorIdLive[d.id] = catNorm(d.categoria); });
   const cats = { Adulto:{total:0,ret:0}, Joven:{total:0,ret:0}, Menor:{total:0,ret:0} };
-  DATA_TOTAL.forEach(d => {
-    const fb = FB_COMIDAS[d.id];
+  Object.entries(FB_COMIDAS).forEach(([pid, fb]) => {
     if (!fb || !fb.meals) return;
-    const cat = cats[catNorm(d.categoria)] || cats["Adulto"];
+    const cat = cats[catPorIdLive[pid] || "Adulto"];
     DAYS_CFG.forEach(dayCfg => {
       if (!diasFiltro.includes(dayCfg.dia)) return;
       dayCfg.meals.forEach(meal => {
@@ -606,31 +608,24 @@ window.descargarPDF = function() {
 
   // Recalcular totales frescos (todos los días, todos los tiempos)
   let pdfTotalMax=0, pdfTotalRet=0;
+  // Mapa id→categoría desde DATA (CSV). IDs en Firebase sin match → "Adulto"
+  const catPorId = {};
+  DATA.forEach(d => { catPorId[d.id] = catNormPDF(d.categoria); });
+
   const pdfCats = { Adulto:{total:0,ret:0}, Joven:{total:0,ret:0}, Menor:{total:0,ret:0} };
 
-  Object.values(FB_COMIDAS).forEach(fb => {
+  // Itera directamente sobre FB_COMIDAS para que totalMax y cats sean consistentes
+  Object.entries(FB_COMIDAS).forEach(([pid, fb]) => {
     if (!fb||!fb.meals) return;
+    const cat = catPorId[pid] || "Adulto";
     DAYS_CFG.forEach(dayCfg => {
       dayCfg.meals.forEach(meal => {
         const fbKey = MK(dayCfg.key, meal);
         if (fb.meals[fbKey]===true) {
           pdfTotalMax++;
           if (fb.retirado&&fb.retirado[fbKey]===true) pdfTotalRet++;
-        }
-      });
-    });
-  });
-
-  DATA.forEach(d => {
-    const fb = FB_COMIDAS[d.id];
-    if (!fb||!fb.meals) return;
-    const cat = pdfCats[catNormPDF(d.categoria)] || pdfCats["Adulto"];
-    DAYS_CFG.forEach(dayCfg => {
-      dayCfg.meals.forEach(meal => {
-        const fbKey = MK(dayCfg.key, meal);
-        if (fb.meals[fbKey]===true) {
-          cat.total++;
-          if (fb.retirado&&fb.retirado[fbKey]===true) cat.ret++;
+          pdfCats[cat].total++;
+          if (fb.retirado&&fb.retirado[fbKey]===true) pdfCats[cat].ret++;
         }
       });
     });
@@ -651,18 +646,17 @@ window.descargarPDF = function() {
     return row;
   });
 
-  // Por categoría por día/tiempo (para la tabla detallada)
+  // Por categoría por día/tiempo — también itera FB_COMIDAS directamente
   const pdfDetalle = DAYS_CFG.map(dayCfg => {
     const dRow = { label: dayCfg.label };
     dayCfg.meals.forEach(meal => {
       const fbKey = MK(dayCfg.key, meal);
       const slot = { Adulto:0, Joven:0, Menor:0 };
-      DATA.forEach(d => {
-        const fb = FB_COMIDAS[d.id];
+      Object.entries(FB_COMIDAS).forEach(([pid, fb]) => {
         if (!fb||!fb.meals) return;
         if (fb.meals[fbKey]===true) {
-          const c = catNormPDF(d.categoria);
-          if (slot[c]!==undefined) slot[c]++;
+          const c = catPorId[pid] || "Adulto";
+          slot[c]++;
         }
       });
       dRow[meal] = slot;
