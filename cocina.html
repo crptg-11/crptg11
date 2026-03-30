@@ -357,10 +357,22 @@ async function cargarParticipantesCSV(){
     if(!res.ok) throw new Error("HTTP "+res.status);
     const text = await res.text();
     const parsed = parseCsvCocina(text);
-    // Congregaciones conocidas primero, luego cualquier extra del CSV
+
+    // Índice case-insensitive de claves del CSV
+    const parsedLower = {};
+    for(const cong of Object.keys(parsed)) parsedLower[cong.toLowerCase()] = parsed[cong];
+
+    // Congregaciones conocidas primero — match case-insensitive contra el CSV
     const merged = {};
-    for(const cong of Object.keys(PARTICIPANTES)) merged[cong] = parsed[cong] || [];
-    for(const cong of Object.keys(parsed)) if(!merged[cong]) merged[cong] = parsed[cong];
+    for(const cong of Object.keys(PARTICIPANTES)){
+      merged[cong] = parsedLower[cong.toLowerCase()] || [];
+    }
+    // Luego agrega cualquier congregación extra que venga del CSV y no esté mapeada
+    for(const cong of Object.keys(parsed)){
+      const yaExiste = Object.keys(merged).some(k => k.toLowerCase() === cong.toLowerCase());
+      if(!yaExiste) merged[cong] = parsed[cong];
+    }
+
     PARTICIPANTES = merged;
     TODAS_CONG = Object.keys(PARTICIPANTES).filter(c=>PARTICIPANTES[c].length>0);
     renderTodo();
