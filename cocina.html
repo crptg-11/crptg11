@@ -253,6 +253,7 @@ const CLAVE    = "IglesiaRestaurada2026";
 const AUTH_KEY = "crptg11-cocina-edit";
 
 const DIAS = [
+  { id:"gen", label:"📊 General",  picado:false },
   { id:"mie", label:"Mié 1 Abr", picado:false },
   { id:"jue", label:"Jue 2 Abr", picado:true  },
   { id:"vie", label:"Vie 3 Abr", picado:true  },
@@ -561,10 +562,256 @@ function actualizarBtn(){
 }
 
 // ── RENDER SECCIÓN DÍA ────────────────────────────────────────
+// ── VISTA GENERAL ─────────────────────────────────────────────
+function renderVistaGeneralHTML(){
+  const COCINEROS = ["Marcos Mata","Adita Mata","Esther Vargas","Michael Gómez"];
+
+  // Recopilar todos los asignados por día/turno
+  const diasData = [
+    { id:"mie", label:"Miércoles 1 Abr", color:"#3ecfb8", congs:["Limoncito","Río Banano"] },
+    { id:"jue", label:"Jueves 2 Abr",    color:"#8b7fe8", congs:["Bribrí","Santa Marta"] },
+    { id:"vie", label:"Viernes 3 Abr",   color:"#e8a838", congs:["Valle la Estrella","Tucurrique"] },
+    { id:"sab", label:"Sábado 4 Abr",    color:"#5ecf7a", congs:["Angelina","Ipís"] },
+  ];
+
+  const comidas = [
+    { id:"des", label:"☀️ Desayuno", hora:"6:00–9:00"    },
+    { id:"alm", label:"🌤️ Almuerzo", hora:"11:00–14:00"  },
+    { id:"cen", label:"🌙 Cena",     hora:"17:00–20:00"  },
+  ];
+
+  // Conteo de turnos por persona (para gráfica)
+  const cuentaTurnos = {};
+  function incr(nombre){ cuentaTurnos[nombre]=(cuentaTurnos[nombre]||0)+1; }
+
+  // Build grid por día
+  const diasHTML = diasData.map(dia => {
+    const esSab = dia.id === "sab";
+
+    // Cocineros fijos
+    const cocineroRows = COCINEROS.map(n=>`<div style="display:flex;align-items:center;gap:6px;padding:4px 8px;background:rgba(232,168,56,.07);border-radius:6px;border:1px solid rgba(232,168,56,.15);margin-bottom:4px">
+      <span style="font-size:11px">👨‍🍳</span>
+      <span style="font-size:12px;font-weight:600;color:#e8a838">${n}</span>
+    </div>`).join("");
+
+    // Turnos ayudantes
+    let turnosHTML = "";
+    if(esSab){
+      const ROLES_SAB_GEN = [
+        { id:"aux_des", label:"Auxiliares Desayuno", slots:3, tipo:"aux" },
+        { id:"aux_alm", label:"Auxiliares Almuerzo", slots:3, tipo:"aux" },
+        { id:"aux_cen", label:"Auxiliares Cena",     slots:3, tipo:"aux" },
+        { id:"pic",     label:"Picadores",           slots:5, tipo:"pic" },
+      ];
+      turnosHTML = ROLES_SAB_GEN.map(rol=>{
+        const names = [];
+        for(let i=0;i<rol.slots;i++){
+          const v=asignSab[`sab_${rol.id}_${i}`];
+          if(v){ const n=v.split("__")[0]; names.push(n); incr(n); }
+        }
+        const color = rol.tipo==="pic"?"var(--lav)":"var(--accent)";
+        return `<div style="margin-bottom:8px">
+          <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;color:${color};margin-bottom:4px">${rol.label}</div>
+          ${names.length
+            ? names.map(n=>`<div style="font-size:12px;padding:3px 7px;background:rgba(255,255,255,.04);border-radius:5px;border-left:2px solid ${color};margin-bottom:3px">${n}</div>`).join("")
+            : `<div style="font-size:11px;color:var(--muted);font-style:italic">Sin asignar</div>`
+          }
+        </div>`;
+      }).join("");
+    } else {
+      turnosHTML = comidas.map(c=>{
+        const names = [];
+        for(let i=0;i<4;i++){
+          const v=asignaciones[`ay_${dia.id}_${c.id}_${i}`];
+          if(v){ const n=v.split("__")[0]; names.push(n); incr(n); }
+        }
+        return `<div style="margin-bottom:8px">
+          <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;color:var(--accent);margin-bottom:4px">${c.label} <span style="color:var(--muted);font-weight:400">${c.hora}</span></div>
+          ${names.length
+            ? names.map(n=>`<div style="font-size:12px;padding:3px 7px;background:rgba(255,255,255,.04);border-radius:5px;border-left:2px solid var(--accent);margin-bottom:3px">${n}</div>`).join("")
+            : `<div style="font-size:11px;color:var(--muted);font-style:italic">Sin asignar</div>`
+          }
+        </div>`;
+      }).join("");
+      // Picadores si aplica
+      const DIAS_OBJ = DIAS.find(d=>d.id===dia.id);
+      if(DIAS_OBJ?.picado){
+        const picNames=[];
+        for(let i=0;i<5;i++){
+          const v=asignaciones[`pic_${dia.id}_${i}`];
+          if(v){ const n=v.split("__")[0]; picNames.push(n); incr(n); }
+        }
+        turnosHTML += `<div style="margin-bottom:8px;margin-top:10px;padding-top:10px;border-top:1px solid var(--border)">
+          <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;color:var(--lav);margin-bottom:4px">🔪 Picadores</div>
+          ${picNames.length
+            ? picNames.map(n=>`<div style="font-size:12px;padding:3px 7px;background:rgba(139,127,232,.06);border-radius:5px;border-left:2px solid var(--lav);margin-bottom:3px">${n}</div>`).join("")
+            : `<div style="font-size:11px;color:var(--muted);font-style:italic">Sin asignar</div>`
+          }
+        </div>`;
+      }
+    }
+
+    return `<div style="background:var(--surface);border:1px solid var(--border);border-top:3px solid ${dia.color};border-radius:12px;padding:16px;min-width:0">
+      <div style="font-family:'Playfair Display',serif;font-size:.95rem;color:${dia.color};margin-bottom:10px;font-weight:700">${dia.label}</div>
+      <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;color:var(--gold);margin-bottom:6px">👨‍🍳 Cocineros</div>
+      ${cocineroRows}
+      <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;color:var(--muted);margin:10px 0 6px;padding-top:10px;border-top:1px solid var(--border)">🙌 Ayudantes</div>
+      ${turnosHTML}
+    </div>`;
+  }).join("");
+
+  // Gráfica de barras de participación
+  const sorted = Object.entries(cuentaTurnos).sort((a,b)=>b[1]-a[1]).slice(0,15);
+  const maxVal = sorted.length ? sorted[0][1] : 1;
+  const graficaHTML = sorted.length ? `
+    <div class="card" style="margin-top:20px">
+      <div class="section-title">📈 Carga por persona (turnos asignados)</div>
+      <div style="display:flex;flex-direction:column;gap:6px;margin-top:4px">
+        ${sorted.map(([nombre,n])=>`
+          <div style="display:flex;align-items:center;gap:10px">
+            <div style="font-size:12px;width:190px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex-shrink:0">${nombre}</div>
+            <div style="flex:1;height:18px;background:#1f2333;border-radius:4px;overflow:hidden">
+              <div style="height:100%;width:${Math.round(n/maxVal*100)}%;background:var(--accent);border-radius:4px;transition:width .4s"></div>
+            </div>
+            <div style="font-size:12px;font-weight:700;color:var(--accent);width:20px;text-align:right;flex-shrink:0">${n}</div>
+          </div>`).join("")}
+      </div>
+    </div>` : "";
+
+  // Estadísticas rápidas
+  const totalAsig = Object.keys(cuentaTurnos).length;
+  const totalSlots = Object.values(cuentaTurnos).reduce((a,b)=>a+b,0);
+
+  return `<div class="card" style="border-color:rgba(232,168,56,.25)">
+    <div class="section-title" style="color:var(--gold)">
+      <span>📊 Vista General — Todos los días</span>
+      <button onclick="generarPDF()" style="padding:7px 18px;border-radius:8px;border:none;background:var(--gold);color:#000;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px">
+        ⬇️ Descargar PDF
+      </button>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px" id="grid-general">
+      ${diasHTML}
+    </div>
+  </div>
+  ${graficaHTML}`;
+}
+
+// ── GENERAR PDF ───────────────────────────────────────────────
+async function generarPDF(){
+  const btn = document.querySelector('[onclick="generarPDF()"]');
+  if(btn){ btn.textContent="⏳ Generando…"; btn.disabled=true; }
+
+  const COCINEROS = ["Marcos Mata","Adita Mata","Esther Vargas","Michael Gómez"];
+  const diasData = [
+    { id:"mie", label:"Miércoles 1 Abr", color:"#3ecfb8" },
+    { id:"jue", label:"Jueves 2 Abr",    color:"#8b7fe8" },
+    { id:"vie", label:"Viernes 3 Abr",   color:"#e8a838" },
+    { id:"sab", label:"Sábado 4 Abr",    color:"#5ecf7a" },
+  ];
+  const comidas = [
+    { id:"des", label:"Desayuno", hora:"6:00–9:00"   },
+    { id:"alm", label:"Almuerzo", hora:"11:00–14:00" },
+    { id:"cen", label:"Cena",     hora:"17:00–20:00" },
+  ];
+  const ROLES_SAB_PDF = [
+    { id:"aux_des", label:"Auxiliares Desayuno", slots:3 },
+    { id:"aux_alm", label:"Auxiliares Almuerzo", slots:3 },
+    { id:"aux_cen", label:"Auxiliares Cena",     slots:3 },
+    { id:"pic",     label:"Picadores",           slots:5 },
+  ];
+
+  // Contar turnos por persona
+  const cuentaTurnos = {};
+  const incr = n => { cuentaTurnos[n]=(cuentaTurnos[n]||0)+1; };
+  diasData.forEach(dia=>{
+    const esSab=dia.id==="sab";
+    if(esSab){
+      ROLES_SAB_PDF.forEach(r=>{ for(let i=0;i<r.slots;i++){ const v=asignSab[`sab_${r.id}_${i}`]; if(v) incr(v.split("__")[0]); }});
+    } else {
+      comidas.forEach(c=>{ for(let i=0;i<4;i++){ const v=asignaciones[`ay_${dia.id}_${c.id}_${i}`]; if(v) incr(v.split("__")[0]); }});
+      const dObj=DIAS.find(d=>d.id===dia.id);
+      if(dObj?.picado){ for(let i=0;i<5;i++){ const v=asignaciones[`pic_${dia.id}_${i}`]; if(v) incr(v.split("__")[0]); }}
+    }
+  });
+  const sorted=Object.entries(cuentaTurnos).sort((a,b)=>b[1]-a[1]);
+  const maxVal=sorted.length?sorted[0][1]:1;
+
+  // Generar HTML del PDF
+  const diaBlocks = diasData.map(dia=>{
+    const esSab=dia.id==="sab";
+    let turnos="";
+    if(esSab){
+      turnos=ROLES_SAB_PDF.map(r=>{
+        const ns=[];
+        for(let i=0;i<r.slots;i++){ const v=asignSab[`sab_${r.id}_${i}`]; if(v) ns.push(v.split("__")[0]); }
+        return `<tr><td style="padding:4px 8px;font-weight:600;font-size:12px;color:#555">${r.label}</td><td style="padding:4px 8px;font-size:12px">${ns.length?ns.join(", "):"—"}</td></tr>`;
+      }).join("");
+    } else {
+      turnos=comidas.map(c=>{
+        const ns=[];
+        for(let i=0;i<4;i++){ const v=asignaciones[`ay_${dia.id}_${c.id}_${i}`]; if(v) ns.push(v.split("__")[0]); }
+        return `<tr><td style="padding:4px 8px;font-weight:600;font-size:12px;color:#555">${c.label} (${c.hora})</td><td style="padding:4px 8px;font-size:12px">${ns.length?ns.join(", "):"—"}</td></tr>`;
+      }).join("");
+      const dObj=DIAS.find(d=>d.id===dia.id);
+      if(dObj?.picado){
+        const ps=[];
+        for(let i=0;i<5;i++){ const v=asignaciones[`pic_${dia.id}_${i}`]; if(v) ps.push(v.split("__")[0]); }
+        turnos+=`<tr><td style="padding:4px 8px;font-weight:600;font-size:12px;color:#8b7fe8">🔪 Picadores</td><td style="padding:4px 8px;font-size:12px">${ps.length?ps.join(", "):"—"}</td></tr>`;
+      }
+    }
+    return `<div style="break-inside:avoid;margin-bottom:20px;border:1px solid #ddd;border-top:4px solid ${dia.color};border-radius:8px;overflow:hidden">
+      <div style="background:#f9f9f9;padding:10px 14px;font-family:serif;font-size:15px;font-weight:bold;color:#222">${dia.label}</div>
+      <div style="padding:8px 14px;font-size:11px;color:#888;border-bottom:1px solid #eee">👨‍🍳 Cocineros: ${COCINEROS.join(" · ")}</div>
+      <table style="width:100%;border-collapse:collapse">${turnos}</table>
+    </div>`;
+  }).join("");
+
+  // Gráfica SVG de barras
+  const barH=22, barGap=6, padding=180, svgW=520;
+  const grafSVG=sorted.length?`
+    <svg width="${svgW}" height="${sorted.length*(barH+barGap)+20}" xmlns="http://www.w3.org/2000/svg" style="display:block;margin:10px 0">
+      ${sorted.map(([nombre,n],i)=>{
+        const y=i*(barH+barGap);
+        const bw=Math.round((n/maxVal)*(svgW-padding-30));
+        return `<text x="${padding-6}" y="${y+barH-5}" font-size="11" text-anchor="end" fill="#444">${nombre}</text>
+          <rect x="${padding}" y="${y}" width="${bw}" height="${barH}" rx="3" fill="#3ecfb8"/>
+          <text x="${padding+bw+5}" y="${y+barH-5}" font-size="11" fill="#333" font-weight="bold">${n}</text>`;
+      }).join("")}
+    </svg>` : "<p style='color:#999'>Sin asignaciones aún.</p>";
+
+  const htmlContent = `<!DOCTYPE html><html><head><meta charset="UTF-8">
+  <title>Cocina CRPTG 11 — Informe de Turnos</title>
+  <style>
+    body{font-family:'Helvetica Neue',Arial,sans-serif;margin:0;padding:30px;color:#222;background:#fff}
+    h1{font-size:22px;margin-bottom:4px}
+    .sub{color:#777;font-size:13px;margin-bottom:24px}
+    @media print{body{padding:15px}}
+  </style>
+  </head><body>
+  <h1>👨‍🍳 Cocina — CRPTG 11</h1>
+  <div class="sub">Informe de responsables por turno · Generado el ${new Date().toLocaleDateString("es-CR",{weekday:"long",year:"numeric",month:"long",day:"numeric"})}</div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:28px">${diaBlocks}</div>
+  <div style="border:1px solid #ddd;border-radius:8px;padding:16px;break-inside:avoid">
+    <h2 style="font-size:15px;margin:0 0 12px">📈 Carga por persona (turnos asignados)</h2>
+    ${grafSVG}
+  </div>
+  </body></html>`;
+
+  const win = window.open("","_blank");
+  win.document.write(htmlContent);
+  win.document.close();
+  setTimeout(()=>win.print(), 600);
+
+  if(btn){ btn.textContent="⬇️ Descargar PDF"; btn.disabled=false; }
+}
+
 function renderSeccionDia(){
   const sec = document.getElementById("seccion-dia");
   const eq  = document.getElementById("card-equipo-general");
-  if(diaActivo === "sab"){
+  if(diaActivo === "gen"){
+    sec.innerHTML = renderVistaGeneralHTML();
+    eq.style.display = "none";
+  } else if(diaActivo === "sab"){
     sec.innerHTML = renderSabadoHTML();
     eq.style.display = "none";
   } else {
@@ -601,8 +848,16 @@ function renderEquipoSelectorHTML(){
 
   if(!editar && !hayEquipo) return banner;
 
+  // Si el CSV aún no cargó, mostrar aviso
+  const csvPendiente = congs.some(c => (PARTICIPANTES[c]||[]).length === 0);
+  if(csvPendiente && editar){
+    setTimeout(()=>renderSeccionDia(), 800); // reintentar en 800ms
+  }
+
   // Listado de personas de las congregaciones del día para seleccionar
-  const personasHTML = editar ? congs.map(cong => {
+  const personasHTML = editar ? (csvPendiente
+    ? `<div style="color:var(--muted);font-size:13px;padding:10px 0">⏳ Cargando participantes desde Google Sheets…</div>`
+    : congs.map(cong => {
     const miembros = (PARTICIPANTES[cong]||[]).filter(p=>p.cat!=="N");
     return `<div style="margin-bottom:12px">
       <div style="font-size:10px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:var(--muted);margin-bottom:6px;display:flex;align-items:center;justify-content:space-between">
@@ -628,7 +883,7 @@ function renderEquipoSelectorHTML(){
         }).join("")}
       </div>
     </div>`;
-  }).join("") : "";
+  }).join("")) : "";
 
   const extrasHTML = editar ? `
     <div style="margin-top:8px;display:flex;gap:8px;align-items:center;flex-wrap:wrap">
@@ -980,21 +1235,82 @@ function buildOptsSab(tipo, keySelected){
 
 function renderSabadoHTML(){
   const editar = puedeEditar();
-  const congsLabel = "Angelina & Ipís";
-
-  // Propuesta automática banner
+  const dia = "sab";
+  const congs = CONG_POR_DIA[dia]; // ["Angelina","Ipís"]
+  const sel = new Set(equipoDia[dia] || []);
+  const equipo = getEquipoDia(dia);
+  const hayEquipo = equipo.length > 0;
   const hayPropuesta = Object.keys(asignSab).some(k=>asignSab[k]);
+
+  // Banner estado
   const bannerHTML = hayPropuesta
     ? `<div class="propuesta-banner">
         <div class="propuesta-txt">✅ <strong>Equipo asignado.</strong> Podés modificar cualquier slot abajo.</div>
         ${editar?`<button class="btn-cancel" onclick="limpiarSab()" style="font-size:12px;padding:5px 12px">↩ Limpiar todo</button>`:""}
        </div>`
-    : (editar
-        ? `<div class="propuesta-banner" style="background:rgba(62,207,184,.06);border-color:rgba(62,207,184,.2)">
-            <div class="propuesta-txt" style="color:var(--accent)">💡 Generá una propuesta automática de equipo para el sábado y editala a tu gusto.</div>
-            <button class="btn-green" onclick="generarPropuestaSab()">⚡ Propuesta automática</button>
+    : hayEquipo && editar
+      ? `<div class="propuesta-banner" style="background:rgba(62,207,184,.06);border-color:rgba(62,207,184,.2)">
+          <div class="propuesta-txt" style="color:var(--accent)">💡 Equipo listo (${equipo.length} personas). Generá la propuesta de turnos.</div>
+          <button class="btn-green" onclick="generarPropuestaSab()">⚡ Propuesta automática</button>
+         </div>`
+      : !hayEquipo && editar
+        ? `<div class="propuesta-banner" style="background:rgba(232,168,56,.06);border-color:rgba(232,168,56,.2)">
+            <div class="propuesta-txt" style="color:var(--gold)">⚠️ Seleccioná personas del equipo de ayudantes primero.</div>
            </div>`
-        : "");
+        : "";
+
+  // Selector de equipo (igual que mié/jue/vie)
+  const csvPendienteSab = congs.some(c => (PARTICIPANTES[c]||[]).length === 0);
+  if(csvPendienteSab && editar) setTimeout(()=>renderSeccionDia(), 800);
+
+  const personasHTML = editar ? (csvPendienteSab
+    ? `<div style="color:var(--muted);font-size:13px;padding:10px 0">⏳ Cargando participantes desde Google Sheets…</div>`
+    : congs.map(cong => {
+        const miembros = (PARTICIPANTES[cong]||[]).filter(p=>p.cat!=="N");
+        return `<div style="margin-bottom:12px">
+          <div style="font-size:10px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:var(--muted);margin-bottom:6px;display:flex;align-items:center;justify-content:space-between">
+            <span>📍 ${cong}</span>
+            <div style="display:flex;gap:6px">
+              <button onclick="selTodosCong('sab','${cong}')" style="padding:2px 9px;border-radius:6px;border:1px solid rgba(62,207,184,.3);background:transparent;color:var(--accent);font-size:10px;cursor:pointer">Todos</button>
+              <button onclick="deselTodosCong('sab','${cong}')" style="padding:2px 9px;border-radius:6px;border:1px solid var(--border);background:transparent;color:var(--muted);font-size:10px;cursor:pointer">Ninguno</button>
+            </div>
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:5px">
+            ${miembros.map(p=>{
+              const marcado = sel.has(p.nombre);
+              return `<label style="display:flex;align-items:center;gap:7px;padding:6px 9px;border-radius:7px;
+                background:${marcado?'rgba(62,207,184,.08)':'#1a1d2a'};
+                border:1px solid ${marcado?'rgba(62,207,184,.3)':'var(--border)'};cursor:pointer;transition:all .15s">
+                <input type="checkbox" ${marcado?'checked':''} onchange="toggleEquipoDia('sab','${p.nombre.replace(/'/g,"\\'")}',this.checked)"
+                  style="accent-color:var(--accent);width:13px;height:13px">
+                <div style="flex:1;min-width:0">
+                  <div style="font-size:12px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${p.nombre}</div>
+                  <div style="font-size:10px;color:var(--muted)">${p.sexo==="F"?"🔴 F":"🔵 M"} · ${p.cat==="J"?"Joven":"Adulto"}</div>
+                </div>
+              </label>`;
+            }).join("")}
+          </div>
+        </div>`;
+      }).join("")) : "";
+
+  const extrasHTML = editar ? `
+    <div style="margin-top:8px;display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+      <input type="text" id="ext-nombre-sab" placeholder="Nombre externo..." style="background:#0f1117;border:1px solid var(--border);color:var(--text);font-family:'DM Sans',sans-serif;font-size:12px;padding:6px 10px;border-radius:7px;outline:none;width:180px" onfocus="this.style.borderColor='#3ecfb8'" onblur="this.style.borderColor='#2a2d40'">
+      <input type="text" id="ext-cong-sab" placeholder="Congregación" style="background:#0f1117;border:1px solid var(--border);color:var(--text);font-family:'DM Sans',sans-serif;font-size:12px;padding:6px 10px;border-radius:7px;outline:none;width:140px" onfocus="this.style.borderColor='#3ecfb8'" onblur="this.style.borderColor='#2a2d40'">
+      <button class="btn-teal" style="padding:6px 14px;font-size:12px" onclick="agregarExternoDia('sab')">+ Externo</button>
+    </div>` : "";
+
+  // Selector y slots de turnos — ahora usa equipo seleccionado (como ayudantes normales)
+  // Para picadores sábado seguimos usando TODAS_CONG
+  const selectorEquipoHTML = editar ? `
+    <div class="card" style="border-color:rgba(62,207,184,.2);margin-bottom:16px">
+      <div class="section-title">
+        <span>🙌 Equipo de Ayudantes — Sábado 4 Abr</span>
+        <span style="font-size:11px;color:var(--muted);font-family:'DM Sans',sans-serif;font-weight:400">${equipo.length} seleccionados · Congregaciones: Angelina & Ipís</span>
+      </div>
+      ${bannerHTML}
+      <div style="margin-bottom:12px">${personasHTML}${extrasHTML}</div>
+    </div>` : bannerHTML ? `<div style="margin-bottom:16px">${bannerHTML}</div>` : "";
 
   const rolesHTML = ROLES_SAB.map(rol => {
     const color = rol.color === "lav" ? "var(--lav)" : "var(--accent)";
@@ -1006,7 +1322,26 @@ function renderSabadoHTML(){
       const k = `sab_${rol.id}_${i}`;
       const asig = asignSab[k] || "";
       if(editar){
-        const opts = buildOptsSab(rol.tipo, asig);
+        let opts = `<option value="">— Sin asignar —</option>`;
+        if(rol.tipo === "pic"){
+          // Picadores: todas las congregaciones
+          TODAS_CONG.forEach(cong => {
+            const ms = (PARTICIPANTES[cong]||[]).filter(p=>p.cat!=="N");
+            if(!ms.length) return;
+            opts += `<optgroup label="📍 ${cong}">`;
+            ms.forEach(p => { opts += `<option value="${p.nombre}__${cong}"${asig===`${p.nombre}__${cong}`?" selected":""}>${p.nombre}</option>`; });
+            opts += `</optgroup>`;
+          });
+        } else {
+          // Auxiliares: solo del equipo seleccionado
+          const porCong = {};
+          equipo.forEach(p => { const c=p.cong||"—"; if(!porCong[c])porCong[c]=[]; porCong[c].push(p); });
+          Object.keys(porCong).forEach(cong => {
+            opts += `<optgroup label="📍 ${cong}">`;
+            porCong[cong].forEach(p => { opts += `<option value="${p.nombre}__${p.cong||cong}"${asig===`${p.nombre}__${p.cong||cong}`?" selected":""}>${p.nombre}</option>`; });
+            opts += `</optgroup>`;
+          });
+        }
         return `<div class="slot-row">
           <span class="slot-num">${i+1}</span>
           <select class="sel-ayudante" style="border-color:${borderCol}" onchange="asignarSab('${k}',this.value)">${opts}</select>
@@ -1029,49 +1364,39 @@ function renderSabadoHTML(){
     </div>`;
   }).join("");
 
-  // Tabla resumen equipo sábado
+  // Tabla resumen
   const asignados = [];
   ROLES_SAB.forEach(rol => {
     for(let i=0;i<rol.slots;i++){
-      const k = `sab_${rol.id}_${i}`;
-      const v = asignSab[k];
-      if(v){
-        const nombre = v.split("__")[0];
-        const cong   = v.split("__")[1];
-        // agrupar turnos por persona
-        const ex = asignados.find(a=>a.nombre===nombre&&a.cong===cong);
-        if(ex) ex.roles.push(rol.label.split("—")[1]||rol.label);
-        else asignados.push({nombre,cong,roles:[rol.label.split("—")[1]||rol.label],tipo:rol.tipo});
-      }
+      const k=`sab_${rol.id}_${i}`; const v=asignSab[k]; if(!v) continue;
+      const nombre=v.split("__")[0]; const cong=v.split("__")[1];
+      const ex=asignados.find(a=>a.nombre===nombre&&a.cong===cong);
+      if(ex) ex.roles.push(rol.label.split("—")[1]||rol.label);
+      else asignados.push({nombre,cong,roles:[rol.label.split("—")[1]||rol.label],tipo:rol.tipo});
     }
   });
-
   const tablaHTML = asignados.length ? `
     <div class="card" style="margin-top:16px">
       <div class="section-title">👥 Equipo del Sábado — Resumen</div>
-      <div style="overflow:auto">
-        <table>
-          <thead><tr><th>#</th><th>Nombre</th><th>Congregación</th><th>Rol(es)</th></tr></thead>
-          <tbody>${asignados.map((a,i)=>`<tr>
-            <td style="color:var(--muted)">${i+1}</td>
-            <td style="font-weight:600">${a.nombre}</td>
-            <td><span class="badge-cong">${a.cong}</span></td>
-            <td style="font-size:11px">${a.roles.map(r=>`<span class="tag-rol ${a.tipo==='pic'?'tag-pic':'tag-aux'}">${r.trim()}</span>`).join(" ")}</td>
-          </tr>`).join("")}</tbody>
-        </table>
-      </div>
+      <div style="overflow:auto"><table>
+        <thead><tr><th>#</th><th>Nombre</th><th>Congregación</th><th>Rol(es)</th></tr></thead>
+        <tbody>${asignados.map((a,i)=>`<tr>
+          <td style="color:var(--muted)">${i+1}</td>
+          <td style="font-weight:600">${a.nombre}</td>
+          <td><span class="badge-cong">${a.cong}</span></td>
+          <td style="font-size:11px">${a.roles.map(r=>`<span class="tag-rol ${a.tipo==='pic'?'tag-pic':'tag-aux'}">${r.trim()}</span>`).join(" ")}</td>
+        </tr>`).join("")}</tbody>
+      </table></div>
     </div>` : "";
 
-  return `<div class="card" style="border-color:rgba(94,207,122,.2)">
+  return `${selectorEquipoHTML}<div class="card" style="border-color:rgba(94,207,122,.2)">
     <div class="section-title" style="color:var(--green)">
-      <span>🗓️ Equipo de Cocina — Sábado 4 Abr</span>
-      <small style="font-family:'DM Sans',sans-serif;font-size:11px;color:var(--muted);font-weight:400">Auxiliares: ${congsLabel} · Picadores: cualquier congregación</small>
+      <span>🗓️ Turnos de Cocina — Sábado 4 Abr</span>
+      <small style="font-family:'DM Sans',sans-serif;font-size:11px;color:var(--muted);font-weight:400">Auxiliares: Angelina & Ipís · Picadores: cualquier congregación</small>
     </div>
-    ${bannerHTML}
     <div class="turno-grid">${rolesHTML}</div>
   </div>${tablaHTML}`;
 }
-
 function asignarSab(k,v){ asignSab[k]=v; guardar(); renderSeccionDia(); mostrarAlerta(v?`✅ ${v.split("__")[0]} asignado`:"↩ Slot liberado"); }
 
 function limpiarSab(){
@@ -1401,6 +1726,7 @@ Object.assign(window, {
   selCongPicadores, deselCongPicadores, limpiarPicadoresJue,
   agregarNota, eliminarNota, renderTodo,
   renderBuscarResultados, agregarDesdeBusqueda,
+  generarPDF,
 });
 
 // Acceso overlay
