@@ -330,14 +330,16 @@ function loadAll(){
       const raw=snap.val()||{};
       HOSPEDAJE={};
       for(const [id,val] of Object.entries(raw)) HOSPEDAJE[id]={lugar:val.lugar||''};
-      window._get(window._ref(window._db,'cuentas_montos')).then(s=>{
-        MONTOS=s.val()||{};
-        window._get(window._ref(window._db,'cuentas_pagos')).then(sp=>{
-          PAGOS=sp.val()||{};
-          loadCSV();
-        }).catch(()=>{PAGOS={};loadCSV();});
-      }).catch(()=>{MONTOS={};PAGOS={};loadCSV();});
+      if(DATA.length){renderTable();updateSummary();}
     });
+    window._onValue(window._ref(window._db,'cuentas_pagos'),sp=>{
+      PAGOS=sp.val()||{};
+      if(DATA.length){renderTable();updateSummary();}
+    });
+    window._get(window._ref(window._db,'cuentas_montos')).then(s=>{
+      MONTOS=s.val()||{};
+      loadCSV();
+    }).catch(()=>{MONTOS={};loadCSV();});
   });
 }
 function loadCSV(){ tryProxy(0); }
@@ -394,7 +396,12 @@ function getMontos(p){
   };
 }
 function getTotal(p){const m=getMontos(p);return m.part+m.alim+m.hosp;}
-function getEstado(id){return PAGOS[id]||'pendiente';}
+function getEstado(id){
+  const v=PAGOS[id];
+  if(v===true||v==='true'||v==='si'||v==='sí'||v==='yes'||v===1||v==='pagado') return 'pagado';
+  if(v==='parcial') return 'parcial';
+  return 'pendiente';
+}
 function fmt(n){return '₡'+n.toLocaleString('es-CR');}
 
 // ── SUMMARY ────────────────────────────────────────────────

@@ -11,6 +11,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>CRPTG 11 — Dashboard</title>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 :root{--bg:#0f1117;--surface:#181b24;--surface2:#1f2333;--border:#2a2d40;--gold:#e8a838;--teal:#3ecfb8;--rose:#e86b8b;--lav:#8b7fe8;--orange:#d4773e;--text:#e8e8f0;--muted:#7a7d95}
@@ -96,7 +97,10 @@ table.res tr:hover td{background:rgba(232,168,56,.03)}
     <a href="index.html" class="back">← Inicio</a>
     <div class="topbar-title"><span class="sync-dot"></span>📊 Dashboard — Alimentación</div>
   </div>
-  <span class="last-update" id="last-update">Conectando...</span>
+  <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+    <span class="last-update" id="last-update">Conectando...</span>
+    <button onclick="descargarPDF()" style="background:rgba(139,127,232,.14);border:1px solid rgba(139,127,232,.35);color:#8b7fe8;padding:6px 14px;border-radius:8px;cursor:pointer;font-size:12px;font-family:'DM Sans',sans-serif;font-weight:600;transition:all .15s;white-space:nowrap" onmouseover="this.style.background='rgba(139,127,232,.28)'" onmouseout="this.style.background='rgba(139,127,232,.14)'">⬇ Descargar PDF</button>
+  </div>
 </div>
 
 <!-- Selector vista -->
@@ -428,18 +432,23 @@ function renderDashboard() {
   const totalPen = totalMax - totalRet;
   const pct      = Math.round(totalRet / (totalMax||1) * 100) || 0;
 
-  // Por categoría — usa DATA del CSV para nombre/categoría, pero conteo desde Firebase
+  // Por categoría — cuenta PLATOS (slots) filtrados por vista, no personas
   const cats = { Adulto:{total:0,ret:0}, Joven:{total:0,ret:0}, Menor:{total:0,ret:0} };
   DATA_TOTAL.forEach(d => {
     const fb = FB_COMIDAS[d.id];
-    // Solo cuenta si tiene al menos una comida asignada en Firebase
-    const tieneComida = fb && fb.meals && DAYS_CFG.some(dayCfg =>
-      dayCfg.meals.some(meal => fb.meals[MK(dayCfg.key, meal)] === true)
-    );
-    if (!tieneComida) return;
+    if (!fb || !fb.meals) return;
     const cat = cats[catNorm(d.categoria)] || cats["Adulto"];
-    cat.total += 1;
-    if (contarRetiros(d.id) > 0) cat.ret += 1;
+    DAYS_CFG.forEach(dayCfg => {
+      if (!diasFiltro.includes(dayCfg.dia)) return;
+      dayCfg.meals.forEach(meal => {
+        if (!tiemposFiltro.includes(meal)) return;
+        const fbKey = MK(dayCfg.key, meal);
+        if (fb.meals[fbKey] === true) {
+          cat.total++;
+          if (fb.retirado && fb.retirado[fbKey] === true) cat.ret++;
+        }
+      });
+    });
   });
 
   // Últimos retiros desde Firebase
@@ -535,7 +544,7 @@ function renderDashboard() {
         <tbody>
           ${resumenFilas
             .filter(row => vistaDia==="todos" || parseInt(vistaDia)===row.dia)
-            .map((row,i) => {
+            .map((row) => {
               const tms = vistaTiempo==="todos" ? TIEMPOS : [vistaTiempo];
               let totalRet2=0;
               const celdas = tms.map(t => {
@@ -543,10 +552,11 @@ function renderDashboard() {
                 totalRet2 += row[t].ret;
                 return `<td class="cell-ret">${row[t].ret}</td><td class="cell-pen">${row[t].pen}</td>`;
               }).join("");
-              const dayCfg = DAYS_CFG[i] || {};
+              const dayCfg = DAYS_CFG.find(d => d.dia === row.dia) || {};
+              const colorIdx = (row.dia - 1) % colors.length;
               return `<tr>
                 <td>
-                  <span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${colors[i%colors.length]};margin-right:6px"></span>
+                  <span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${colors[colorIdx]};margin-right:6px"></span>
                   ${dayCfg.label || "Día "+row.dia}
                 </td>
                 ${celdas}
@@ -573,6 +583,237 @@ function renderDashboard() {
     </div>
   `;
 }
+
+// ── DESCARGA PDF ─────────────────────────────────────────────────────────────
+window.descargarPDF = function() {
+  if (!window.jspdf) { alert("jsPDF aún no cargó, espera un momento y vuelve a intentarlo."); return; }
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ unit:"mm", format:"a4" });
+  const W=210, M=16, cw=W-M*2;
+
+  // Paleta
+  const DARK=[15,17,23], SURF=[24,27,36], SURF2=[31,35,51];
+  const GOLD=[232,168,56], TEAL=[62,207,184], ROSE=[232,107,139];
+  const LAV=[139,127,232], ORANGE=[212,119,62], MUTED=[122,125,149];
+  const WHITE=[232,232,240];
+
+  const catNormPDF = c => {
+    if (c==="A"||c==="Adulto") return "Adulto";
+    if (c==="J"||c==="Joven")  return "Joven";
+    if (c==="N"||c==="Menor")  return "Menor";
+    return "Adulto";
+  };
+
+  // Recalcular totales frescos (todos los días, todos los tiempos)
+  let pdfTotalMax=0, pdfTotalRet=0;
+  const pdfCats = { Adulto:{total:0,ret:0}, Joven:{total:0,ret:0}, Menor:{total:0,ret:0} };
+
+  Object.values(FB_COMIDAS).forEach(fb => {
+    if (!fb||!fb.meals) return;
+    DAYS_CFG.forEach(dayCfg => {
+      dayCfg.meals.forEach(meal => {
+        const fbKey = MK(dayCfg.key, meal);
+        if (fb.meals[fbKey]===true) {
+          pdfTotalMax++;
+          if (fb.retirado&&fb.retirado[fbKey]===true) pdfTotalRet++;
+        }
+      });
+    });
+  });
+
+  DATA.forEach(d => {
+    const fb = FB_COMIDAS[d.id];
+    if (!fb||!fb.meals) return;
+    const cat = pdfCats[catNormPDF(d.categoria)] || pdfCats["Adulto"];
+    DAYS_CFG.forEach(dayCfg => {
+      dayCfg.meals.forEach(meal => {
+        const fbKey = MK(dayCfg.key, meal);
+        if (fb.meals[fbKey]===true) {
+          cat.total++;
+          if (fb.retirado&&fb.retirado[fbKey]===true) cat.ret++;
+        }
+      });
+    });
+  });
+
+  // Tabla resumen por día/tiempo
+  const pdfResumen = DAYS_CFG.map(dayCfg => {
+    const row = { dia: dayCfg.dia, label: dayCfg.label };
+    dayCfg.meals.forEach(meal => {
+      const fbKey = MK(dayCfg.key, meal);
+      let asig=0, ret=0;
+      Object.values(FB_COMIDAS).forEach(fb => {
+        if (!fb||!fb.meals) return;
+        if (fb.meals[fbKey]===true) { asig++; if (fb.retirado&&fb.retirado[fbKey]===true) ret++; }
+      });
+      row[meal] = { total:asig, ret, pen:asig-ret };
+    });
+    return row;
+  });
+
+  // Por categoría por día/tiempo (para la tabla detallada)
+  const pdfDetalle = DAYS_CFG.map(dayCfg => {
+    const dRow = { label: dayCfg.label };
+    dayCfg.meals.forEach(meal => {
+      const fbKey = MK(dayCfg.key, meal);
+      const slot = { Adulto:0, Joven:0, Menor:0 };
+      DATA.forEach(d => {
+        const fb = FB_COMIDAS[d.id];
+        if (!fb||!fb.meals) return;
+        if (fb.meals[fbKey]===true) {
+          const c = catNormPDF(d.categoria);
+          if (slot[c]!==undefined) slot[c]++;
+        }
+      });
+      dRow[meal] = slot;
+    });
+    return dRow;
+  });
+
+  // ── DISEÑO ──────────────────────────────────────────────────────
+  // Fondo oscuro
+  doc.setFillColor(...DARK); doc.rect(0,0,W,297,"F");
+
+  // Header
+  doc.setFillColor(...SURF); doc.roundedRect(M,10,cw,28,3,3,"F");
+  doc.setFillColor(...GOLD); doc.roundedRect(M,10,3,28,2,0,"F"); doc.rect(M+1,10,2,28,"F");
+  doc.setFont("helvetica","bold"); doc.setFontSize(15); doc.setTextColor(...WHITE);
+  doc.text("CRPTG 11 — Dashboard Alimentación",M+9,22);
+  doc.setFont("helvetica","normal"); doc.setFontSize(8); doc.setTextColor(...MUTED);
+  const now = new Date();
+  doc.text("Generado: "+now.toLocaleString("es-CR",{dateStyle:"long",timeStyle:"short"}),M+9,29);
+  const pctPDF = Math.round(pdfTotalRet/(pdfTotalMax||1)*100);
+  doc.setFont("helvetica","bold"); doc.setFontSize(14); doc.setTextColor(...TEAL);
+  doc.text(pctPDF+"%",W-M-5,27,{align:"right"});
+
+  // Totales generales
+  let y=46;
+  doc.setFillColor(...SURF2); doc.roundedRect(M,y,cw,18,2,2,"F");
+  const cols3 = [{label:"Esperados",val:pdfTotalMax,col:GOLD},{label:"Retirados",val:pdfTotalRet,col:TEAL},{label:"Pendientes",val:pdfTotalMax-pdfTotalRet,col:ROSE}];
+  cols3.forEach((c,i)=>{
+    const x=M+5+i*(cw/3);
+    doc.setFont("helvetica","bold"); doc.setFontSize(14); doc.setTextColor(...c.col);
+    doc.text(String(c.val),x+cw/6,y+10,{align:"center"});
+    doc.setFont("helvetica","normal"); doc.setFontSize(7); doc.setTextColor(...MUTED);
+    doc.text(c.label.toUpperCase(),x+cw/6,y+15,{align:"center"});
+  });
+
+  // Totales por categoría
+  y+=24;
+  doc.setFont("helvetica","bold"); doc.setFontSize(8.5); doc.setTextColor(...GOLD);
+  doc.text("PLATOS ESPERADOS POR CATEGORÍA",M,y); y+=5;
+  const catCols=[{name:"Adultos",key:"Adulto",col:LAV},{name:"Jóvenes",key:"Joven",col:GOLD},{name:"Menores",key:"Menor",col:ORANGE}];
+  const cardW=(cw-8)/3;
+  catCols.forEach((cc,i)=>{
+    const cx=M+i*(cardW+4), cy=y;
+    const d=pdfCats[cc.key];
+    doc.setFillColor(...SURF); doc.roundedRect(cx,cy,cardW,24,2,2,"F");
+    doc.setFont("helvetica","bold"); doc.setFontSize(16); doc.setTextColor(...cc.col);
+    doc.text(String(d.total),cx+cardW/2,cy+12,{align:"center"});
+    doc.setFont("helvetica","bold"); doc.setFontSize(7); doc.setTextColor(...WHITE);
+    doc.text(cc.name,cx+cardW/2,cy+18,{align:"center"});
+    doc.setFont("helvetica","normal"); doc.setFontSize(6.5); doc.setTextColor(...MUTED);
+    doc.text(`${d.ret} ret. / ${d.total-d.ret} pend.`,cx+cardW/2,cy+22,{align:"center"});
+  });
+
+  // Tabla resumen por día × tiempo
+  y+=32;
+  doc.setFont("helvetica","bold"); doc.setFontSize(8.5); doc.setTextColor(...GOLD);
+  doc.text("RESUMEN POR DÍA Y TIEMPO DE COMIDA",M,y);
+  doc.setFillColor(...GOLD); doc.rect(M,y+2,cw,.4,"F");
+  y+=7;
+
+  // Encabezado tabla
+  const allMeals=["desayuno","almuerzo","cena"];
+  const mLabels={desayuno:"Desayuno",almuerzo:"Almuerzo",cena:"Cena"};
+  const colW=[(cw-4)/5,(cw-4)/5,(cw-4)/5,(cw-4)/5,(cw-4)*0.2]; // día, des, alm, cena, subtotal
+  const colX=[M, M+(cw-4)/5, M+(cw-4)*2/5, M+(cw-4)*3/5, M+(cw-4)*4/5+4];
+  doc.setFillColor(...SURF2); doc.rect(M,y,cw,7,"F");
+  doc.setFont("helvetica","bold"); doc.setFontSize(7); doc.setTextColor(...MUTED);
+  doc.text("DÍA",colX[0]+2,y+5);
+  doc.text("DESAYUNO",colX[1]+colW[1]/2,y+5,{align:"center"});
+  doc.text("ALMUERZO",colX[2]+colW[2]/2,y+5,{align:"center"});
+  doc.text("CENA",colX[3]+colW[3]/2,y+5,{align:"center"});
+  doc.text("TOTAL",colX[4]+colW[4]/2,y+5,{align:"center"});
+  y+=7;
+
+  pdfResumen.forEach((row,ri)=>{
+    const bg=ri%2===0?SURF:DARK;
+    doc.setFillColor(...bg); doc.rect(M,y,cw,8,"F");
+    let rowTotal=0;
+    doc.setFont("helvetica","bold"); doc.setFontSize(8); doc.setTextColor(...WHITE);
+    doc.text(row.label,colX[0]+2,y+5.5);
+    allMeals.forEach((meal,mi)=>{
+      const slot=row[meal];
+      if (slot&&slot.total>0) {
+        rowTotal+=slot.total;
+        doc.setFont("helvetica","bold"); doc.setFontSize(8); doc.setTextColor(...TEAL);
+        doc.text(String(slot.total),colX[1+mi]+colW[mi]/2,y+5.5,{align:"center"});
+        doc.setFont("helvetica","normal"); doc.setFontSize(6.5); doc.setTextColor(...MUTED);
+        doc.text(`(${slot.ret} ret)`,colX[1+mi]+colW[mi]/2,y+8.5,{align:"center"});
+      } else {
+        doc.setFont("helvetica","normal"); doc.setFontSize(8); doc.setTextColor(...MUTED);
+        doc.text("–",colX[1+mi]+colW[mi]/2,y+5.5,{align:"center"});
+      }
+    });
+    doc.setFont("helvetica","bold"); doc.setFontSize(9); doc.setTextColor(...GOLD);
+    doc.text(String(rowTotal),colX[4]+colW[4]/2,y+5.5,{align:"center"});
+    y+=10;
+  });
+
+  // Tabla detallada adultos/jovenes/menores por día y tiempo
+  y+=6;
+  doc.setFont("helvetica","bold"); doc.setFontSize(8.5); doc.setTextColor(...GOLD);
+  doc.text("DETALLE POR CATEGORÍA (ADULTOS · JÓVENES · MENORES)",M,y);
+  doc.setFillColor(...GOLD); doc.rect(M,y+2,cw,.4,"F");
+  y+=7;
+
+  // Sub-encabezado
+  doc.setFillColor(...SURF2); doc.rect(M,y,cw,7,"F");
+  doc.setFont("helvetica","bold"); doc.setFontSize(7); doc.setTextColor(...MUTED);
+  doc.text("DÍA / COMIDA",colX[0]+2,y+5);
+  doc.text("ADULTOS",colX[1]+colW[1]/2,y+5,{align:"center"});
+  doc.text("JÓVENES",colX[2]+colW[2]/2,y+5,{align:"center"});
+  doc.text("MENORES",colX[3]+colW[3]/2,y+5,{align:"center"});
+  doc.text("TOTAL",colX[4]+colW[4]/2,y+5,{align:"center"});
+  y+=7;
+
+  pdfDetalle.forEach((dRow,ri)=>{
+    const dayMeals = DAYS_CFG.find(d=>d.label===dRow.label)?.meals||[];
+    dayMeals.forEach((meal,mi)=>{
+      const slot=dRow[meal];
+      if(!slot) return;
+      const tot=slot.Adulto+slot.Joven+slot.Menor;
+      if(tot===0) return;
+      if(y>265){ doc.addPage(); doc.setFillColor(...DARK); doc.rect(0,0,W,297,"F"); y=15; }
+      const bg=(ri+mi)%2===0?SURF:DARK;
+      doc.setFillColor(...bg); doc.rect(M,y,cw,7,"F");
+      const label=`${dRow.label} · ${mLabels[meal]}`;
+      doc.setFont("helvetica","normal"); doc.setFontSize(7.5); doc.setTextColor(...WHITE);
+      doc.text(label,colX[0]+2,y+5);
+      doc.setFont("helvetica","bold"); doc.setFontSize(8); doc.setTextColor(...LAV);
+      doc.text(String(slot.Adulto),colX[1]+colW[1]/2,y+5,{align:"center"});
+      doc.setTextColor(...GOLD);
+      doc.text(String(slot.Joven),colX[2]+colW[2]/2,y+5,{align:"center"});
+      doc.setTextColor(...ORANGE);
+      doc.text(String(slot.Menor),colX[3]+colW[3]/2,y+5,{align:"center"});
+      doc.setTextColor(...WHITE);
+      doc.text(String(tot),colX[4]+colW[4]/2,y+5,{align:"center"});
+      y+=7;
+    });
+  });
+
+  // Footer
+  if(y<270){
+    y=Math.max(y+8,270);
+    doc.setFillColor(42,45,64); doc.rect(M,y,cw,.4,"F");
+    doc.setFont("helvetica","normal"); doc.setFontSize(7); doc.setTextColor(...MUTED);
+    doc.text("Reporte generado por el sistema de logística CRPTG 11",W/2,y+6,{align:"center"});
+  }
+
+  doc.save("CRPTG11_Dashboard_Alimentacion.pdf");
+};
+
 
 </script>
 <!-- OVERLAY DE ACCESO -->
