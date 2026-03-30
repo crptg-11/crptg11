@@ -613,7 +613,7 @@ function renderVistaGeneralHTML(){
         { id:"aux_des", label:"Auxiliares Desayuno", slots:3, tipo:"aux" },
         { id:"aux_alm", label:"Auxiliares Almuerzo", slots:3, tipo:"aux" },
         { id:"aux_cen", label:"Auxiliares Cena",     slots:3, tipo:"aux" },
-        { id:"pic",     label:"Picadores",           slots:5, tipo:"pic" },
+        // Nota: sábado no tiene picadores — se eliminó "pic" para que coincida con los datos reales
       ];
       turnosHTML = ROLES_SAB_GEN.map(rol=>{
         const names = [];
@@ -729,6 +729,7 @@ async function generarPDF(){
     { id:"aux_des", label:"Auxiliares Desayuno", slots:3 },
     { id:"aux_alm", label:"Auxiliares Almuerzo", slots:3 },
     { id:"aux_cen", label:"Auxiliares Cena",     slots:3 },
+    // Nota: el sábado no tiene picadores — se eliminó el rol "pic" para evitar datos fantasma
   ];
 
   // Contar turnos por persona

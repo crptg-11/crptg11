@@ -78,6 +78,23 @@ tr:last-child td{border-bottom:none}tr:hover td{background:rgba(232,107,139,.03)
   .print-header { display: block !important; text-align: right; font-size: 10pt; color: #888; margin-bottom: 6px; }
 }
 .print-header { display: none; }
+/* ── BLOQUE IMPRESIÓN COMPLETA (oculto en pantalla) ─── */
+#print-all-nights { display: none; }
+
+@media print {
+  /* Ocultar vista normal de turnos (pestañas por día) */
+  .dia-tabs, #turno-dia { display: none !important; }
+  /* Mostrar bloque completo de todas las noches */
+  #print-all-nights { display: block !important; }
+
+  .print-section-title { font-family:'Playfair Display',serif; font-size:1rem; color:#c04060; border-bottom:1px solid #f0c0cc; padding-bottom:5px; margin-bottom:12px; }
+  .print-dia-block { margin-bottom:18px; break-inside: avoid; }
+  .print-dia-titulo { font-weight:700; font-size:10.5pt; color:#333; background:#fdf0f3; border-left:3px solid #e86b8b; padding:5px 10px; border-radius:0 6px 6px 0; margin-bottom:8px; }
+  .print-turnos-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+  .print-turno-card { background:#fafafa; border:1px solid #eee; border-radius:6px; padding:10px; }
+  .print-turno-hora { font-size:9.5pt; font-weight:700; color:#c04060; margin-bottom:7px; }
+  .print-nota { background:#fafafa; border-left:3px solid #e86b8b; padding:6px 10px; margin-bottom:6px; font-size:10pt; border-radius:0 5px 5px 0; }
+}
 </style>
 </head>
 <body>
@@ -262,6 +279,8 @@ function guardar(){
   localStorage.setItem("crptg11-seg-turnos",          JSON.stringify(turnos));
   localStorage.setItem("crptg11-check-seguridad",     JSON.stringify(asistencia));
   localStorage.setItem("crptg11-notas-seguridad",     JSON.stringify(notas));
+  // Exponer al scope global para la función de impresión
+  window._segData = { turnos, asistencia, notas };
   _guardarFirebase();
 }
 // Alias para compatibilidad con llamadas existentes
@@ -286,6 +305,7 @@ onValue(ref(db, DB_PATH), snap => {
   localStorage.setItem("crptg11-check-seguridad",     JSON.stringify(asistencia));
   localStorage.setItem("crptg11-notas-seguridad",     JSON.stringify(notas));
   renderTabs(); renderTurnoDia(); renderTabla(); renderNotas();
+  window._segData = { turnos, asistencia, notas };
   _syncUI("ok");
 }, ()=> _syncUI("err"));
 
@@ -544,6 +564,7 @@ function mostrarAlerta(msg){ const a=document.getElementById("alert"); a.textCon
 
 actualizarBtnEdicion();
 renderTabs(); renderTurnoDia(); renderTabla(); renderNotas();
+window._segData = { turnos, asistencia, notas };
 
 // Exponer funciones al scope global
 Object.assign(window, {
@@ -570,14 +591,77 @@ Object.assign(window, {
 <!-- OVERLAY DE ACCESO -->
 <script>
 function imprimirInforme(){
+  // Timestamp
   const ts = document.getElementById("print-timestamp");
   if(ts){
     const ahora = new Date();
     ts.textContent = "Impreso el " + ahora.toLocaleDateString("es-CR",{weekday:"long",year:"numeric",month:"long",day:"numeric"})
       + " a las " + ahora.toLocaleTimeString("es-CR",{hour:"2-digit",minute:"2-digit"});
   }
-  setTimeout(()=> window.print(), 80);
+
+  // Generar bloque con todas las noches para impresión
+  const DIAS_PRINT = [
+    { id:"mie", label:"Miércoles 1 Abr", siguiente:"Jue" },
+    { id:"jue", label:"Jueves 2 Abr",    siguiente:"Vie" },
+    { id:"vie", label:"Viernes 3 Abr",   siguiente:"Sáb" },
+  ];
+
+  const datos = window._segData || {};
+  const turnosData   = datos.turnos     || {};
+  const asistData    = datos.asistencia || {};
+  const notasData    = datos.notas      || [];
+
+  function renderTurnoImpresion(diaId, turnoId, hora, siguiente){
+    const filas = [0,1,2].map(slot => {
+      const key  = `${diaId}_${turnoId}_${slot}`;
+      const asig = turnosData[key] || "";
+      const chekin = asig ? asistData[`${diaId}_${asig}`] : null;
+      return `<tr>
+        <td style="color:#888;width:28px">${slot+1}</td>
+        <td style="font-weight:${asig?'600':'400'};color:${asig?'#111':'#aaa'}">${asig||'Sin asignar'}</td>
+        <td style="color:${chekin?'#2a9d6a':'#bbb'};font-size:10pt">${chekin ? '✅ '+chekin : '—'}</td>
+      </tr>`;
+    }).join("");
+    return `<div class="print-turno-card">
+      <div class="print-turno-hora">🌙 ${hora}</div>
+      <table><thead><tr><th>#</th><th>Persona</th><th>Check-in</th></tr></thead>
+      <tbody>${filas}</tbody></table>
+    </div>`;
+  }
+
+  const notasHtml = notasData.length
+    ? notasData.map(n=>`<div class="print-nota">📝 ${n.texto} <span style="color:#aaa;font-size:9pt">${n.hora}</span></div>`).join("")
+    : `<div style="color:#aaa;font-size:10pt">Sin notas.</div>`;
+
+  const diasHtml = DIAS_PRINT.map(d => `
+    <div class="print-dia-block">
+      <div class="print-dia-titulo">🌙 Noche del ${d.label}</div>
+      <div class="print-turnos-grid">
+        ${renderTurnoImpresion(d.id,"t1","11:00 PM – 2:00 AM",d.siguiente)}
+        ${renderTurnoImpresion(d.id,"t2","2:00 AM – 5:00 AM (→ "+d.siguiente+")",d.siguiente)}
+      </div>
+    </div>
+  `).join("");
+
+  // Inyectar en contenedor temporal de impresión
+  let el = document.getElementById("print-all-nights");
+  if(!el){
+    el = document.createElement("div");
+    el.id = "print-all-nights";
+    document.body.appendChild(el);
+  }
+  el.innerHTML = `
+    <div class="print-section-title">⏰ Turnos Nocturnos — 3 Noches</div>
+    ${diasHtml}
+    <div class="print-section-title" style="margin-top:20px">📝 Notas y Observaciones</div>
+    ${notasHtml}
+  `;
+
+  setTimeout(()=> window.print(), 100);
 }
+
+// Exponer datos al scope global para que imprimirInforme() los use
+window._segData = window._segData || {};
 </script>
 <div id="acceso-overlay" style="display:none;position:fixed;inset:0;background:rgba(11,13,19,.97);z-index:9999;align-items:center;justify-content:center;flex-direction:column">
   <div style="background:#13161f;border:1px solid #22263a;border-radius:24px;padding:40px 42px;text-align:center;max-width:360px;width:90%;box-shadow:0 24px 64px rgba(0,0,0,.6)">
