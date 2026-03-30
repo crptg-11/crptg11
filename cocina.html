@@ -751,23 +751,26 @@ async function generarPDF(){
   const diaBlocks = diasData.map(dia=>{
     const esSab=dia.id==="sab";
     let turnos="";
+    const mkLista = (ns, color="#222") => ns.length
+      ? `<ul style="margin:2px 0 2px 16px;padding:0;list-style:disc">${ns.map(n=>`<li style="font-size:12px;color:${color};padding:1px 0">${n}</li>`).join("")}</ul>`
+      : `<span style="font-size:12px;color:#aaa;font-style:italic">—</span>`;
     if(esSab){
       turnos=ROLES_SAB_PDF.map(r=>{
         const ns=[];
         for(let i=0;i<r.slots;i++){ const v=asignSab[`sab_${r.id}_${i}`]; if(v) ns.push(v.split("__")[0]); }
-        return `<tr><td style="padding:4px 8px;font-weight:600;font-size:12px;color:#555">${r.label}</td><td style="padding:4px 8px;font-size:12px">${ns.length?ns.join(", "):"—"}</td></tr>`;
+        return `<tr><td style="padding:6px 8px;font-weight:600;font-size:12px;color:#555;vertical-align:top;width:38%;border-bottom:1px solid #f0f0f0">${r.label}</td><td style="padding:4px 8px;vertical-align:top;border-bottom:1px solid #f0f0f0">${mkLista(ns)}</td></tr>`;
       }).join("");
     } else {
       turnos=comidas.map(c=>{
         const ns=[];
         for(let i=0;i<4;i++){ const v=asignaciones[`ay_${dia.id}_${c.id}_${i}`]; if(v) ns.push(v.split("__")[0]); }
-        return `<tr><td style="padding:4px 8px;font-weight:600;font-size:12px;color:#555">${c.label} (${c.hora})</td><td style="padding:4px 8px;font-size:12px">${ns.length?ns.join(", "):"—"}</td></tr>`;
+        return `<tr><td style="padding:6px 8px;font-weight:600;font-size:12px;color:#555;vertical-align:top;width:38%;border-bottom:1px solid #f0f0f0">${c.label}<br><span style="font-weight:400;color:#999;font-size:11px">${c.hora}</span></td><td style="padding:4px 8px;vertical-align:top;border-bottom:1px solid #f0f0f0">${mkLista(ns)}</td></tr>`;
       }).join("");
       const dObj=DIAS.find(d=>d.id===dia.id);
       if(dObj?.picado){
         const ps=[];
         for(let i=0;i<5;i++){ const v=asignaciones[`pic_${dia.id}_${i}`]; if(v) ps.push(v.split("__")[0]); }
-        turnos+=`<tr><td style="padding:4px 8px;font-weight:600;font-size:12px;color:#8b7fe8">🔪 Picadores</td><td style="padding:4px 8px;font-size:12px">${ps.length?ps.join(", "):"—"}</td></tr>`;
+        turnos+=`<tr><td style="padding:6px 8px;font-weight:600;font-size:12px;color:#8b7fe8;vertical-align:top;width:38%">🔪 Picadores</td><td style="padding:4px 8px;vertical-align:top">${mkLista(ps,"#8b7fe8")}</td></tr>`;
       }
     }
     return `<div style="break-inside:avoid;margin-bottom:20px;border:1px solid #ddd;border-top:4px solid ${dia.color};border-radius:8px;overflow:hidden">
