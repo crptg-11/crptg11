@@ -610,9 +610,9 @@ function renderVistaGeneralHTML(){
     let turnosHTML = "";
     if(esSab){
       const ROLES_SAB_GEN = [
-        { id:"aux_des", label:"Auxiliares Desayuno", slots:3, tipo:"aux" },
-        { id:"aux_alm", label:"Auxiliares Almuerzo", slots:3, tipo:"aux" },
-        { id:"aux_cen", label:"Auxiliares Cena",     slots:3, tipo:"aux" },
+        { id:"aux_des", label:"Auxiliares Desayuno", slots:4, tipo:"aux" },
+        { id:"aux_alm", label:"Auxiliares Almuerzo", slots:4, tipo:"aux" },
+        { id:"aux_cen", label:"Auxiliares Cena",     slots:4, tipo:"aux" },
         // Nota: sábado no tiene picadores — se eliminó "pic" para que coincida con los datos reales
       ];
       turnosHTML = ROLES_SAB_GEN.map(rol=>{
@@ -726,9 +726,9 @@ async function generarPDF(){
     { id:"cen", label:"Cena",     hora:"17:00–20:00" },
   ];
   const ROLES_SAB_PDF = [
-    { id:"aux_des", label:"Auxiliares Desayuno", slots:3 },
-    { id:"aux_alm", label:"Auxiliares Almuerzo", slots:3 },
-    { id:"aux_cen", label:"Auxiliares Cena",     slots:3 },
+    { id:"aux_des", label:"Auxiliares Desayuno", slots:4 },
+    { id:"aux_alm", label:"Auxiliares Almuerzo", slots:4 },
+    { id:"aux_cen", label:"Auxiliares Cena",     slots:4 },
     // Nota: el sábado no tiene picadores — se eliminó el rol "pic" para evitar datos fantasma
   ];
 
@@ -1143,14 +1143,14 @@ function limpiarPicadoresJue(){
 
 // ── SÁBADO ────────────────────────────────────────────────────
 // Roles del equipo de cocina para sábado:
-// - 3 auxiliares de cocina (mañana) → Angelina e Ipís
-// - 3 auxiliares de cocina (tarde)  → Angelina e Ipís
-// - 5 picadores (cualquier congregación)
+// - 4 auxiliares de cocina (desayuno) → Angelina e Ipís
+// - 4 auxiliares de cocina (almuerzo) → Angelina e Ipís
+// - 4 auxiliares de cocina (cena)     → Angelina e Ipís
 
 const ROLES_SAB = [
-  { id:"aux_des", label:"🙌 Auxiliares — Desayuno", hora:"6:00–9:00", color:"accent", tipo:"aux", slots:3 },
-  { id:"aux_alm", label:"🙌 Auxiliares — Almuerzo", hora:"11:00–14:00", color:"accent", tipo:"aux", slots:3 },
-  { id:"aux_cen", label:"🙌 Auxiliares — Cena",    hora:"17:00–20:00", color:"accent", tipo:"aux", slots:3 },
+  { id:"aux_des", label:"🙌 Auxiliares — Desayuno", hora:"6:00–9:00", color:"accent", tipo:"aux", slots:4 },
+  { id:"aux_alm", label:"🙌 Auxiliares — Almuerzo", hora:"11:00–14:00", color:"accent", tipo:"aux", slots:4 },
+  { id:"aux_cen", label:"🙌 Auxiliares — Cena",    hora:"17:00–20:00", color:"accent", tipo:"aux", slots:4 },
 ];
 
 function buildOptsSab(tipo, keySelected){
@@ -1340,27 +1340,32 @@ function limpiarSab(){
   guardar(); renderSeccionDia(); mostrarAlerta("↩ Equipo del sábado limpiado");
 }
 
-// Propuesta automática: repartir participantes balanceadamente
+// Propuesta automática: repartir solo el equipo seleccionado balanceadamente
 function generarPropuestaSab(){
-  const auxCong = ["Angelina","Ipís"];
-  // Recoger todos los adultos/jóvenes de Angelina e Ipís
-  let pool = [];
-  auxCong.forEach(cong => {
-    PARTICIPANTES[cong]
-      .filter(p => p.cat !== "N")
-      .forEach(p => pool.push({nombre:p.nombre,cong}));
-  });
-  // Shuffle
-  pool = pool.sort(()=>Math.random()-.5);
+  // Usar únicamente las personas marcadas con checkbox (igual que mié/jue/vie)
+  let pool = getEquipoDia("sab");
+  if(!pool.length){ mostrarAlerta("⚠️ Agrega personas al equipo primero",true); return; }
+
+  // Conteo para distribuir equitativamente
+  const conteo = {};
+  pool.forEach(p => { conteo[p.nombre] = 0; });
+
+  function elegir(excluidos){
+    const cands = pool.filter(p => !excluidos.has(p.nombre));
+    if(!cands.length) return pool.reduce((a,b) => (conteo[a.nombre]||0)<=(conteo[b.nombre]||0)?a:b);
+    cands.sort((a,b) => (conteo[a.nombre]||0) - (conteo[b.nombre]||0));
+    const p = cands[0];
+    conteo[p.nombre] = (conteo[p.nombre]||0) + 1;
+    return p;
+  }
 
   const nuevo = {};
-  let idx = 0;
-  ROLES_SAB.forEach(rol=>{
+  ROLES_SAB.forEach(rol => {
+    const usados = new Set();
     for(let i=0;i<rol.slots;i++){
-      const k=`sab_${rol.id}_${i}`;
-      const p = pool[idx % pool.length];
-      nuevo[k] = `${p.nombre}__${p.cong}`;
-      idx++;
+      const p = elegir(usados);
+      nuevo[`sab_${rol.id}_${i}`] = `${p.nombre}__${p.cong}`;
+      usados.add(p.nombre);
     }
   });
   asignSab = nuevo;
