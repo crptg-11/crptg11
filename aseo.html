@@ -814,92 +814,125 @@ function toggleCuadroGeneral(){
   document.getElementById("btn-toggle-cuadro").textContent = cuadroVisible ? "Ocultar" : "Ver cuadro";
 }
 
+// Paleta de columnas por día (borde superior e highlight)
+const DIA_COLORS = {
+  mie: { accent:"#7ecef4", bg:"rgba(126,206,244,.04)", border:"rgba(126,206,244,.25)" },
+  jue: { accent:"#e8a838", bg:"rgba(232,168,56,.04)",  border:"rgba(232,168,56,.25)"  },
+  vie: { accent:"#3ecfb8", bg:"rgba(62,207,184,.04)",  border:"rgba(62,207,184,.25)"  },
+  sab: { accent:"#c97de8", bg:"rgba(201,125,232,.04)", border:"rgba(201,125,232,.25)" },
+};
+const AREA_META = {
+  "🍳 Cocina":  { color:"#e8a838", bg:"rgba(232,168,56,.07)",  label:"Cocina"  },
+  "🚹 Baño H":  { color:"#3ecfb8", bg:"rgba(62,207,184,.07)",  label:"Baño H"  },
+  "🚺 Baño M":  { color:"#e86b8b", bg:"rgba(232,107,139,.07)", label:"Baño M"  },
+  "🏛️ Salón":   { color:"#8b7fe8", bg:"rgba(139,127,232,.07)", label:"Salón"   },
+  "🗑️ Basura":  { color:"#7a7d95", bg:"rgba(122,125,149,.09)", label:"Basura"  },
+};
+
 function renderCuadroGeneral(){
   const editar = puedeEditar();
 
-  // Helper: genera el HTML de una celda con sus slots
-  function celdaSlots(slots, disponible){
-    // slots: [{key, val, pool}]
-    if(!disponible) return `<td style="text-align:center;color:var(--muted);font-size:10px;font-style:italic;border-bottom:1px solid rgba(42,45,64,.5)">—</td>`;
+  // ── chip de nombre (lectura) ──
+  function chipNombre(nombre, sexo){
+    const isH = sexo==="H";
+    const color = isH ? "var(--teal)" : "var(--rose)";
+    const bg    = isH ? "rgba(62,207,184,.1)" : "rgba(232,107,139,.1)";
+    const border= isH ? "rgba(62,207,184,.25)" : "rgba(232,107,139,.25)";
+    return `<span style="display:inline-flex;align-items:center;gap:4px;background:${bg};border:1px solid ${border};
+      color:${color};border-radius:100px;padding:2px 8px 2px 6px;font-size:11px;font-weight:500;margin:2px 2px 2px 0;white-space:nowrap">
+      <span style="font-size:9px">${isH?"♂":"♀"}</span>${nombre}
+    </span>`;
+  }
+
+  // ── picker editable ──
+  function pickerSlot(s, idx){
+    const escKey = s.key.replace(/'/g,"\\'");
+    const poolJson = JSON.stringify(s.pool.map(p=>({nombre:p.nombre,cong:p.cong||""}))).replace(/"/g,"&quot;");
+    const filled = !!s.val;
+    const p = s.pool.find(x=>x.nombre===s.val);
+    const sexo = p ? p.sexo : (s.pool===hombres() ? "H" : s.pool===mujeres() ? "M" : "");
+    const isH = sexo==="H";
+    const inputColor = filled ? (isH?"var(--teal)":"var(--rose)") : "var(--muted)";
+    const inputBorder = filled ? (isH?"rgba(62,207,184,.4)":"rgba(232,107,139,.4)") : "var(--border)";
+    return `<div style="display:flex;align-items:center;gap:5px;margin-bottom:4px">
+      <span style="font-size:10px;color:var(--muted);min-width:14px;text-align:right;flex-shrink:0">${idx+1}</span>
+      <div class="search-select-wrap" style="flex:1;min-width:0">
+        <input type="text"
+          class="search-select-input"
+          data-picker-key="${s.key}"
+          value="${s.val}"
+          placeholder="Buscar…"
+          autocomplete="off"
+          onfocus="abrirPicker('${escKey}',this,JSON.parse(this.dataset.pool))"
+          oninput="_filtrarPicker(this.value)"
+          data-pool="${poolJson}"
+          style="font-size:11.5px;padding:5px 9px;width:100%;color:${inputColor};border-color:${inputBorder};border-radius:8px;font-weight:${filled?600:400}"
+        >
+        <div class="search-select-dropdown"></div>
+      </div>
+    </div>`;
+  }
+
+  // ── celda completa ──
+  function celda(slots, diaId){
+    const dc = DIA_COLORS[diaId]||{};
+    const cellBg = dc.bg||"";
+    const cellBorder = `border-left:2px solid ${dc.border||"transparent"}`;
+    if(slots === null){
+      return `<td style="background:${cellBg};${cellBorder};text-align:center;padding:10px 8px">
+        <span style="font-size:13px;opacity:.25">—</span>
+      </td>`;
+    }
     if(editar){
-      const inner = slots.map((s,i)=>{
-        const escKey = s.key.replace(/'/g,"\\'");
-        const poolJson = JSON.stringify(s.pool.map(p=>({nombre:p.nombre,cong:p.cong||""}))).replace(/"/g,"&quot;");
-        return `<div style="display:flex;align-items:center;gap:4px;margin-bottom:3px">
-          <span style="font-size:10px;color:var(--muted);width:12px;flex-shrink:0">${i+1}</span>
-          <div class="search-select-wrap" style="flex:1;min-width:0">
-            <input type="text"
-              class="search-select-input"
-              data-picker-key="${s.key}"
-              value="${s.val}"
-              placeholder="— sin asignar —"
-              autocomplete="off"
-              onfocus="abrirPicker('${escKey}',this,JSON.parse(this.dataset.pool))"
-              oninput="_filtrarPicker(this.value)"
-              data-pool="${poolJson}"
-              style="font-size:11px;padding:3px 6px;width:100%"
-            >
-            <div class="search-select-dropdown"></div>
-          </div>
-        </div>`;
-      }).join("");
-      return `<td style="padding:6px 8px;vertical-align:top;border-bottom:1px solid rgba(42,45,64,.5)">${inner}</td>`;
+      return `<td style="background:${cellBg};${cellBorder};padding:8px 10px;vertical-align:top;min-width:190px">
+        ${slots.map((s,i)=>pickerSlot(s,i)).join("")}
+      </td>`;
     } else {
       const names = slots.map(s=>s.val).filter(Boolean);
       if(!names.length){
-        return `<td style="text-align:center;color:var(--muted);font-size:10px;font-style:italic;opacity:.5;border-bottom:1px solid rgba(42,45,64,.5)">Sin asignar</td>`;
+        return `<td style="background:${cellBg};${cellBorder};padding:10px 12px;text-align:center">
+          <span style="font-size:11px;color:var(--muted);font-style:italic;opacity:.5">Sin asignar</span>
+        </td>`;
       }
-      return `<td style="font-size:11px;line-height:1.7;padding:6px 10px;border-bottom:1px solid rgba(42,45,64,.5)">${names.map(n=>`<span style="display:block">${n}</span>`).join("")}</td>`;
+      const chips = names.map(n=>{
+        const p = equipoAseo.find(x=>x.nombre===n);
+        return chipNombre(n, p?p.sexo:"");
+      }).join("");
+      return `<td style="background:${cellBg};${cellBorder};padding:8px 10px;vertical-align:top">${chips}</td>`;
     }
   }
 
-  // Construir filas con slots explícitos
+  // ── construir filas ──
   const filas = [];
 
   TODAS_COMIDAS.forEach(c=>{
-    filas.push({
-      area:"🍳 Cocina", turno:`Post-${c.label}`,
+    filas.push({ area:"🍳 Cocina", turno:`Post-${c.label}`,
       getSlots:(diaId)=>{
         const dia=DIAS.find(d=>d.id===diaId);
         if(!dia||!dia.comidas.includes(c.id)) return null;
-        return Array.from({length:4},(_,i)=>({
-          key:`cocina_${diaId}_${c.id}_mix_${i}`,
-          val:asignaciones[`cocina_${diaId}_${c.id}_mix_${i}`]||"",
-          pool:equipoAseo
-        }));
+        return Array.from({length:4},(_,i)=>({ key:`cocina_${diaId}_${c.id}_mix_${i}`, val:asignaciones[`cocina_${diaId}_${c.id}_mix_${i}`]||"", pool:equipoAseo }));
       }
     });
   });
 
   TURNOS_BANOS.forEach(t=>{
-    filas.push({
-      area:"🚹 Baño H", turno:t.label,
-      getSlots:(diaId)=>[{
-        key:`banosh_${diaId}_${t.id}_h_0`,
-        val:asignaciones[`banosh_${diaId}_${t.id}_h_0`]||"",
-        pool:hombres()
-      }]
+    filas.push({ area:"🚹 Baño H", turno:t.label,
+      getSlots:(diaId)=>[{ key:`banosh_${diaId}_${t.id}_h_0`, val:asignaciones[`banosh_${diaId}_${t.id}_h_0`]||"", pool:hombres() }]
     });
-    filas.push({
-      area:"🚺 Baño M", turno:t.label,
-      getSlots:(diaId)=>[{
-        key:`banoosm_${diaId}_${t.id}_m_0`,
-        val:asignaciones[`banoosm_${diaId}_${t.id}_m_0`]||"",
-        pool:mujeres()
-      }]
+    filas.push({ area:"🚺 Baño M", turno:t.label,
+      getSlots:(diaId)=>[{ key:`banoosm_${diaId}_${t.id}_m_0`, val:asignaciones[`banoosm_${diaId}_${t.id}_m_0`]||"", pool:mujeres() }]
     });
   });
 
   TODAS_COMIDAS.forEach(c=>{
     ["antes","desp"].forEach(mo=>{
-      filas.push({
-        area:"🏛️ Salón", turno:`${mo==="antes"?"Antes":"Después"} ${c.label}`,
+      filas.push({ area:"🏛️ Salón", turno:`${mo==="antes"?"Antes":"Después"} ${c.label}`,
         getSlots:(diaId)=>{
           const dia=DIAS.find(d=>d.id===diaId);
           if(!dia||!dia.comidas.includes(c.id)) return null;
           const slots=[];
-          for(let i=0;i<3;i++) slots.push({key:`salon_${diaId}_${c.id}_${mo}_m_${i}`,val:asignaciones[`salon_${diaId}_${c.id}_${mo}_m_${i}`]||"",pool:mujeres()});
-          for(let i=0;i<2;i++) slots.push({key:`salon_${diaId}_${c.id}_${mo}_h_${i}`,val:asignaciones[`salon_${diaId}_${c.id}_${mo}_h_${i}`]||"",pool:hombres()});
+          for(let i=0;i<3;i++) slots.push({ key:`salon_${diaId}_${c.id}_${mo}_m_${i}`, val:asignaciones[`salon_${diaId}_${c.id}_${mo}_m_${i}`]||"", pool:mujeres() });
+          for(let i=0;i<2;i++) slots.push({ key:`salon_${diaId}_${c.id}_${mo}_h_${i}`, val:asignaciones[`salon_${diaId}_${c.id}_${mo}_h_${i}`]||"", pool:hombres() });
           return slots;
         }
       });
@@ -907,50 +940,66 @@ function renderCuadroGeneral(){
   });
 
   TODAS_COMIDAS.forEach(c=>{
-    filas.push({
-      area:"🗑️ Basura", turno:`Post-${c.label}`,
+    filas.push({ area:"🗑️ Basura", turno:`Post-${c.label}`,
       getSlots:(diaId)=>{
         const dia=DIAS.find(d=>d.id===diaId);
         if(!dia||!dia.comidas.includes(c.id)) return null;
-        return Array.from({length:2},(_,i)=>({
-          key:`basura_${diaId}_${c.id}_h_${i}`,
-          val:asignaciones[`basura_${diaId}_${c.id}_h_${i}`]||"",
-          pool:hombres()
-        }));
+        return Array.from({length:2},(_,i)=>({ key:`basura_${diaId}_${c.id}_h_${i}`, val:asignaciones[`basura_${diaId}_${c.id}_h_${i}`]||"", pool:hombres() }));
       }
     });
   });
 
-  // Encabezado
-  const colWidth = editar ? "min-width:180px" : "min-width:140px";
+  // ── encabezado ──
   document.getElementById("thead-cuadro").innerHTML = `<tr>
-    <th style="min-width:90px">Área</th>
-    <th style="min-width:120px">Turno</th>
-    ${DIAS.map(d=>`<th style="${colWidth};text-align:left">${d.label}</th>`).join("")}
+    <th style="min-width:100px;position:sticky;left:0;z-index:2;background:var(--surface)">Área</th>
+    <th style="min-width:130px;position:sticky;left:100px;z-index:2;background:var(--surface)">Turno</th>
+    ${DIAS.map(d=>{
+      const dc=DIA_COLORS[d.id]||{};
+      return `<th style="min-width:${editar?190:150}px;border-top:3px solid ${dc.accent||"var(--border)"};color:${dc.accent||"var(--muted)"};">${d.label}</th>`;
+    }).join("")}
   </tr>`;
 
-  // Cuerpo con rowspan por área
-  const areaColors = {
-    "🍳 Cocina":"rgba(232,168,56,.06)","🚹 Baño H":"rgba(62,207,184,.05)",
-    "🚺 Baño M":"rgba(232,107,139,.05)","🏛️ Salón":"rgba(139,127,232,.05)","🗑️ Basura":"rgba(122,125,149,.06)"
-  };
-  const areaCount = {};
+  // ── cuerpo ──
+  const areaCount={};
   filas.forEach(f=>{ areaCount[f.area]=(areaCount[f.area]||0)+1; });
   let areaAnterior="";
   let html="";
 
-  filas.forEach(f=>{
+  filas.forEach((f,fi)=>{
     const esPrimera = f.area !== areaAnterior;
+    const esUltimaDeLaArea = fi===filas.length-1 || filas[fi+1].area!==f.area;
     areaAnterior = f.area;
-    html += `<tr style="background:${areaColors[f.area]||""}">`;
+    const am = AREA_META[f.area]||{};
+    const rowBorder = esUltimaDeLaArea ? "border-bottom:2px solid var(--border)" : "border-bottom:1px solid rgba(42,45,64,.4)";
+
+    html += `<tr>`;
+
+    // Celda de área con rowspan
     if(esPrimera){
-      html += `<td rowspan="${areaCount[f.area]}" style="font-weight:700;font-size:12px;color:var(--accent);vertical-align:middle;border-right:1px solid var(--border);white-space:nowrap;border-bottom:1px solid rgba(42,45,64,.5)">${f.area}</td>`;
+      html += `<td rowspan="${areaCount[f.area]}"
+        style="background:${am.bg||""};border-right:3px solid ${am.color||"var(--border)"};
+        border-bottom:2px solid var(--border);vertical-align:middle;padding:10px 14px;
+        position:sticky;left:0;z-index:1">
+        <div style="display:flex;flex-direction:column;align-items:center;gap:4px">
+          <span style="font-size:18px">${f.area.split(" ")[0]}</span>
+          <span style="font-size:10px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:${am.color};white-space:nowrap">${am.label}</span>
+        </div>
+      </td>`;
     }
-    html += `<td style="font-size:11px;color:var(--muted);white-space:nowrap;border-bottom:1px solid rgba(42,45,64,.5)">${f.turno}</td>`;
+
+    // Celda de turno
+    html += `<td style="font-size:11px;color:var(--text);font-weight:500;white-space:nowrap;padding:10px 14px;
+      ${rowBorder};background:var(--surface);position:sticky;left:100px;z-index:1;
+      border-right:1px solid var(--border)">${f.turno}</td>`;
+
+    // Celdas de días
     DIAS.forEach(d=>{
       const slots = f.getSlots(d.id);
-      html += celdaSlots(slots, slots !== null);
+      const cellHtml = celda(slots, d.id);
+      // Inject row border into the td style
+      html += cellHtml.replace('<td ', `<td style-extra="${rowBorder}" `).replace('style="', `style="${rowBorder};`);
     });
+
     html += `</tr>`;
   });
 
