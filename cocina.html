@@ -95,6 +95,22 @@ tr:last-child td{border-bottom:none}tr:hover td{background:rgba(62,207,184,.03)}
 .sel-miembro option{background:#0f1117}
 .sel-miembro optgroup{background:#1f2333;font-size:11px;color:var(--muted)}
 .info-cong{font-size:10px;color:var(--muted);white-space:nowrap;max-width:90px;overflow:hidden;text-overflow:ellipsis}
+/* Buscador de participantes */
+.buscar-panel{background:#1a1d2a;border:1px solid rgba(139,127,232,.25);border-radius:10px;padding:14px;margin-top:10px}
+.buscar-panel-title{font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--lav);margin-bottom:10px;display:flex;align-items:center;gap:6px}
+.buscar-input-wrap{position:relative;margin-bottom:8px}
+.buscar-input-wrap input{width:100%;background:#0f1117;border:1px solid var(--border);color:var(--text);font-family:'DM Sans',sans-serif;font-size:13px;padding:8px 12px 8px 32px;border-radius:8px;outline:none;transition:border-color .2s}
+.buscar-input-wrap input:focus{border-color:var(--lav)}
+.buscar-input-wrap::before{content:'🔍';position:absolute;left:9px;top:50%;transform:translateY(-50%);font-size:12px;opacity:.4;pointer-events:none}
+.buscar-resultados{max-height:200px;overflow-y:auto;display:flex;flex-direction:column;gap:4px}
+.buscar-item{display:flex;align-items:center;justify-content:space-between;padding:7px 10px;border-radius:7px;background:#1f2333;border:1px solid var(--border);cursor:pointer;transition:all .15s}
+.buscar-item:hover{border-color:rgba(139,127,232,.4);background:rgba(139,127,232,.06)}
+.buscar-item.ya{opacity:.45;cursor:not-allowed}
+.buscar-item-info{font-size:12px;font-weight:500}
+.buscar-item-cong{font-size:10px;color:var(--muted)}
+.buscar-item-btn{padding:3px 10px;border-radius:6px;border:1px solid rgba(139,127,232,.4);background:transparent;color:var(--lav);font-size:11px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .15s}
+.buscar-item-btn:hover{background:rgba(139,127,232,.15)}
+.buscar-empty{color:var(--muted);font-size:12px;text-align:center;padding:12px}
 /* Propuesta banner */
 .propuesta-banner{background:rgba(94,207,122,.08);border:1px solid rgba(94,207,122,.25);border-radius:10px;padding:14px 18px;margin-bottom:16px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
 .propuesta-txt{font-size:13px;color:var(--green)}
@@ -249,116 +265,20 @@ const COMIDAS = [
   { id:"cen", label:"🌙 Cena",     hora:"17:00 – 20:00" },
 ];
 
-// ── PARTICIPANTES POR CONGREGACIÓN (del Excel, solo adultos/jóvenes ≥14) ──────
-// Sábado: Angelina e Ipís
-// Viernes: Valle la Estrella y Tucurrique
-// Jueves: Bribrí y Santa Marta
-// Miércoles: Limoncito y Río Banano
+// ── PARTICIPANTES — cargados dinámicamente desde Google Sheets ───────────────
+// Sábado: Angelina e Ipís | Viernes: Valle la Estrella y Tucurrique
+// Jueves: Bribrí y Santa Marta | Miércoles: Limoncito y Río Banano
 // Picadores: cualquier congregación (todos los días)
 
-const PARTICIPANTES = {
-  "Angelina": [
-    {nombre:"Alison Arias Ugalde",id:"CR-11047", edad:16, cat:"J", sexo:"F"},
-    {nombre:"Ashley Arias Ugalde",id:"CR-11021", edad:16, cat:"J", sexo:"F"},
-    {nombre:"Carlos Eduardo Espinoza Calderón",id:"CR-11057", edad:66, cat:"A", sexo:"M"},
-    {nombre:"Carlos José García Quiroz",id:"CR-11110", edad:48, cat:"A", sexo:"M"},
-    {nombre:"Carlos Sebastián Ríos Bonilla",id:"CR-11090", edad:18, cat:"A", sexo:"M"},
-    {nombre:"Ivonne Noelia Ríos Bonilla",id:"CR-11091", edad:21, cat:"A", sexo:"F"},
-    {nombre:"Jackeline Monge Graham",id:"CR-11092", edad:47, cat:"A", sexo:"F"},
-    {nombre:"Jeffry David López Hernández",id:"CR-11022", edad:17, cat:"J", sexo:"M"},
-    {nombre:"Josué Gómez Barrientos",id:"CR-11131", edad:62, cat:"A", sexo:"M"},
-    {nombre:"Mildred Esther Vargas Coronado",id:"CR-11132", edad:63, cat:"A", sexo:"F"},
-    {nombre:"Mirna Graham McHayle",id:"CR-11018", edad:60, cat:"A", sexo:"F"},
-    {nombre:"Vera Carranza Graham",id:"CR-11117", edad:62, cat:"A", sexo:"F"},
-    {nombre:"Adita Mata",id:"CR-11163", edad:57, cat:"A", sexo:"F"},
-    {nombre:"Cristian León Aguero",id:"CR-11170", edad:42, cat:"A", sexo:"M"},
-    {nombre:"Ebony Alondra Zamora Monge",id:"CR-11166", edad:14, cat:"J", sexo:"F"},
-    {nombre:"Eser Jeriel García Villalobos",id:"CR-11114", edad:12, cat:"N", sexo:"M"},
-    {nombre:"Gerlly Hadassa García Villalobos",id:"CR-11104", edad:22, cat:"A", sexo:"F"},
-    {nombre:"Gerlly Vanessa Villalobos Rodríguez",id:"CR-11173", edad:47, cat:"A", sexo:"F"},
-    {nombre:"Ismael Santiago Leon Ureña",id:"CR-11171", edad:16, cat:"J", sexo:"M"},
-  ],
-  "Ipís": [
-    {nombre:"Audrey Tatiana Jaubert Vargas",id:"CR-11036", edad:39, cat:"A", sexo:"F"},
-    {nombre:"Carmen Villarreal Torres",id:"CR-11035", edad:63, cat:"A", sexo:"F"},
-    {nombre:"Damaris Elizabeth Vargas Coronado",id:"CR-11037", edad:65, cat:"A", sexo:"F"},
-    {nombre:"Eyber Degracia Mata",id:"CR-11001", edad:41, cat:"A", sexo:"M"},
-    {nombre:"Gerardo Vargas",id:"CR-11006", edad:68, cat:"A", sexo:"M"},
-    {nombre:"Juan Rafael Sánchez Aguilar",id:"CR-11029", edad:39, cat:"A", sexo:"M"},
-    {nombre:"Luis Mauricio Mora Jara",id:"CR-11124", edad:47, cat:"A", sexo:"M"},
-    {nombre:"Maritza Vargas Coronado",id:"CR-11038", edad:69, cat:"A", sexo:"F"},
-    {nombre:"Nadia De Gracia Núñez",id:"CR-11002", edad:35, cat:"A", sexo:"F"},
-    {nombre:"Raquel Gómez Vargas",id:"CR-11028", edad:41, cat:"A", sexo:"F"},
-    {nombre:"Sandra Vargas Coronado",id:"CR-11027", edad:67, cat:"A", sexo:"F"},
-    {nombre:"Sebastiana Del Carmen López Chevez",id:"CR-11046", edad:43, cat:"A", sexo:"F"},
-    {nombre:"Zeidy Valverde Valverde",id:"CR-11007", edad:65, cat:"A", sexo:"F"},
-  ],
-  "Valle la Estrella": [
-    {nombre:"Adriel Salazar",id:"CR-11032", edad:17, cat:"J", sexo:"M"},
-    {nombre:"Hilary Salazar",id:"CR-11118", edad:17, cat:"J", sexo:"F"},
-    {nombre:"Irene Chavarría Salgado",id:"CR-11151", edad:62, cat:"A", sexo:"F"},
-    {nombre:"Joel Isaac Chaves Chavarría",id:"CR-11143", edad:39, cat:"A", sexo:"M"},
-    {nombre:"Johalis Pinzón Ayala",id:"CR-11120", edad:41, cat:"A", sexo:"F"},
-    {nombre:"Leonel Soto Gomez",id:"CR-11119", edad:40, cat:"A", sexo:"M"},
-    {nombre:"Marcia Golding Narathan",id:"CR-11013", edad:45, cat:"A", sexo:"F"},
-    {nombre:"María Elisabeth Reyes Castillo",id:"CR-11031", edad:38, cat:"A", sexo:"F"},
-    {nombre:"Minor Rodríguez Acuña",id:"CR-11150", edad:65, cat:"A", sexo:"M"},
-    {nombre:"Neigel Cuff Golding",id:"CR-11015", edad:15, cat:"J", sexo:"M"},
-    {nombre:"Oriel Salazar",id:"CR-11033", edad:13, cat:"J", sexo:"M"},
-    {nombre:"Ruby Golding Narathan",id:"CR-11014", edad:66, cat:"A", sexo:"F"},
-    {nombre:"Samir Soto Pinzón",id:"CR-11122", edad:13, cat:"J", sexo:"M"},
-    {nombre:"Steven Soto Pinzon",id:"CR-11121", edad:17, cat:"J", sexo:"M"},
-    {nombre:"Yarisel Cardenas Martinez",id:"CR-11142", edad:41, cat:"A", sexo:"F"},
-  ],
-  "Tucurrique": [
-    {nombre:"Abiezer D'Gracia Mata",id:"CR-11012", edad:29, cat:"A", sexo:"M"},
-    {nombre:"Eneida Vargas Mata",id:"CR-11134", edad:52, cat:"A", sexo:"F"},
-    {nombre:"José Luis Mata Ortiz",id:"CR-11135", edad:33, cat:"A", sexo:"M"},
-    {nombre:"Kathya Vanesa Mora Burgos",id:"CR-11136", edad:40, cat:"A", sexo:"F"},
-    {nombre:"Kimberly Macloud Manzanares",id:"CR-11008", edad:34, cat:"A", sexo:"F"},
-    {nombre:"María Eugenia Mata Nuñez",id:"CR-11096", edad:58, cat:"A", sexo:"F"},
-    {nombre:"Sebastián Murillo Macloud",id:"CR-11009", edad:16, cat:"J", sexo:"M"},
-  ],
-  "Bribrí": [
-    {nombre:"Angela Zapata Zúñiga",id:"CR-11055", edad:64, cat:"A", sexo:"F"},
-    {nombre:"Barbara Fonseca Méndez",id:"CR-11071", edad:14, cat:"J", sexo:"F"},
-    {nombre:"Brígida Miranda Blanco",id:"CR-11048", edad:63, cat:"A", sexo:"F"},
-    {nombre:"Carla Blanco Blanco",id:"CR-11067", edad:45, cat:"A", sexo:"F"},
-    {nombre:"Damaris Arias Zapata",id:"CR-11053", edad:41, cat:"A", sexo:"F"},
-    {nombre:"Eliseo Mata Miranda",id:"CR-11025", edad:50, cat:"A", sexo:"M"},
-    {nombre:"Jennifer Viviana Zúñiga Tapia",id:"CR-11072", edad:32, cat:"A", sexo:"F"},
-    {nombre:"Joel Blanco Pereira",id:"CR-11045", edad:23, cat:"A", sexo:"M"},
-    {nombre:"Karla Blanco Blanco",id:"CR-11075", edad:45, cat:"A", sexo:"F"},
-    {nombre:"Karla Sulay Montiel Blanco",id:"CR-11068", edad:15, cat:"J", sexo:"F"},
-    {nombre:"Lidia Price Blanco",id:"CR-11070", edad:56, cat:"A", sexo:"F"},
-    {nombre:"Luis Madriz Abarca",id:"CR-11049", edad:67, cat:"A", sexo:"M"},
-    {nombre:"Mariangel Pereira Arias",id:"CR-11054", edad:14, cat:"J", sexo:"F"},
-    {nombre:"Martina Miranda Blanco",id:"CR-11024", edad:67, cat:"A", sexo:"F"},
-    {nombre:"Mercedes Blanco Blanco",id:"CR-11069", edad:62, cat:"A", sexo:"F"},
-    {nombre:"Nícole Fonseca Méndez",id:"CR-11078", edad:14, cat:"J", sexo:"F"},
-    {nombre:"Rodolfo Rojas Brenes",id:"CR-11095", edad:67, cat:"A", sexo:"M"},
-    {nombre:"Sandra Mancía Mancía",id:"CR-11023", edad:53, cat:"A", sexo:"F"},
-    {nombre:"Sulay Montiel Blanco",id:"CR-11079", edad:15, cat:"J", sexo:"F"},
-  ],
-  "Santa Marta": [
-    {nombre:"Ana Marys Montes De Oca Díaz",id:"CR-11050", edad:38, cat:"A", sexo:"F"},
-    {nombre:"Kaytlyn Gutiérrez Picado",id:"CR-11137", edad:18, cat:"A", sexo:"F"},
-  ],
-  "Limoncito": [
-    {nombre:"Juan Carlos Campos Muñoz",id:"CR-11106", edad:47, cat:"A", sexo:"M"},
-    {nombre:"Lois Annette Johnson West",id:"CR-11105", edad:57, cat:"A", sexo:"F"},
-    {nombre:"Annette Campos",id:"CR-11199", edad:null, cat:"A", sexo:"F"},
-  ],
-  "Río Banano": [
-    {nombre:"Arnold Sandoval Monge",id:"CR-11060", edad:39, cat:"A", sexo:"M"},
-    {nombre:"Axa Milipsa Jiménez Rodríguez",id:"CR-11059", edad:32, cat:"A", sexo:"F"},
-    {nombre:"Fonseca Jiménez Cintia",id:"CR-11065", edad:51, cat:"A", sexo:"F"},
-    {nombre:"Hugo González",id:"CR-11107", edad:43, cat:"A", sexo:"M"},
-    {nombre:"Luis Guillermo Jiménez Mata",id:"CR-11061", edad:63, cat:"A", sexo:"M"},
-    {nombre:"Ordoñez Chevez José Joaquín",id:"CR-11066", edad:64, cat:"A", sexo:"M"},
-    {nombre:"Lisseth Mayorga Jiménez",id:"CR-11039", edad:null, cat:"A", sexo:"F"},
-    {nombre:"Lilliam Jiménez Mata",id:"CR-11182", edad:null, cat:"A", sexo:"F"},
-  ],
+const SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vS-FHGAAPJvj_dQEHyN09G1xVJWfblbjGrDgjCREmoi19ucjl1cuPLm5fR0ZHvcmZZ6PPdrEQ7g1pSV/pub?gid=1479802457&single=true&output=csv";
+
+const COL_MAP_C = {
+  id:           ["ID", "id", "Código", "codigo"],
+  nombre:       ["Nombre completo", "nombre", "Nombre"],
+  sexo:         ["Sexo", "sexo", "Género", "genero"],
+  edad:         ["Edad", "edad"],
+  congregacion: ["Congregación", "congregacion", "Congregacion"],
+  categoria:    ["CategoriaE", "Categoría", "categoria", "Categoria"],
 };
 
 // Congregaciones por día (para ayudantes del equipo de cocina)
@@ -369,24 +289,100 @@ const CONG_POR_DIA = {
   mie: ["Limoncito", "Río Banano"],
 };
 
-// Todas las congregaciones para picadores
-const TODAS_CONG = Object.keys(PARTICIPANTES);
+// PARTICIPANTES se construye desde el CSV; empieza con las congregaciones conocidas vacías
+let PARTICIPANTES = {
+  "Angelina": [], "Ipís": [], "Valle la Estrella": [], "Tucurrique": [],
+  "Bribrí": [], "Santa Marta": [], "Limoncito": [], "Río Banano": [],
+};
+let TODAS_CONG = Object.keys(PARTICIPANTES);
 
-// Obtener participantes del día (para ayudantes)
+// ── Parser CSV ────────────────────────────────────────────────
+function parseCsvCocina(text) {
+  const allRows = [];
+  let cur = "", inQ = false, row = [];
+  for (let i = 0; i < text.length; i++) {
+    const ch = text[i];
+    if (ch === '"') {
+      if (inQ && text[i+1] === '"') { cur += '"'; i++; }
+      else inQ = !inQ;
+    } else if (ch === ',' && !inQ) {
+      row.push(cur); cur = "";
+    } else if ((ch === '\n' || ch === '\r') && !inQ) {
+      if (ch === '\r' && text[i+1] === '\n') i++;
+      row.push(cur); cur = "";
+      if (row.some(c => c !== "")) allRows.push(row);
+      row = [];
+    } else { cur += ch; }
+  }
+  if (cur || row.length) { row.push(cur); allRows.push(row); }
+
+  const headers = allRows[0].map(h => h.replace(/^"|"$/g,"").trim());
+  const findCol = (keys) => { for(const k of keys){ const i=headers.findIndex(h=>h===k); if(i!==-1)return i; } return -1; };
+  const idx = {};
+  for(const [f,keys] of Object.entries(COL_MAP_C)) idx[f] = findCol(keys);
+
+  const result = {};
+  for(let i=1;i<allRows.length;i++){
+    const cells = allRows[i];
+    const get = f => idx[f]!==-1 ? (cells[idx[f]]||"").replace(/^"|"$/g,"").trim() : "";
+    const nombre = get("nombre"); if(!nombre) continue;
+    const edadRaw = parseInt(get("edad"))||0;
+    let cat = get("categoria");
+    if(!cat){
+      if(edadRaw < 7)       cat = "Menor";
+      else if(edadRaw < 18) cat = "Joven";
+      else                  cat = "Adulto";
+    }
+    cat = cat.charAt(0).toUpperCase()+cat.slice(1).toLowerCase();
+    if(!["Adulto","Joven","Menor"].includes(cat)) cat = "Adulto";
+    if(cat === "Menor") continue; // excluir menores
+
+    const cong = get("congregacion") || "—";
+    const p = {
+      nombre, id: get("id") || ("CR-11"+String(1000+i).slice(1)),
+      edad: edadRaw, cat: cat==="Adulto"?"A":"J",
+      sexo: get("sexo").startsWith("F")?"F":"M",
+    };
+    if(!result[cong]) result[cong] = [];
+    result[cong].push(p);
+  }
+  return result;
+}
+
+// Cargar CSV y reconstruir PARTICIPANTES
+async function cargarParticipantesCSV(){
+  try {
+    const res = await fetch(SHEET_CSV_URL, {cache:"no-store"});
+    if(!res.ok) throw new Error("HTTP "+res.status);
+    const text = await res.text();
+    const parsed = parseCsvCocina(text);
+    // Congregaciones conocidas primero, luego cualquier extra del CSV
+    const merged = {};
+    for(const cong of Object.keys(PARTICIPANTES)) merged[cong] = parsed[cong] || [];
+    for(const cong of Object.keys(parsed)) if(!merged[cong]) merged[cong] = parsed[cong];
+    PARTICIPANTES = merged;
+    TODAS_CONG = Object.keys(PARTICIPANTES).filter(c=>PARTICIPANTES[c].length>0);
+    renderTodo();
+  } catch(e){
+    console.warn("No se pudo cargar CSV de participantes:", e);
+  }
+}
+
+// Obtener participantes del día — solo los de sus congregaciones, sin menores
 function participantesDia(dia) {
   const congs = CONG_POR_DIA[dia] || [];
   let lista = [];
   congs.forEach(cong => {
-    PARTICIPANTES[cong].forEach(p => lista.push({...p, cong}));
+    (PARTICIPANTES[cong]||[]).filter(p=>p.cat!=="N").forEach(p => lista.push({...p, cong}));
   });
   return lista;
 }
 
-// Obtener todos los participantes (para picadores)
+// Obtener todos los participantes — para picadores, sin menores
 function todosParticipantes() {
   let lista = [];
   TODAS_CONG.forEach(cong => {
-    PARTICIPANTES[cong].forEach(p => lista.push({...p, cong}));
+    (PARTICIPANTES[cong]||[]).filter(p=>p.cat!=="N").forEach(p => lista.push({...p, cong}));
   });
   return lista;
 }
@@ -1335,10 +1331,65 @@ function mostrarAlerta(msg,err=false){
   setTimeout(()=>a.className="alert",2800);
 }
 
-// ── INIT ──────────────────────────────────────────────────────
+// ── BUSCADOR DE PARTICIPANTES ─────────────────────────────────
+function renderBuscarResultados(dia){
+  const q = (document.getElementById(`buscar-part-${dia}`)?.value || "").trim().toLowerCase();
+  const el = document.getElementById(`buscar-res-${dia}`);
+  if(!el) return;
+  if(!q){ el.innerHTML='<div class="buscar-empty">Escribe para buscar participantes</div>'; return; }
+  const sel = new Set(equipoDia[dia] || []);
+  const extras = new Set((ayudantesExtra[dia]||[]).map(p=>p.nombre));
+  let resultados = [];
+  TODAS_CONG.forEach(cong => {
+    (PARTICIPANTES[cong]||[]).forEach(p => {
+      if(p.nombre.toLowerCase().includes(q) || cong.toLowerCase().includes(q)){
+        resultados.push({...p, cong});
+      }
+    });
+  });
+  if(!resultados.length){ el.innerHTML='<div class="buscar-empty">Sin resultados</div>'; return; }
+  el.innerHTML = resultados.slice(0,20).map(p => {
+    const yaEsta = sel.has(p.nombre) || extras.has(p.nombre);
+    return `<div class="buscar-item${yaEsta?' ya':''}">
+      <div>
+        <div class="buscar-item-info">${p.nombre} <span style="font-size:10px;color:var(--muted)">${p.sexo==="F"?"🔴 F":"🔵 M"} · ${p.cat==="J"?"Joven":p.cat==="N"?"Menor":"Adulto"}</span></div>
+        <div class="buscar-item-cong">📍 ${p.cong}</div>
+      </div>
+      ${yaEsta
+        ? `<span style="font-size:10px;color:var(--accent);font-weight:600">✓ En equipo</span>`
+        : `<button class="buscar-item-btn" onclick="agregarDesdeBusqueda('${dia}','${p.nombre.replace(/'/g,"\\'")}','${p.cong}')">+ Agregar</button>`
+      }
+    </div>`;
+  }).join("") + (resultados.length>20?`<div class="buscar-empty">…y ${resultados.length-20} más. Refina la búsqueda.</div>`:"");
+}
+
+function agregarDesdeBusqueda(dia, nombre, cong){
+  // Si es de las congregaciones del día, añadir a equipoDia
+  const congsDia = CONG_POR_DIA[dia] || [];
+  if(congsDia.includes(cong)){
+    if(!equipoDia[dia]) equipoDia[dia]=[];
+    if(!equipoDia[dia].includes(nombre)) equipoDia[dia].push(nombre);
+  } else {
+    // Si es de otra congregación, añadir como extra con su congregación
+    if(!ayudantesExtra[dia]) ayudantesExtra[dia]=[];
+    if(!ayudantesExtra[dia].some(p=>p.nombre===nombre)){
+      ayudantesExtra[dia].push({nombre, cong});
+    }
+  }
+  guardar(); renderSeccionDia(); renderEquipo();
+  mostrarAlerta(`✅ ${nombre} agregado al equipo`);
+  // Re-render resultados después de renderSeccionDia
+  setTimeout(()=>{
+    const input = document.getElementById(`buscar-part-${dia}`);
+    if(input && input.value) renderBuscarResultados(dia);
+  }, 50);
+}
+
+
 function renderTodo(){ renderTabs(); renderSeccionDia(); renderEquipo(); renderNotas(); }
 actualizarBtn();
 renderTodo();
+cargarParticipantesCSV(); // Carga lista completa desde Google Sheets
 
 // Exponer todas las funciones al scope global (necesario en type="module")
 Object.assign(window, {
@@ -1349,6 +1400,7 @@ Object.assign(window, {
   togglePicadorJue, selTodosPicadores, deselTodosPicadores,
   selCongPicadores, deselCongPicadores, limpiarPicadoresJue,
   agregarNota, eliminarNota, renderTodo,
+  renderBuscarResultados, agregarDesdeBusqueda,
 });
 
 // Acceso overlay
