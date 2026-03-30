@@ -478,6 +478,63 @@ onValue(ref(db, DB_PATH), snap => {
   } catch(e){ console.warn("Migración Firebase:", e); }
 })();
 
+// ── LIMPIEZA DE CLAVES BASURA ay_sab_*** ─────────────────────
+// En versiones anteriores, los slots del sábado se guardaban en `asignaciones`
+// con prefijo "ay_sab_" en vez de en `asignSab` con prefijo "sab_".
+// Esta función limpia esas claves basura de Firebase automáticamente.
+(async () => {
+  try {
+    const snap = await get(ref(db, DB_PATH));
+    if(!snap.exists()) return;
+    const data = snap.val();
+    const asig = data.asig || {};
+    const sab  = data.sab  || {};
+
+    // Detectar claves ay_sab_*** en asig
+    const clavesBasura = Object.keys(asig).filter(k => k.startsWith("ay_sab_"));
+    if(!clavesBasura.length) return; // nada que limpiar
+
+    // Si asignSab (sab) está vacío, migrar los valores antes de borrar
+    const sabVacio = !Object.values(sab).some(v => v);
+    if(sabVacio){
+      const nuevoSab = {...sab};
+      clavesBasura.forEach(k => {
+        // ay_sab_aux_des_0 → sab_aux_des_0  |  ay_sab_des_0 → sab_aux_des_0
+        // Mapeamos: ay_sab_des_N → sab_aux_des_N, ay_sab_alm_N → sab_aux_alm_N, ay_sab_cen_N → sab_aux_cen_N
+        const sinPrefijo = k.replace(/^ay_sab_/, "");
+        let nuevaKey = "";
+        if(sinPrefijo.startsWith("des_"))      nuevaKey = `sab_aux_des_${sinPrefijo.replace("des_","")}`;
+        else if(sinPrefijo.startsWith("alm_")) nuevaKey = `sab_aux_alm_${sinPrefijo.replace("alm_","")}`;
+        else if(sinPrefijo.startsWith("cen_")) nuevaKey = `sab_aux_cen_${sinPrefijo.replace("cen_","")}`;
+        else if(sinPrefijo.startsWith("aux_")) nuevaKey = `sab_${sinPrefijo}`;
+        if(nuevaKey && asig[k]) nuevoSab[nuevaKey] = asig[k];
+      });
+      asignSab = nuevoSab;
+    }
+
+    // Borrar claves basura de asignaciones
+    clavesBasura.forEach(k => delete asig[k]);
+    asignaciones = asig;
+
+    // Guardar en Firebase
+    _fbIgnore = true;
+    await set(ref(db, DB_PATH), {
+      asig:      asignaciones,
+      sab:       asignSab,
+      notas:     notas,
+      equipo:    equipoDia,
+      extra:     ayudantesExtra,
+      picadores: picadoresEquipo,
+    });
+    setTimeout(() => { _fbIgnore = false; }, 1000);
+
+    localStorage.setItem("crptg11-cocina-asig", JSON.stringify(asignaciones));
+    localStorage.setItem("crptg11-cocina-sab",  JSON.stringify(asignSab));
+    renderTodo();
+    console.log(`✅ Migración sábado: ${clavesBasura.length} claves ay_sab_*** limpiadas de Firebase`);
+  } catch(e){ console.warn("Limpieza ay_sab:", e); }
+})();
+
 // Devuelve el equipo de ayudantes activo para un día
 function getEquipoDia(dia){
   const sel  = equipoDia[dia] || [];
@@ -1178,7 +1235,19 @@ function renderSabadoHTML(){
   const hayPropuesta = Object.keys(asignSab).some(k=>asignSab[k]);
 
   // Banner estado
-  const bannerHTML = hayPropuesta
+  const haySlotHuerfano = (() => {
+    const equipoActual = new Set(getEquipoDia("sab").map(p => `${p.nombre}__${p.cong}`));
+    return Object.entries(asignSab).some(([,v]) => v && !equipoActual.has(v));
+  })();
+  const bannerHTML = haySlotHuerfano && editar
+    ? `<div class="propuesta-banner" style="background:rgba(232,107,139,.08);border-color:rgba(232,107,139,.35)">
+        <div class="propuesta-txt" style="color:var(--rose)">⚠️ <strong>Hay slots con personas que ya no están en el equipo seleccionado.</strong> Limpiá los slots huérfanos o el PDF no coincidirá.</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button class="btn-teal" onclick="limpiarSlotsHuerfanosSab()" style="font-size:12px;padding:5px 14px;background:var(--rose);color:#fff">🧹 Limpiar huérfanos</button>
+          <button class="btn-cancel" onclick="limpiarSab()" style="font-size:12px;padding:5px 12px">↩ Limpiar todo</button>
+        </div>
+       </div>`
+    : hayPropuesta
     ? `<div class="propuesta-banner">
         <div class="propuesta-txt">✅ <strong>Equipo asignado.</strong> Podés modificar cualquier slot abajo.</div>
         ${editar?`<button class="btn-cancel" onclick="limpiarSab()" style="font-size:12px;padding:5px 12px">↩ Limpiar todo</button>`:""}
@@ -1338,6 +1407,23 @@ function limpiarSab(){
   if(!confirm("¿Limpiar todos los slots del sábado?")) return;
   asignSab={};
   guardar(); renderSeccionDia(); mostrarAlerta("↩ Equipo del sábado limpiado");
+}
+
+// Limpia slots del sábado cuyo valor no pertenece al equipo actualmente seleccionado
+function limpiarSlotsHuerfanosSab(){
+  const equipoActual = new Set(getEquipoDia("sab").map(p => `${p.nombre}__${p.cong}`));
+  let cambiado = false;
+  ROLES_SAB.forEach(rol => {
+    for(let i = 0; i < rol.slots; i++){
+      const k = `sab_${rol.id}_${i}`;
+      if(asignSab[k] && !equipoActual.has(asignSab[k])){
+        delete asignSab[k];
+        cambiado = true;
+      }
+    }
+  });
+  if(cambiado){ guardar(); renderSeccionDia(); mostrarAlerta("🧹 Slots con personas fuera del equipo fueron limpiados"); }
+  return cambiado;
 }
 
 // Propuesta automática: repartir solo el equipo seleccionado balanceadamente
@@ -1648,7 +1734,7 @@ cargarParticipantesCSV(); // Carga lista completa desde Google Sheets
 // Exponer todas las funciones al scope global (necesario en type="module")
 Object.assign(window, {
   toggleEdicion, verificarClave, selDia, asignar, asignarSab, togglePicador,
-  generarPropuestaDia, limpiarDia, generarPropuestaSab, limpiarSab,
+  generarPropuestaDia, limpiarDia, generarPropuestaSab, limpiarSab, limpiarSlotsHuerfanosSab,
   toggleEquipoDia, selTodosCong, deselTodosCong, agregarExternoDia,
   eliminarAyudante, mostrarFormAgregar, agregarAyudante,
   togglePicadorJue, selTodosPicadores, deselTodosPicadores,
