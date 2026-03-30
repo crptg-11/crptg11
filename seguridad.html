@@ -50,6 +50,34 @@ tr:last-child td{border-bottom:none}tr:hover td{background:rgba(232,107,139,.03)
 .sel-turno:focus{border-color:var(--accent)}
 .sel-turno option{background:#0f1117}
 @media(max-width:600px){.main{padding:14px 12px}.header{padding:10px 12px}}
+
+/* ── ESTILOS DE IMPRESIÓN ─────────────────────────────── */
+@media print {
+  * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+  body { background: #fff !important; color: #111 !important; font-size: 11pt; }
+  .header { background: #fff !important; border-bottom: 2px solid #e86b8b !important; padding: 10px 16px !important; }
+  .header-title { color: #c04060 !important; font-size: 1rem !important; }
+  .header-sub { color: #555 !important; }
+  .back, #sync-indicator, #btn-imprimir, #btn-editar-turnos, #btn-agregar,
+  .check-btn, .nota-add, .nota-del, .dia-tabs, #form-agregar,
+  #auth-turnos-overlay, #acceso-overlay, .alert { display: none !important; }
+  .main { max-width: 100% !important; padding: 10px 16px !important; }
+  .card { background: #fff !important; border: 1px solid #ddd !important; border-radius: 6px !important; margin-bottom: 14px !important; padding: 14px !important; break-inside: avoid; }
+  .section-title { color: #c04060 !important; border-bottom: 1px solid #f0c0cc; padding-bottom: 6px; margin-bottom: 10px !important; }
+  .turno-card { background: #fafafa !important; border: 1px solid #eee !important; break-inside: avoid; }
+  .turno-hora { color: #c04060 !important; }
+  .turno-hora span { background: #fde8ee !important; }
+  table { border-collapse: collapse !important; width: 100% !important; }
+  th { background: #f5e8ec !important; color: #666 !important; border: 1px solid #ddd !important; padding: 6px 10px !important; }
+  td { border: 1px solid #eee !important; padding: 6px 10px !important; color: #111 !important; }
+  .badge { background: #fde8ee !important; color: #c04060 !important; }
+  .nota-item { background: #fafafa !important; border-left: 3px solid #e86b8b !important; }
+  .nota-meta { color: #888 !important; }
+  .sel-turno { border: none !important; background: transparent !important; color: #111 !important; font-weight: 600; appearance: none; }
+  /* Print header with date/time */
+  .print-header { display: block !important; text-align: right; font-size: 10pt; color: #888; margin-bottom: 6px; }
+}
+.print-header { display: none; }
 </style>
 </head>
 <body>
@@ -62,8 +90,14 @@ tr:last-child td{border-bottom:none}tr:hover td{background:rgba(232,107,139,.03)
     </div>
   </div>
   <span id="sync-indicator" style="font-size:11px;color:var(--muted);font-weight:500;margin-left:auto;margin-right:12px">☁️ Conectando…</span>
+  <button onclick="imprimirInforme()" id="btn-imprimir"
+    style="padding:7px 16px;border-radius:100px;border:1px solid rgba(232,107,139,.4);background:transparent;color:var(--accent);font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .15s;display:flex;align-items:center;gap:6px"
+    onmouseover="this.style.background='rgba(232,107,139,.1)'" onmouseout="this.style.background='transparent'">
+    🖨️ Imprimir informe
+  </button>
 </div>
 <div class="main">
+<div class="print-header" id="print-timestamp"></div>
 
   <!-- TURNOS POR DÍA -->
   <div class="card">
@@ -534,6 +568,17 @@ Object.assign(window, {
 })();
 </script>
 <!-- OVERLAY DE ACCESO -->
+<script>
+function imprimirInforme(){
+  const ts = document.getElementById("print-timestamp");
+  if(ts){
+    const ahora = new Date();
+    ts.textContent = "Impreso el " + ahora.toLocaleDateString("es-CR",{weekday:"long",year:"numeric",month:"long",day:"numeric"})
+      + " a las " + ahora.toLocaleTimeString("es-CR",{hour:"2-digit",minute:"2-digit"});
+  }
+  setTimeout(()=> window.print(), 80);
+}
+</script>
 <div id="acceso-overlay" style="display:none;position:fixed;inset:0;background:rgba(11,13,19,.97);z-index:9999;align-items:center;justify-content:center;flex-direction:column">
   <div style="background:#13161f;border:1px solid #22263a;border-radius:24px;padding:40px 42px;text-align:center;max-width:360px;width:90%;box-shadow:0 24px 64px rgba(0,0,0,.6)">
     <div style="font-size:2.4rem;margin-bottom:12px">🔐</div>
