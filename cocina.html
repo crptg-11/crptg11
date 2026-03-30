@@ -810,9 +810,6 @@ function renderSeccionDia(){
   if(diaActivo === "gen"){
     sec.innerHTML = renderVistaGeneralHTML();
     eq.style.display = "none";
-  } else if(diaActivo === "sab"){
-    sec.innerHTML = renderSabadoHTML();
-    eq.style.display = "none";
   } else {
     sec.innerHTML = renderEquipoSelectorHTML() + renderAyudantesHTML() + renderPicadoresHTML();
     eq.style.display = "block";
@@ -827,25 +824,7 @@ function renderEquipoSelectorHTML(){
   const equipo = getEquipoDia(dia);
   const editar = puedeEditar();
   const hayEquipo = equipo.length > 0;
-  const hayPropuesta = hayEquipo && Object.keys(asignaciones).some(k=>k.startsWith(`ay_${dia}`));
-
-  const banner = hayPropuesta
-    ? `<div class="propuesta-banner" style="background:rgba(62,207,184,.08);border-color:rgba(62,207,184,.25)">
-        <div class="propuesta-txt" style="color:var(--accent)">✅ <strong>Propuesta generada.</strong> Podés modificar cualquier slot abajo.</div>
-        ${editar?`<button class="btn-cancel" onclick="limpiarDia('${dia}')" style="font-size:12px;padding:5px 12px">↩ Limpiar</button>`:""}
-       </div>`
-    : hayEquipo && editar
-      ? `<div class="propuesta-banner" style="background:rgba(62,207,184,.06);border-color:rgba(62,207,184,.2)">
-          <div class="propuesta-txt" style="color:var(--accent)">💡 Equipo listo (${equipo.length} personas). Generá la propuesta de turnos.</div>
-          <button class="btn-green" onclick="generarPropuestaDia('${dia}')">⚡ Propuesta automática</button>
-         </div>`
-      : !hayEquipo && editar
-        ? `<div class="propuesta-banner" style="background:rgba(232,168,56,.06);border-color:rgba(232,168,56,.2)">
-            <div class="propuesta-txt" style="color:var(--gold)">⚠️ Seleccioná personas del equipo de ayudantes primero.</div>
-           </div>`
-        : "";
-
-  if(!editar && !hayEquipo) return banner;
+  const banner = "";
 
   // Si el CSV aún no cargó, mostrar aviso
   const csvPendiente = congs.some(c => (PARTICIPANTES[c]||[]).length === 0);
@@ -891,7 +870,7 @@ function renderEquipoSelectorHTML(){
       <button class="btn-teal" style="padding:6px 14px;font-size:12px" onclick="agregarExternoDia('${dia}')">+ Externo</button>
     </div>` : "";
 
-  const buscarPanelHTML = (editar && dia === "jue") ? `
+  const buscarPanelHTML = (editar && (dia === "jue" || dia === "vie" || dia === "sab")) ? `
     <div class="buscar-panel">
       <div class="buscar-panel-title">🔍 Buscar participantes para agregar al equipo</div>
       <div class="buscar-input-wrap">
@@ -994,133 +973,73 @@ function renderPicadoresHTML(){
   if(!dia.picado) return "";
   const editar = puedeEditar();
   const key = `pic_${diaActivo}`;
+  const selPic = new Set(picadoresEquipo[diaActivo] || []);
+  const equipoPic = getEquipoPicadores(diaActivo);
+  const maxPic = 5;
 
-  // ── JUEVES: selección por checkbox de cualquier congregación ──
-  if(diaActivo === "jue"){
-    const selPic = new Set(picadoresEquipo["jue"] || []);
-    const equipoPic = getEquipoPicadores("jue");
-    const maxPic = 5;
-    const hayPropPic = equipoPic.length > 0 && Object.keys(asignaciones).some(k=>k.startsWith(`pic_jue`));
-
-    // Banner estado
-    const bannerPic = hayPropPic
-      ? `<div class="propuesta-banner" style="background:rgba(139,127,232,.08);border-color:rgba(139,127,232,.25);margin-bottom:14px">
-          <div class="propuesta-txt" style="color:var(--lav)">✅ <strong>Picadores asignados.</strong> Podés modificar los slots abajo.</div>
-          ${editar?`<button class="btn-cancel" onclick="limpiarPicadoresJue()" style="font-size:12px;padding:5px 12px">↩ Limpiar picadores</button>`:""}
-         </div>`
-      : equipoPic.length > 0 && editar
-        ? `<div class="propuesta-banner" style="background:rgba(139,127,232,.06);border-color:rgba(139,127,232,.2);margin-bottom:14px">
-            <div class="propuesta-txt" style="color:var(--lav)">💡 ${equipoPic.length} picador(es) seleccionado(s). Podés asignarlos a los slots.</div>
-           </div>`
-        : editar
-          ? `<div class="propuesta-banner" style="background:rgba(232,168,56,.06);border-color:rgba(232,168,56,.2);margin-bottom:14px">
-              <div class="propuesta-txt" style="color:var(--gold)">⚠️ Seleccioná hasta ${maxPic} picadores de cualquier congregación.</div>
-             </div>`
-          : "";
-
-    // Panel de selección de picadores por checkbox (todas las congregaciones)
-    const panelSelPic = editar ? `
-      <div style="background:#181b24;border:1px solid rgba(139,127,232,.2);border-radius:10px;padding:14px;margin-bottom:16px">
-        <div style="font-size:11px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:var(--lav);margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px">
-          <span>👥 Seleccionar Picadores <span style="color:var(--muted);font-weight:400">(máx. ${maxPic} · ${selPic.size} seleccionados)</span></span>
-          <div style="display:flex;gap:6px">
-            <button onclick="selTodosPicadores()" style="padding:2px 9px;border-radius:6px;border:1px solid rgba(139,127,232,.3);background:transparent;color:var(--lav);font-size:10px;cursor:pointer">Todos (${maxPic})</button>
-            <button onclick="deselTodosPicadores()" style="padding:2px 9px;border-radius:6px;border:1px solid var(--border);background:transparent;color:var(--muted);font-size:10px;cursor:pointer">Ninguno</button>
-          </div>
+  // Panel de selección de picadores por checkbox (todas las congregaciones)
+  const panelSelPic = editar ? `
+    <div style="background:#181b24;border:1px solid rgba(139,127,232,.2);border-radius:10px;padding:14px;margin-bottom:16px">
+      <div style="font-size:11px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:var(--lav);margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px">
+        <span>👥 Seleccionar Picadores <span style="color:var(--muted);font-weight:400">(máx. ${maxPic} · ${selPic.size} seleccionados)</span></span>
+        <div style="display:flex;gap:6px">
+          <button onclick="selTodosPicadores('${diaActivo}')" style="padding:2px 9px;border-radius:6px;border:1px solid rgba(139,127,232,.3);background:transparent;color:var(--lav);font-size:10px;cursor:pointer">Todos (${maxPic})</button>
+          <button onclick="deselTodosPicadores('${diaActivo}')" style="padding:2px 9px;border-radius:6px;border:1px solid var(--border);background:transparent;color:var(--muted);font-size:10px;cursor:pointer">Ninguno</button>
         </div>
-        ${TODAS_CONG.map(cong => {
-          const miembros = (PARTICIPANTES[cong]||[]).filter(p=>p.cat!=="N");
-          if(!miembros.length) return "";
-          return `<div style="margin-bottom:12px">
-            <div style="font-size:10px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:var(--muted);margin-bottom:6px;display:flex;align-items:center;justify-content:space-between">
-              <span>📍 ${cong}</span>
-              <div style="display:flex;gap:6px">
-                <button onclick="selCongPicadores('${cong}')" style="padding:2px 9px;border-radius:6px;border:1px solid rgba(139,127,232,.3);background:transparent;color:var(--lav);font-size:10px;cursor:pointer">Todos</button>
-                <button onclick="deselCongPicadores('${cong}')" style="padding:2px 9px;border-radius:6px;border:1px solid var(--border);background:transparent;color:var(--muted);font-size:10px;cursor:pointer">Ninguno</button>
-              </div>
-            </div>
-            <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:5px">
-              ${miembros.map(p=>{
-                const marcado = selPic.has(p.nombre);
-                const disabled = !marcado && selPic.size >= maxPic;
-                return `<label style="display:flex;align-items:center;gap:7px;padding:6px 9px;border-radius:7px;
-                  background:${marcado?'rgba(139,127,232,.1)':'#1a1d2a'};
-                  border:1px solid ${marcado?'rgba(139,127,232,.35)':'var(--border)'};
-                  cursor:${disabled?'not-allowed':'pointer'};opacity:${disabled?'.45':'1'};transition:all .15s">
-                  <input type="checkbox" ${marcado?'checked':''} ${disabled?'disabled':''} 
-                    onchange="togglePicadorJue('${p.nombre.replace(/'/g,"\\'")}',this.checked)"
-                    style="accent-color:var(--lav);width:13px;height:13px">
-                  <div style="flex:1;min-width:0">
-                    <div style="font-size:12px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${p.nombre}</div>
-                    <div style="font-size:10px;color:var(--muted)">${p.sexo==="F"?"🔴 F":"🔵 M"} · ${p.cat==="J"?"Joven":"Adulto"} · ${cong}</div>
-                  </div>
-                </label>`;
-              }).join("")}
-            </div>
-          </div>`;
-        }).join("")}
-      </div>` : "";
-
-    // Slots de asignación de picadores
-    const slotsHTML = Array.from({length:5},(_,i)=>{
-      const k = `${key}_${i}`;
-      const asig = asignaciones[k] || "";
-      if(editar){
-        // Opciones: solo del equipo de picadores seleccionados por checkbox
-        let opts = `<option value="">— Sin asignar —</option>`;
-        const porCongPic = {};
-        equipoPic.forEach(p => {
-          const c = p.cong || "—";
-          if(!porCongPic[c]) porCongPic[c] = [];
-          porCongPic[c].push(p);
-        });
-        Object.keys(porCongPic).forEach(cong => {
-          opts += `<optgroup label="📍 ${cong}">`;
-          porCongPic[cong].forEach(p => {
-            const val = `${p.nombre}__${p.cong||cong}`;
-            opts += `<option value="${val}"${asig===val?" selected":""}>${p.nombre}</option>`;
-          });
-          opts += `</optgroup>`;
-        });
-        return `<div class="slot-row">
-          <span class="slot-num">${i+1}</span>
-          <select class="sel-ayudante" style="border-color:rgba(139,127,232,.3)" onchange="asignar('${k}',this.value)">${opts}</select>
-        </div>`;
-      } else {
-        const nombre = asig ? asig.split("__")[0] : "";
-        const cong   = asig ? asig.split("__")[1] : "";
-        return `<div class="slot-row">
-          <span class="slot-num">${i+1}</span>
-          <span style="font-size:13px;${asig?'font-weight:600':'color:var(--muted);font-style:italic'}">${nombre||"Sin asignar"}${cong?` <span class="badge-cong" style="background:rgba(139,127,232,.1);color:var(--lav);border-color:rgba(139,127,232,.2)">${cong}</span>`:""}</span>
-        </div>`;
-      }
-    }).join("");
-
-    return `<div class="card" id="card-picadores">
-      <div class="section-title" style="color:var(--lav)">
-        <span>🔪 Picadores — Jueves</span>
-        <small style="font-family:'DM Sans',sans-serif;font-size:11px;color:var(--muted);font-weight:400">Hasta 5 · Cualquier congregación</small>
       </div>
-      ${bannerPic}
-      ${panelSelPic}
-      ${equipoPic.length || !editar ? `<div class="turno-grid">
-        <div class="turno-card" style="border-color:rgba(139,127,232,.3)">
-          <div class="turno-header">
-            <span class="turno-label" style="color:var(--lav)">🔪 Picado</span>
-            <span class="turno-tag" style="background:rgba(139,127,232,.1);color:var(--lav);border-color:rgba(139,127,232,.25)">Fuera de horario de comidas</span>
+      ${TODAS_CONG.map(cong => {
+        const miembros = (PARTICIPANTES[cong]||[]).filter(p=>p.cat!=="N");
+        if(!miembros.length) return "";
+        return `<div style="margin-bottom:12px">
+          <div style="font-size:10px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:var(--muted);margin-bottom:6px;display:flex;align-items:center;justify-content:space-between">
+            <span>📍 ${cong}</span>
+            <div style="display:flex;gap:6px">
+              <button onclick="selCongPicadores('${cong}','${diaActivo}')" style="padding:2px 9px;border-radius:6px;border:1px solid rgba(139,127,232,.3);background:transparent;color:var(--lav);font-size:10px;cursor:pointer">Todos</button>
+              <button onclick="deselCongPicadores('${cong}','${diaActivo}')" style="padding:2px 9px;border-radius:6px;border:1px solid var(--border);background:transparent;color:var(--muted);font-size:10px;cursor:pointer">Ninguno</button>
+            </div>
           </div>
-          ${slotsHTML}
-        </div>
-      </div>` : ""}
-    </div>`;
-  }
+          <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:5px">
+            ${miembros.map(p=>{
+              const marcado = selPic.has(p.nombre);
+              const disabled = !marcado && selPic.size >= maxPic;
+              return `<label style="display:flex;align-items:center;gap:7px;padding:6px 9px;border-radius:7px;
+                background:${marcado?'rgba(139,127,232,.1)':'#1a1d2a'};
+                border:1px solid ${marcado?'rgba(139,127,232,.35)':'var(--border)'};
+                cursor:${disabled?'not-allowed':'pointer'};opacity:${disabled?'.45':'1'};transition:all .15s">
+                <input type="checkbox" ${marcado?'checked':''} ${disabled?'disabled':''}
+                  onchange="togglePicador('${diaActivo}','${p.nombre.replace(/'/g,"\'")}',this.checked)"
+                  style="accent-color:var(--lav);width:13px;height:13px">
+                <div style="flex:1;min-width:0">
+                  <div style="font-size:12px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${p.nombre}</div>
+                  <div style="font-size:10px;color:var(--muted)">${p.sexo==="F"?"🔴 F":"🔵 M"} · ${p.cat==="J"?"Joven":"Adulto"} · ${cong}</div>
+                </div>
+              </label>`;
+            }).join("")}
+          </div>
+        </div>`;
+      }).join("")}
+    </div>` : "";
 
-  // ── VIERNES: picadores con dropdown (cualquier congregación) ──
+  // Slots de asignación de picadores
   const slotsHTML = Array.from({length:5},(_,i)=>{
     const k = `${key}_${i}`;
     const asig = asignaciones[k] || "";
     if(editar){
-      const opts = buildOptsPicadores(asig);
+      let opts = `<option value="">— Sin asignar —</option>`;
+      const porCongPic = {};
+      equipoPic.forEach(p => {
+        const c = p.cong || "—";
+        if(!porCongPic[c]) porCongPic[c] = [];
+        porCongPic[c].push(p);
+      });
+      Object.keys(porCongPic).forEach(cong => {
+        opts += `<optgroup label="📍 ${cong}">`;
+        porCongPic[cong].forEach(p => {
+          const val = `${p.nombre}__${p.cong||cong}`;
+          opts += `<option value="${val}"${asig===val?" selected":""}>${p.nombre}</option>`;
+        });
+        opts += `</optgroup>`;
+      });
       return `<div class="slot-row">
         <span class="slot-num">${i+1}</span>
         <select class="sel-ayudante" style="border-color:rgba(139,127,232,.3)" onchange="asignar('${k}',this.value)">${opts}</select>
@@ -1138,9 +1057,10 @@ function renderPicadoresHTML(){
   return `<div class="card" id="card-picadores">
     <div class="section-title" style="color:var(--lav)">
       <span>🔪 Picadores</span>
-      <small style="font-family:'DM Sans',sans-serif;font-size:11px;color:var(--muted);font-weight:400">Fuera de horario · Cualquier congregación</small>
+      <small style="font-family:'DM Sans',sans-serif;font-size:11px;color:var(--muted);font-weight:400">Hasta 5 · Cualquier congregación</small>
     </div>
-    <div class="turno-grid">
+    ${panelSelPic}
+    ${equipoPic.length || !editar ? `<div class="turno-grid">
       <div class="turno-card" style="border-color:rgba(139,127,232,.3)">
         <div class="turno-header">
           <span class="turno-label" style="color:var(--lav)">🔪 Picado</span>
@@ -1148,61 +1068,62 @@ function renderPicadoresHTML(){
         </div>
         ${slotsHTML}
       </div>
-    </div>
+    </div>` : ""}
   </div>`;
 }
-
 function asignar(k,v){ asignaciones[k]=v; guardar(); renderSeccionDia(); renderEquipo(); mostrarAlerta(v?`✅ ${v.split("__")[0]} asignado`:"↩ Slot liberado"); }
 
-// ── GESTIÓN PICADORES JUEVES (checkbox) ──────────────────────
-function togglePicadorJue(nombre, checked){
-  if(!picadoresEquipo["jue"]) picadoresEquipo["jue"]=[];
+// ── GESTIÓN PICADORES (checkbox, genérico por día) ──────────────
+function togglePicador(dia, nombre, checked){
+  if(!picadoresEquipo[dia]) picadoresEquipo[dia]=[];
   const maxPic = 5;
   if(checked){
-    if(picadoresEquipo["jue"].length >= maxPic){ mostrarAlerta(`⚠️ Máximo ${maxPic} picadores`,true); renderSeccionDia(); return; }
-    if(!picadoresEquipo["jue"].includes(nombre)) picadoresEquipo["jue"].push(nombre);
+    if(picadoresEquipo[dia].length >= maxPic){ mostrarAlerta(`⚠️ Máximo ${maxPic} picadores`,true); renderSeccionDia(); return; }
+    if(!picadoresEquipo[dia].includes(nombre)) picadoresEquipo[dia].push(nombre);
   } else {
-    picadoresEquipo["jue"] = picadoresEquipo["jue"].filter(n=>n!==nombre);
-    // limpiar asignaciones de slots si ya no está en el equipo
+    picadoresEquipo[dia] = picadoresEquipo[dia].filter(n=>n!==nombre);
     for(let i=0;i<5;i++){
-      const k=`pic_jue_${i}`;
+      const k=`pic_${dia}_${i}`;
       if(asignaciones[k]?.split("__")[0]===nombre) delete asignaciones[k];
     }
   }
   guardar(); renderSeccionDia();
 }
 
-function selTodosPicadores(){
-  if(!picadoresEquipo["jue"]) picadoresEquipo["jue"]=[];
+// Alias para compatibilidad con código anterior
+function togglePicadorJue(nombre, checked){ togglePicador("jue", nombre, checked); }
+
+function selTodosPicadores(dia){
+  if(!picadoresEquipo[dia]) picadoresEquipo[dia]=[];
   const todos = [];
   TODAS_CONG.forEach(cong=>{
     PARTICIPANTES[cong].filter(p=>p.cat!=="N").forEach(p=>{ if(!todos.includes(p.nombre)) todos.push(p.nombre); });
   });
-  picadoresEquipo["jue"] = todos.slice(0,5);
+  picadoresEquipo[dia] = todos.slice(0,5);
   guardar(); renderSeccionDia();
 }
 
-function deselTodosPicadores(){
-  picadoresEquipo["jue"]=[];
-  for(let i=0;i<5;i++){ const k=`pic_jue_${i}`; delete asignaciones[k]; }
+function deselTodosPicadores(dia){
+  picadoresEquipo[dia]=[];
+  for(let i=0;i<5;i++){ delete asignaciones[`pic_${dia}_${i}`]; }
   guardar(); renderSeccionDia();
 }
 
-function selCongPicadores(cong){
-  if(!picadoresEquipo["jue"]) picadoresEquipo["jue"]=[];
+function selCongPicadores(cong, dia){
+  if(!picadoresEquipo[dia]) picadoresEquipo[dia]=[];
   const miembros = (PARTICIPANTES[cong]||[]).filter(p=>p.cat!=="N");
   miembros.forEach(p=>{
-    if(picadoresEquipo["jue"].length < 5 && !picadoresEquipo["jue"].includes(p.nombre))
-      picadoresEquipo["jue"].push(p.nombre);
+    if(picadoresEquipo[dia].length < 5 && !picadoresEquipo[dia].includes(p.nombre))
+      picadoresEquipo[dia].push(p.nombre);
   });
   guardar(); renderSeccionDia();
 }
 
-function deselCongPicadores(cong){
+function deselCongPicadores(cong, dia){
   const nombres = new Set((PARTICIPANTES[cong]||[]).map(p=>p.nombre));
-  picadoresEquipo["jue"] = (picadoresEquipo["jue"]||[]).filter(n=>!nombres.has(n));
+  picadoresEquipo[dia] = (picadoresEquipo[dia]||[]).filter(n=>!nombres.has(n));
   for(let i=0;i<5;i++){
-    const k=`pic_jue_${i}`;
+    const k=`pic_${dia}_${i}`;
     if(asignaciones[k] && nombres.has(asignaciones[k].split("__")[0])) delete asignaciones[k];
   }
   guardar(); renderSeccionDia();
@@ -1472,7 +1393,6 @@ function turnosDePersona(nombre){
 }
 
 function renderEquipo(){
-  if(diaActivo==="sab") return;
   const todas=todosLosAyudantes();
   const cEl=document.getElementById("contador");
   if(cEl) cEl.textContent=`${todas.length} en el equipo`;
@@ -1657,7 +1577,10 @@ function renderBuscarResultados(dia){
   if(!q){ el.innerHTML='<div class="buscar-empty">Escribe para buscar participantes</div>'; return; }
   const sel = new Set(equipoDia[dia] || []);
   const extras = new Set((ayudantesExtra[dia]||[]).map(p=>p.nombre));
-  const congsExcluidas = dia === "jue" ? new Set(["Valle la Estrella","Tucurrique"]) : new Set();
+  const congsExcluidas = dia === "jue" ? new Set(["Valle la Estrella","Tucurrique"])
+    : dia === "vie" ? new Set(["Bribrí","Santa Marta","Limoncito","Río Banano","Angelina","Ipís"])
+    : dia === "sab" ? new Set(TODAS_CONG.filter(c => c !== "Angelina" && c !== "Ipís"))
+    : new Set();
   let resultados = [];
   TODAS_CONG.forEach(cong => {
     if(congsExcluidas.has(cong)) return;
@@ -1713,7 +1636,7 @@ cargarParticipantesCSV(); // Carga lista completa desde Google Sheets
 
 // Exponer todas las funciones al scope global (necesario en type="module")
 Object.assign(window, {
-  toggleEdicion, verificarClave, selDia, asignar, asignarSab,
+  toggleEdicion, verificarClave, selDia, asignar, asignarSab, togglePicador,
   generarPropuestaDia, limpiarDia, generarPropuestaSab, limpiarSab,
   toggleEquipoDia, selTodosCong, deselTodosCong, agregarExternoDia,
   eliminarAyudante, mostrarFormAgregar, agregarAyudante,
