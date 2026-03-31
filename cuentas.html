@@ -133,29 +133,33 @@ tr:last-child td{border-bottom:none}tr:hover td{background:rgba(232,168,56,.02)}
 .subtot{background:rgba(232,168,56,.04);border-top:2px solid rgba(232,168,56,.2)!important}
 .subtot td{font-weight:600;color:var(--muted);font-size:11px}
 
-/* ── COMPROBANTE SECTION ── */
-.comp-section{max-width:1440px;margin:0 auto 24px;padding:0 22px}
-.comp-box{background:var(--surface);border:1px solid var(--border);border-radius:13px;padding:18px 20px}
-.comp-box h3{font-family:'Playfair Display',serif;font-size:1rem;margin-bottom:4px;color:var(--gold)}
-.comp-box p{color:var(--muted);font-size:12px;margin-bottom:14px}
-.comp-drop{border:2px dashed var(--border);border-radius:10px;padding:22px 16px;text-align:center;cursor:pointer;transition:all .2s;position:relative}
-.comp-drop:hover,.comp-drop.drag{border-color:var(--teal);background:rgba(62,207,184,.04)}
-.comp-drop input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
-.comp-drop .drop-icon{font-size:2rem;margin-bottom:6px}
-.comp-drop .drop-text{font-size:13px;color:var(--muted)}
-.comp-drop .drop-types{font-size:11px;color:var(--muted);margin-top:4px;opacity:.6}
-.comp-preview{margin-top:14px;display:flex;flex-wrap:wrap;gap:10px}
-.comp-item{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px 12px;display:flex;align-items:center;gap:10px;min-width:220px;max-width:320px;flex:1}
-.comp-item .ci-icon{font-size:1.4rem;flex-shrink:0}
-.comp-item .ci-info{flex:1;min-width:0}
-.comp-item .ci-name{font-size:12px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.comp-item .ci-size{font-size:10px;color:var(--muted);margin-top:2px}
-.comp-item .ci-del{background:none;border:none;color:var(--rose);cursor:pointer;font-size:14px;padding:2px 5px;border-radius:4px;flex-shrink:0}
-.comp-item .ci-del:hover{background:rgba(232,107,139,.12)}
-.comp-saved{display:inline-flex;align-items:center;gap:5px;font-size:11px;color:var(--emerald);margin-top:8px;opacity:0;transition:opacity .4s}
-.comp-saved.show{opacity:1}
-.comp-upload-btn{margin-top:12px;background:rgba(62,207,184,.1);border:1px solid rgba(62,207,184,.3);color:var(--teal);padding:8px 18px;border-radius:8px;cursor:pointer;font-size:12px;font-family:'DM Sans',sans-serif;font-weight:600;transition:all .15s}
-.comp-upload-btn:hover{background:rgba(62,207,184,.2)}
+/* ── COMPROBANTE MODAL (por participante) ── */
+#comp-modal{position:fixed;inset:0;background:rgba(11,13,19,.92);z-index:8889;display:none;align-items:center;justify-content:center;padding:20px 10px}
+#comp-modal.open{display:flex}
+.cmpbox{background:#13161f;border:1px solid rgba(62,207,184,.25);border-radius:20px;padding:26px 28px;max-width:480px;width:100%;box-shadow:0 16px 56px rgba(0,0,0,.7);max-height:90vh;overflow-y:auto}
+.cmpbox h2{font-family:'Playfair Display',serif;font-size:1.1rem;color:var(--teal)}
+.cmp-participant{font-size:13px;font-weight:600;color:var(--text);margin-bottom:2px}
+.cmp-sub{color:var(--muted);font-size:11.5px;margin-bottom:12px;line-height:1.5}
+.cmp-drop{border:2px dashed var(--border);border-radius:10px;padding:18px 14px;text-align:center;cursor:pointer;transition:all .2s;position:relative}
+.cmp-drop:hover,.cmp-drop.drag{border-color:var(--teal);background:rgba(62,207,184,.04)}
+.cmp-drop input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
+.cmp-file-row{display:flex;align-items:center;gap:9px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:8px 10px;margin-bottom:6px}
+.cmp-file-row .cfi{font-size:1.2rem;flex-shrink:0}
+.cmp-file-row .cfn{flex:1;font-size:11px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cmp-file-row .cfs{font-size:10px;color:var(--muted)}
+.cmp-file-row .cfd{background:none;border:none;color:var(--rose);cursor:pointer;font-size:13px;padding:2px 5px;border-radius:4px}
+.cmp-file-row .cfd:hover{background:rgba(232,107,139,.12)}
+.cmp-existing-lbl{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;color:var(--muted);margin-bottom:6px}
+.cmp-save-btn{background:rgba(62,207,184,.12);border:1px solid rgba(62,207,184,.35);color:var(--teal);padding:8px 18px;border-radius:9px;cursor:pointer;font-size:12px;font-family:'DM Sans',sans-serif;font-weight:600;transition:all .15s}
+.cmp-save-btn:hover{background:rgba(62,207,184,.22)}
+.cmp-cancel{background:transparent;border:1px solid var(--border);color:var(--muted);padding:8px 16px;border-radius:9px;font-family:'DM Sans',sans-serif;font-size:12px;cursor:pointer;margin-left:auto}
+.cmp-cancel:hover{border-color:var(--muted);color:var(--text)}
+.cmp-ok{font-size:11px;color:var(--emerald);opacity:0;transition:opacity .4s}
+.cmp-ok.show{opacity:1}
+/* badge in table cell */
+.comp-btn{display:inline-flex;align-items:center;gap:3px;background:rgba(62,207,184,.09);border:1px solid rgba(62,207,184,.25);color:var(--teal);padding:4px 9px;border-radius:7px;cursor:pointer;font-size:10px;font-family:'DM Sans',sans-serif;font-weight:600;transition:all .15s;white-space:nowrap}
+.comp-btn:hover{background:rgba(62,207,184,.2)}
+.comp-btn.has{background:rgba(16,185,129,.1);border-color:rgba(16,185,129,.3);color:var(--emerald)}
 
 /* ── INFORME MODAL ── */
 #report-modal{position:fixed;inset:0;background:rgba(11,13,19,.92);z-index:8888;display:none;align-items:flex-start;justify-content:center;overflow-y:auto;padding:30px 10px}
@@ -270,21 +274,37 @@ tr:last-child td{border-bottom:none}tr:hover td{background:rgba(232,168,56,.02)}
   <button class="fbtn" id="f-pendientes" onclick="setFilter('pendientes',this)">⏳ Pendiente</button>
 </div>
 
-<!-- COMPROBANTE DE PAGO -->
-<div class="comp-section">
-  <div class="comp-box">
-    <h3>📎 Adjuntar Comprobante de Pago</h3>
-    <p>Sube uno o varios comprobantes de pago. Se aceptan imágenes JPG, PNG o archivos PDF.</p>
-    <div class="comp-drop" id="comp-drop" ondragover="compDragOver(event)" ondragleave="compDragLeave()" ondrop="compDrop(event)">
-      <input type="file" id="comp-file" accept=".jpg,.jpeg,.png,.pdf,image/jpeg,image/png,application/pdf" multiple onchange="compFileChange(event)">
-      <div class="drop-icon">📂</div>
-      <div class="drop-text">Arrastra archivos aquí o <span style="color:var(--teal);font-weight:600">haz clic para seleccionar</span></div>
-      <div class="drop-types">JPG · PNG · PDF — hasta 10 MB por archivo</div>
+<!-- COMPROBANTE MODAL (por participante) -->
+<div id="comp-modal">
+  <div class="cmpbox">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
+      <h2>📎 Comprobante de Pago</h2>
+      <button onclick="closeCompModal()" style="background:none;border:none;color:var(--muted);font-size:1.3rem;cursor:pointer;line-height:1">✕</button>
     </div>
-    <div class="comp-preview" id="comp-preview"></div>
-    <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
-      <button class="comp-upload-btn" id="comp-upload-btn" onclick="uploadComprobantes()" style="display:none">⬆ Guardar comprobantes</button>
-      <span class="comp-saved" id="comp-saved">✅ Comprobantes guardados</span>
+    <div class="cmp-participant" id="cmp-participant-lbl"></div>
+    <p class="cmp-sub">Adjunta uno o varios comprobantes (JPG, PNG o PDF, máx 10 MB c/u). Los archivos existentes aparecen abajo.</p>
+
+    <!-- existing files -->
+    <div id="cmp-existing" style="margin-bottom:12px"></div>
+
+    <!-- drop zone -->
+    <div class="cmp-drop" id="cmp-drop"
+      ondragover="cmpDragOver(event)" ondragleave="cmpDragLeave()" ondrop="cmpDrop(event)">
+      <input type="file" id="cmp-file-inp"
+        accept=".jpg,.jpeg,.png,.pdf,image/jpeg,image/png,application/pdf"
+        multiple onchange="cmpFileChange(event)">
+      <div style="font-size:1.8rem;margin-bottom:5px">📂</div>
+      <div style="font-size:12px;color:var(--muted)">Arrastra aquí o <span style="color:var(--teal);font-weight:600">selecciona archivos</span></div>
+      <div style="font-size:10px;color:var(--muted);margin-top:3px;opacity:.6">JPG · PNG · PDF</div>
+    </div>
+
+    <!-- pending preview -->
+    <div id="cmp-pending" style="margin-top:10px"></div>
+
+    <div style="display:flex;align-items:center;gap:10px;margin-top:12px;flex-wrap:wrap">
+      <button class="cmp-save-btn" id="cmp-save-btn" onclick="saveComprobante()" style="display:none">⬆ Guardar</button>
+      <span class="cmp-ok" id="cmp-ok">✅ Guardado</span>
+      <button class="cmp-cancel" onclick="closeCompModal()">Cerrar</button>
     </div>
   </div>
 </div>
@@ -319,6 +339,7 @@ tr:last-child td{border-bottom:none}tr:hover td{background:rgba(232,168,56,.02)}
           <th onclick="sortBy('total')" id="th-total">Total ₡</th>
           <th class="ns" style="text-align:center;min-width:120px">Estado</th>
           <th class="ns" style="text-align:center">Factura</th>
+          <th class="ns" style="text-align:center">Comprobante</th>
         </tr>
       </thead>
       <tbody id="tbody"></tbody>
@@ -343,7 +364,7 @@ const PROXIES = [
 ];
 
 // ── STATE ──────────────────────────────────────────────────
-let DATA=[], HOSPEDAJE={}, MONTOS={}, PAGOS={};
+let DATA=[], HOSPEDAJE={}, MONTOS={}, PAGOS={}, COMPROBANTES={};
 let canEdit=false, sortCol='nombre', sortDir=1, curPage=1, activeFilter='todos';
 const PER=25;
 
@@ -418,6 +439,12 @@ function loadAll(){
     window._onValue(window._ref(window._db,'cuentas_pagos'),sp=>{
       PAGOS=sp.val()||{};
       if(DATA.length){renderTable();updateSummary();}
+    });
+    window._onValue(window._ref(window._db,'comprobantes_v2'),sc=>{
+      const raw=sc.val()||{};
+      COMPROBANTES={};
+      for(const [id,arr] of Object.entries(raw)) COMPROBANTES[id]=Array.isArray(arr)?arr:Object.values(arr);
+      if(DATA.length) renderTable();
     });
     window._get(window._ref(window._db,'cuentas_montos')).then(s=>{
       MONTOS=s.val()||{};
@@ -561,7 +588,7 @@ function renderTable(){
   const slice=sorted.slice((curPage-1)*PER,curPage*PER);
   const tbody=document.getElementById('tbody');
   if(!slice.length){
-    tbody.innerHTML=`<tr><td colspan="11" style="text-align:center;padding:38px;color:var(--muted)">Sin resultados</td></tr>`;
+    tbody.innerHTML=`<tr><td colspan="12" style="text-align:center;padding:38px;color:var(--muted)">Sin resultados</td></tr>`;
   } else {
     tbody.innerHTML=slice.map(p=>{
       const m=getMontos(p),tot=m.part+m.alim+m.hosp;
@@ -570,6 +597,9 @@ function renderTable(){
       const lugarBadge=lugar==='Cedros'?`<span class="b bcedros">🌿 Cedros</span>`:lugar==='Gosén'?`<span class="b bgosen">🏠 Gosén</span>`:`<span class="b bsin">—</span>`;
       const alimentBadge=p.quiere_alim?`<span class="b bsi">Sí</span>`:`<span class="b bno">No</span>`;
       const sid=p.id.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+      const compMeta=COMPROBANTES[p.id]||[];
+      const hasComp=compMeta.length>0;
+      const compLbl=hasComp?`📎 ${compMeta.length}`:'＋ Adjuntar';
       return `<tr>
         <td style="font-size:11px;color:var(--muted)">${p.id}</td>
         <td><div class="nm">${p.nombre}</div><div style="font-size:10px;color:var(--muted);margin-top:1px">${p.categoria}</div></td>
@@ -590,6 +620,9 @@ function renderTable(){
         </td>
         <td style="text-align:center">
           <button class="dl-btn" onclick="downloadFactura('${sid}')">⬇ PDF</button>
+        </td>
+        <td style="text-align:center">
+          <button class="comp-btn${hasComp?' has':''}" onclick="openCompModal('${sid}')">${compLbl}</button>
         </td>
       </tr>`;
     }).join('')+renderSubtotRow(sorted);
@@ -613,7 +646,7 @@ function renderSubtotRow(sorted){
     <td style="text-align:right;font-weight:700">₡${tA.toLocaleString('es-CR')}</td>
     <td style="text-align:right;font-weight:700">₡${tH.toLocaleString('es-CR')}</td>
     <td class="total-cell" style="text-align:right">₡${tT.toLocaleString('es-CR')}</td>
-    <td></td><td></td></tr>`;
+    <td></td><td></td><td></td></tr>`;
 }
 function goP(p,pages){if(p>=1&&p<=pages){curPage=p;renderTable();}}
 
@@ -804,64 +837,116 @@ function downloadFactura(id){
   showToast(`📄 Factura de ${p.nombre.split(' ')[0]} descargada`);
 }
 
-// ── COMPROBANTE DE PAGO ────────────────────────────────────
-let pendingFiles=[];
-function compDragOver(e){e.preventDefault();document.getElementById('comp-drop').classList.add('drag');}
-function compDragLeave(){document.getElementById('comp-drop').classList.remove('drag');}
-function compDrop(e){
-  e.preventDefault();
-  document.getElementById('comp-drop').classList.remove('drag');
-  const files=[...e.dataTransfer.files].filter(f=>isValidComp(f));
-  addCompFiles(files);
+// ── COMPROBANTE POR PARTICIPANTE ──────────────────────────
+let cmpCurrentId=null, cmpPending=[];
+
+function openCompModal(id){
+  cmpCurrentId=id;
+  cmpPending=[];
+  const p=DATA.find(x=>x.id===id);
+  document.getElementById('cmp-participant-lbl').textContent=p?`${p.nombre} — ${p.congregacion}`:'';
+  document.getElementById('cmp-save-btn').style.display='none';
+  document.getElementById('cmp-ok').classList.remove('show');
+  renderCmpPending();
+  renderCmpExisting();
+  document.getElementById('comp-modal').classList.add('open');
 }
-function compFileChange(e){
-  const files=[...e.target.files].filter(f=>isValidComp(f));
-  addCompFiles(files);
+function closeCompModal(){
+  document.getElementById('comp-modal').classList.remove('open');
+  cmpCurrentId=null; cmpPending=[];
+}
+
+function cmpDragOver(e){e.preventDefault();document.getElementById('cmp-drop').classList.add('drag');}
+function cmpDragLeave(){document.getElementById('cmp-drop').classList.remove('drag');}
+function cmpDrop(e){
+  e.preventDefault();
+  document.getElementById('cmp-drop').classList.remove('drag');
+  const files=[...e.dataTransfer.files].filter(f=>cmpValidate(f));
+  cmpAddFiles(files);
+}
+function cmpFileChange(e){
+  const files=[...e.target.files].filter(f=>cmpValidate(f));
+  cmpAddFiles(files);
   e.target.value='';
 }
-function isValidComp(f){
+function cmpValidate(f){
   const ok=/^(image\/jpeg|image\/png|application\/pdf)$/.test(f.type)||/\.(jpg|jpeg|png|pdf)$/i.test(f.name);
-  if(!ok){showToast('⚠️ Solo se aceptan JPG, PNG o PDF');}
-  if(f.size>10*1024*1024){showToast('⚠️ Archivo muy grande (máx 10 MB)');return false;}
-  return ok;
+  if(!ok){showToast('⚠️ Solo JPG, PNG o PDF');return false;}
+  if(f.size>10*1024*1024){showToast('⚠️ Máx 10 MB por archivo');return false;}
+  return true;
 }
-function addCompFiles(files){
+function cmpAddFiles(files){
   files.forEach(f=>{
-    if(pendingFiles.find(x=>x.name===f.name&&x.size===f.size))return;
-    pendingFiles.push(f);
+    if(cmpPending.find(x=>x.name===f.name&&x.size===f.size))return;
+    cmpPending.push(f);
   });
-  renderCompPreview();
+  renderCmpPending();
 }
-function renderCompPreview(){
-  const wrap=document.getElementById('comp-preview');
-  const btn=document.getElementById('comp-upload-btn');
-  if(!pendingFiles.length){wrap.innerHTML='';btn.style.display='none';return;}
+function cmpRemovePending(i){cmpPending.splice(i,1);renderCmpPending();}
+
+function renderCmpPending(){
+  const wrap=document.getElementById('cmp-pending');
+  const btn=document.getElementById('cmp-save-btn');
+  if(!cmpPending.length){wrap.innerHTML='';btn.style.display='none';return;}
   btn.style.display='';
-  wrap.innerHTML=pendingFiles.map((f,i)=>{
-    const icon=f.type==='application/pdf'?'📄':f.type.startsWith('image/')? '🖼':'📎';
-    const kb=(f.size/1024).toFixed(1);
-    return `<div class="comp-item">
-      <div class="ci-icon">${icon}</div>
-      <div class="ci-info"><div class="ci-name" title="${f.name}">${f.name}</div><div class="ci-size">${kb} KB</div></div>
-      <button class="ci-del" onclick="removeComp(${i})" title="Eliminar">✕</button>
-    </div>`;
-  }).join('');
+  wrap.innerHTML=`<div class="cmp-existing-lbl" style="color:var(--teal);margin-bottom:6px">Nuevos archivos</div>`+
+    cmpPending.map((f,i)=>{
+      const icon=f.type==='application/pdf'?'📄':'🖼';
+      const kb=(f.size/1024).toFixed(1);
+      return `<div class="cmp-file-row">
+        <span class="cfi">${icon}</span>
+        <div style="flex:1;min-width:0"><div class="cfn" title="${f.name}">${f.name}</div><div class="cfs">${kb} KB · pendiente</div></div>
+        <button class="cfd" onclick="cmpRemovePending(${i})" title="Quitar">✕</button>
+      </div>`;
+    }).join('');
 }
-function removeComp(i){pendingFiles.splice(i,1);renderCompPreview();}
-async function uploadComprobantes(){
-  if(!pendingFiles.length)return;
-  // Store references in Firebase (names + sizes as metadata, files stay in browser)
-  const meta=pendingFiles.map(f=>({name:f.name,size:f.size,type:f.type,fecha:new Date().toISOString()}));
+
+function renderCmpExisting(){
+  const wrap=document.getElementById('cmp-existing');
+  const list=COMPROBANTES[cmpCurrentId]||[];
+  if(!list.length){wrap.innerHTML='';return;}
+  wrap.innerHTML=`<div class="cmp-existing-lbl">Comprobantes guardados (${list.length})</div>`+
+    list.map((m,i)=>{
+      const icon=m.type==='application/pdf'?'📄':'🖼';
+      const kb=m.size?(m.size/1024).toFixed(1)+'KB':'';
+      const fecha=m.fecha?new Date(m.fecha).toLocaleDateString('es-CR',{day:'2-digit',month:'short',year:'numeric'}):'';
+      return `<div class="cmp-file-row">
+        <span class="cfi">${icon}</span>
+        <div style="flex:1;min-width:0"><div class="cfn" title="${m.name}">${m.name}</div><div class="cfs">${[kb,fecha].filter(Boolean).join(' · ')}</div></div>
+        <button class="cfd" onclick="cmpDeleteExisting(${i})" title="Eliminar">🗑</button>
+      </div>`;
+    }).join('');
+}
+
+async function cmpDeleteExisting(i){
+  if(!cmpCurrentId)return;
+  const list=[...(COMPROBANTES[cmpCurrentId]||[])];
+  list.splice(i,1);
   try{
-    const existing=(await window._get(window._ref(window._db,'comprobantes'))).val()||[];
-    const merged=[...(Array.isArray(existing)?existing:[]),...meta];
-    await window._set(window._ref(window._db,'comprobantes'),merged);
-    const sv=document.getElementById('comp-saved');
-    sv.classList.add('show');
-    setTimeout(()=>sv.classList.remove('show'),3000);
-    showToast(`✅ ${pendingFiles.length} comprobante(s) registrado(s)`);
-    pendingFiles=[];
-    renderCompPreview();
+    await window._set(window._ref(window._db,`comprobantes_v2/${cmpCurrentId}`),list.length?list:null);
+    COMPROBANTES[cmpCurrentId]=list;
+    renderCmpExisting();
+    renderTable();
+    showToast('🗑 Comprobante eliminado');
+  } catch(e){showToast('⚠️ Error al eliminar');}
+}
+
+async function saveComprobante(){
+  if(!cmpCurrentId||!cmpPending.length)return;
+  const newMeta=cmpPending.map(f=>({name:f.name,size:f.size,type:f.type,fecha:new Date().toISOString()}));
+  const existing=COMPROBANTES[cmpCurrentId]||[];
+  const merged=[...existing,...newMeta];
+  try{
+    await window._set(window._ref(window._db,`comprobantes_v2/${cmpCurrentId}`),merged);
+    COMPROBANTES[cmpCurrentId]=merged;
+    cmpPending=[];
+    renderCmpPending();
+    renderCmpExisting();
+    renderTable();
+    const ok=document.getElementById('cmp-ok');
+    ok.classList.add('show');
+    setTimeout(()=>ok.classList.remove('show'),2800);
+    showToast(`✅ Comprobante(s) guardados para ${DATA.find(x=>x.id===cmpCurrentId)?.nombre.split(' ')[0]||cmpCurrentId}`);
   } catch(e){showToast('⚠️ Error al guardar');}
 }
 
