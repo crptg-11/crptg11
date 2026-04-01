@@ -166,20 +166,20 @@ tr:last-child td{border-bottom:none}tr:hover td{background:rgba(232,168,56,.02)}
 .cmp-view-btn:hover{background:rgba(139,127,232,.25);border-color:var(--lav)}
 
 /* ── LIGHTBOX ── */
-#lightbox{position:fixed;inset:0;background:rgba(5,6,10,.96);z-index:9990;display:none;align-items:center;justify-content:center;padding:16px;flex-direction:column;gap:12px}
+#lightbox{position:fixed;inset:0;background:rgba(5,6,10,.96);z-index:9990;display:none;align-items:center;justify-content:center;padding:20px 16px;flex-direction:column;gap:12px}
 #lightbox.open{display:flex}
-#lightbox-inner{max-width:92vw;max-height:82vh;min-width:260px;min-height:120px;border-radius:12px;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.8);display:flex;align-items:center;justify-content:center;background:#13161f;border:1px solid rgba(255,255,255,.07)}
-#lightbox-img{max-width:min(900px,90vw);max-height:78vh;border-radius:8px;object-fit:contain;display:none}
-#lightbox-pdf{width:min(900px,90vw);height:78vh;border:none;border-radius:8px;display:none}
-#lightbox-nodata{color:var(--muted);font-size:13px;padding:36px 28px;text-align:center;line-height:1.7;display:none}
+#lightbox-inner{position:relative;max-width:min(960px,92vw);max-height:80vh;min-width:280px;min-height:140px;border-radius:12px;box-shadow:0 20px 60px rgba(0,0,0,.8);display:flex;align-items:center;justify-content:center;background:#13161f;border:1px solid rgba(255,255,255,.07)}
+#lightbox-img{display:none;max-width:min(960px,92vw);max-height:80vh;width:auto;height:auto;border-radius:10px;object-fit:contain;vertical-align:middle}
+#lightbox-pdf{display:none;width:min(960px,90vw);height:78vh;border:none;border-radius:10px}
+#lightbox-nodata{color:var(--muted);font-size:13px;padding:40px 32px;text-align:center;line-height:1.7;display:none}
 #lightbox-nodata strong{color:var(--rose);display:block;font-size:15px;margin-bottom:8px}
-.lb-bar{display:flex;align-items:center;gap:8px;width:min(900px,92vw)}
+.lb-bar{display:flex;align-items:center;gap:8px;width:min(960px,92vw)}
 .lb-title{color:var(--text);font-size:12px;font-weight:500;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;opacity:.7}
 .lb-close{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);color:var(--text);padding:7px 14px;border-radius:8px;cursor:pointer;font-size:12px;font-family:'DM Sans',sans-serif;transition:all .15s}
 .lb-close:hover{background:rgba(255,255,255,.18)}
 .lb-dl{background:rgba(139,127,232,.15);border:1px solid rgba(139,127,232,.35);color:var(--lav);padding:7px 14px;border-radius:8px;cursor:pointer;font-size:12px;font-family:'DM Sans',sans-serif;font-weight:600;transition:all .15s}
 .lb-dl:hover{background:rgba(139,127,232,.28)}
-.lb-loading{color:var(--muted);font-size:12px;padding:36px 28px;display:flex;flex-direction:column;align-items:center;gap:10px}
+.lb-loading{color:var(--muted);font-size:12px;padding:40px 32px;display:flex;flex-direction:column;align-items:center;gap:10px}
 .lb-spinner{width:28px;height:28px;border:3px solid rgba(255,255,255,.08);border-top-color:var(--teal);border-radius:50%;animation:spin .7s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
 
@@ -1024,14 +1024,17 @@ function openLightbox(id,idx){
   _lbCurrentName=m.name||'comprobante';
   _lbCurrentType=m.type||'';
   document.getElementById('lb-title').textContent=m.name||'Comprobante';
-  // Reset all panels
   const loading=document.getElementById('lb-loading');
   const img=document.getElementById('lightbox-img');
   const frame=document.getElementById('lightbox-pdf');
   const nodata=document.getElementById('lightbox-nodata');
   const dlBtn=document.getElementById('lb-dl-btn');
-  loading.style.display='flex'; img.style.display='none'; frame.style.display='none'; nodata.style.display='none';
-  dlBtn.style.display=m.data?'':'none';
+  // reset
+  loading.style.display='flex';
+  img.style.display='none'; img.src='';
+  frame.style.display='none'; frame.src='';
+  nodata.style.display='none';
+  dlBtn.style.display='none';
   document.getElementById('lightbox').classList.add('open');
   document.body.style.overflow='hidden';
   if(!m.data){
@@ -1039,16 +1042,15 @@ function openLightbox(id,idx){
     nodata.style.display='';
     return;
   }
+  dlBtn.style.display='';
   const isPdf=m.type==='application/pdf'||/\.pdf$/i.test(m.name);
   if(isPdf){
-    frame.onload=()=>{loading.style.display='none'};
+    frame.onload=()=>{loading.style.display='none'; frame.style.display='';};
     frame.src=m.data;
-    frame.style.display='';
   } else {
-    img.onload=()=>{loading.style.display='none'};
-    img.onerror=()=>{loading.style.display='none';nodata.style.display='';};
+    img.onload=()=>{loading.style.display='none'; img.style.display='block';};
+    img.onerror=()=>{loading.style.display='none'; nodata.style.display='';};
     img.src=m.data;
-    img.style.display='';
   }
 }
 function closeLightbox(){
