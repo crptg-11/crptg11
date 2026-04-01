@@ -1,0 +1,948 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Menú — CRPTG 11</title>
+<script>
+  const tieneAcceso = localStorage.getItem("crptg11-auth")==="ok"||localStorage.getItem("crptg11-ver")==="ok";
+  if(!tieneAcceso){ document.documentElement.style.visibility="hidden"; }
+</script>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#0f1117;--surface:#181b24;--surface2:#1f2333;
+  --border:#2a2d40;--accent:#3ecfb8;--gold:#e8a838;
+  --rose:#e86b8b;--lav:#8b7fe8;--green:#5ecf7a;
+  --text:#e8e8f0;--muted:#7a7d95;
+}
+body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min-height:100vh}
+
+/* HEADER */
+.header{background:var(--surface);border-bottom:1px solid var(--border);padding:14px 28px;display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.back{color:var(--muted);font-size:13px;text-decoration:none;transition:color .15s}.back:hover{color:var(--accent)}
+.header-title{font-family:'Playfair Display',serif;font-size:1.15rem;color:var(--accent)}
+.header-sub{font-size:11px;color:var(--muted);margin-top:3px}
+
+/* MAIN */
+.main{max-width:1100px;margin:0 auto;padding:28px 24px 60px}
+
+/* DAY TABS */
+.day-tabs{display:flex;gap:8px;margin-bottom:28px;flex-wrap:wrap}
+.tab{padding:9px 22px;border-radius:100px;border:1px solid var(--border);background:transparent;color:var(--muted);font-size:13px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .18s}
+.tab:hover{border-color:var(--accent);color:var(--accent)}
+.tab.active{border-color:var(--accent);color:var(--accent);background:rgba(62,207,184,.13)}
+
+/* SPECIAL TABS */
+.tab.tab-gold:hover{border-color:var(--gold);color:var(--gold)}
+.tab.tab-gold.active{border-color:var(--gold);color:var(--gold);background:rgba(232,168,56,.13)}
+.tab.tab-lav:hover{border-color:var(--lav);color:var(--lav)}
+.tab.tab-lav.active{border-color:var(--lav);color:var(--lav);background:rgba(139,127,232,.13)}
+
+/* DAY PANEL */
+.day-panel{display:none;animation:fadeIn .25s ease}
+.day-panel.visible{display:block}
+@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+
+/* MEAL SECTION */
+.meal-section{margin-bottom:28px}
+.meal-header{display:flex;align-items:center;gap:10px;margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid var(--border)}
+.meal-icon{font-size:1.3rem}
+.meal-title{font-family:'Playfair Display',serif;font-size:1.1rem;font-weight:700}
+.meal-title.gold{color:var(--gold)}
+.meal-title.teal{color:var(--accent)}
+.meal-title.lav{color:var(--lav)}
+.meal-badge{padding:3px 10px;border-radius:100px;font-size:10px;font-weight:700;letter-spacing:.8px;text-transform:uppercase}
+.badge-desayuno{background:rgba(232,168,56,.12);color:var(--gold);border:1px solid rgba(232,168,56,.25)}
+.badge-almuerzo{background:rgba(62,207,184,.12);color:var(--accent);border:1px solid rgba(62,207,184,.25)}
+.badge-cena{background:rgba(139,127,232,.12);color:var(--lav);border:1px solid rgba(139,127,232,.25)}
+
+/* MEAL SECTION */
+.meal-section{margin-bottom:36px;page-break-inside:avoid}
+.meal-header{display:flex;align-items:center;gap:12px;margin-bottom:18px;padding-bottom:12px;border-bottom:1px solid var(--border)}
+.meal-icon{font-size:1.6rem}
+.meal-title{font-family:'Playfair Display',serif;font-size:1.4rem;font-weight:700}
+.meal-title.gold{color:var(--gold)}
+.meal-title.teal{color:var(--accent)}
+.meal-title.lav{color:var(--lav)}
+.meal-badge{padding:4px 13px;border-radius:100px;font-size:11px;font-weight:700;letter-spacing:.8px;text-transform:uppercase}
+.badge-desayuno{background:rgba(232,168,56,.12);color:var(--gold);border:1px solid rgba(232,168,56,.25)}
+.badge-almuerzo{background:rgba(62,207,184,.12);color:var(--accent);border:1px solid rgba(62,207,184,.25)}
+.badge-cena{background:rgba(139,127,232,.12);color:var(--lav);border:1px solid rgba(139,127,232,.25)}
+
+/* DISHES GRID */
+.dishes-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px}
+
+/* DISH CARD */
+.dish-card{background:var(--surface2);border:1px solid var(--border);border-radius:14px;overflow:hidden;transition:border-color .18s,transform .15s}
+.dish-card:hover{transform:translateY(-2px)}
+.dish-card.gold{border-color:rgba(232,168,56,.2)}.dish-card.gold:hover{border-color:rgba(232,168,56,.5)}
+.dish-card.teal{border-color:rgba(62,207,184,.2)}.dish-card.teal:hover{border-color:rgba(62,207,184,.5)}
+.dish-card.lav{border-color:rgba(139,127,232,.2)}.dish-card.lav:hover{border-color:rgba(139,127,232,.5)}
+.dish-card.rose{border-color:rgba(232,107,139,.2)}.dish-card.rose:hover{border-color:rgba(232,107,139,.5)}
+
+.dish-name-bar{padding:14px 18px;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--border)}
+.dish-name-bar.gold{background:rgba(232,168,56,.06)}
+.dish-name-bar.teal{background:rgba(62,207,184,.06)}
+.dish-name-bar.lav{background:rgba(139,127,232,.06)}
+.dish-name-bar.rose{background:rgba(232,107,139,.06)}
+.dish-name-icon{font-size:20px}
+.dish-name-text{font-size:15px;font-weight:600;color:var(--text)}
+.dish-name-text.gold{color:var(--gold)}
+.dish-name-text.teal{color:var(--accent)}
+.dish-name-text.lav{color:var(--lav)}
+.dish-name-text.rose{color:var(--rose)}
+
+.dish-ingredients{padding:12px 18px}
+.ing-row{display:flex;justify-content:space-between;align-items:baseline;padding:6px 0;border-bottom:1px solid rgba(42,45,64,.6);font-size:14px}
+.ing-row:last-child{border-bottom:none}
+.ing-name{color:var(--muted)}
+.ing-qty{font-weight:700;color:var(--text);white-space:nowrap;margin-left:10px;font-size:15px}
+
+/* FRESCOS */
+.frescos-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px}
+
+/* SHOPPING */
+.shopping-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:14px}
+.shop-cat{background:var(--surface2);border:1px solid var(--border);border-radius:14px;overflow:hidden}
+.shop-cat-header{padding:12px 16px;font-size:12px;font-weight:700;letter-spacing:1px;text-transform:uppercase;border-bottom:1px solid var(--border)}
+.shop-cat-header.gold{background:rgba(232,168,56,.08);color:var(--gold)}
+.shop-cat-header.teal{background:rgba(62,207,184,.08);color:var(--accent)}
+.shop-cat-header.lav{background:rgba(139,127,232,.08);color:var(--lav)}
+.shop-cat-header.rose{background:rgba(232,107,139,.08);color:var(--rose)}
+.shop-cat-header.green{background:rgba(94,207,122,.08);color:var(--green)}
+.shop-items{padding:10px 16px}
+.shop-item{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid rgba(42,45,64,.6);font-size:14px}
+.shop-item:last-child{border-bottom:none}
+.shop-item-name{color:var(--muted)}
+.shop-item-qty{font-weight:700;color:var(--text);white-space:nowrap;margin-left:8px;font-size:14px}
+
+/* SECTION HEADING */
+.section-heading{font-family:'Playfair Display',serif;font-size:1.15rem;color:var(--muted);margin-bottom:20px;display:flex;align-items:center;gap:8px}
+.section-heading span{color:var(--text)}
+
+/* PRINT BUTTON */
+.print-bar{display:flex;justify-content:flex-end;margin-bottom:20px}
+.btn-print{display:flex;align-items:center;gap:8px;padding:9px 20px;border-radius:100px;border:1px solid rgba(62,207,184,.4);background:transparent;color:var(--accent);font-size:13px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .18s}
+.btn-print:hover{background:rgba(62,207,184,.1);border-color:var(--accent)}
+.btn-print svg{width:16px;height:16px;stroke:var(--accent);fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+
+/* PRINT STYLES */
+@media print {
+  body{background:#fff !important;color:#111 !important}
+  .header,.day-tabs,.print-bar{display:none !important}
+  .day-panel{display:none !important}
+  .day-panel.printing{display:block !important}
+  .print-title{display:block !important}
+  .dish-card{background:#f8f8f8 !important;border:1px solid #ddd !important;break-inside:avoid}
+  .dish-name-bar{background:#f0f0f0 !important;border-bottom:1px solid #ddd !important}
+  .dish-name-text,.dish-name-text.gold,.dish-name-text.teal,.dish-name-text.lav,.dish-name-text.rose{color:#111 !important}
+  .ing-name{color:#555 !important}
+  .ing-qty{color:#111 !important}
+  .meal-title,.meal-title.gold,.meal-title.teal,.meal-title.lav{color:#111 !important}
+  .meal-header{border-bottom:2px solid #ddd !important}
+  .meal-badge{border:1px solid #ccc !important;color:#333 !important;background:#eee !important}
+  .ing-row{border-bottom:1px solid #eee !important}
+  .dishes-grid{grid-template-columns:repeat(2,1fr) !important}
+  .shop-cat{background:#f8f8f8 !important;border:1px solid #ddd !important;break-inside:avoid}
+  .shop-cat-header{background:#f0f0f0 !important;color:#111 !important;border-bottom:1px solid #ddd !important}
+  .shop-item{border-bottom:1px solid #eee !important}
+  .shop-item-name{color:#555 !important}
+  .shop-item-qty{color:#111 !important}
+  .shopping-grid{grid-template-columns:repeat(3,1fr) !important}
+  .section-heading{color:#111 !important}
+  .section-heading span{color:#111 !important}
+  .frescos-grid{grid-template-columns:repeat(2,1fr) !important}
+  .main{padding:0 !important;max-width:100% !important}
+}
+
+.print-title{display:none;font-family:'Playfair Display',serif;font-size:1.6rem;font-weight:900;color:#111;margin-bottom:6px;padding-bottom:10px;border-bottom:2px solid #ddd}
+.print-subtitle{display:none;font-size:13px;color:#666;margin-bottom:24px}
+@media print{.print-title,.print-subtitle{display:block !important}}
+
+@media(max-width:600px){
+  .main{padding:16px 14px}
+  .header{padding:10px 14px}
+  .dishes-grid,.frescos-grid,.shopping-grid{grid-template-columns:1fr}
+  .day-tabs{gap:6px}
+  .tab{padding:7px 14px;font-size:12px}
+}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <a href="index.html" class="back">← Panel Central</a>
+  <div>
+    <div class="header-title">🍽️ Menú — CRPTG 11</div>
+    <div class="header-sub">Costa Rica Para Tu Gloria 2026 · 160 personas</div>
+  </div>
+</div>
+
+<div class="main">
+
+  <div class="day-tabs">
+    <button class="tab active" onclick="showDay('mie',this)">Miércoles</button>
+    <button class="tab" onclick="showDay('jue',this)">Jueves</button>
+    <button class="tab" onclick="showDay('vie',this)">Viernes</button>
+    <button class="tab tab-gold" onclick="showDay('sab',this)">Sábado</button>
+    <button class="tab tab-lav" onclick="showDay('frescos',this)">Frescos</button>
+    <button class="tab tab-lav" onclick="showDay('compras',this)">Lista de Compras</button>
+  </div>
+
+  <!-- ──────────── MIÉRCOLES ──────────── -->
+  <div class="day-panel visible" id="panel-mie">
+    <div class="print-title">🍽️ Menú CRPTG 11 — Miércoles</div>
+    <div class="print-subtitle">Costa Rica Para Tu Gloria 2026 · 160 personas</div>
+    <div class="print-bar">
+      <button class="btn-print" onclick="imprimirDia('mie')">
+        <svg viewBox="0 0 24 24"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+        Imprimir Miércoles
+      </button>
+    </div>
+
+    <div class="meal-section">
+      <div class="meal-header">
+        <span class="meal-icon">🌙</span>
+        <span class="meal-title lav">Cena</span>
+        <span class="meal-badge badge-cena">Cena</span>
+      </div>
+      <div class="dishes-grid">
+
+        <div class="dish-card lav">
+          <div class="dish-name-bar lav"><span class="dish-name-icon">🥣</span><span class="dish-name-text lav">Crema de ayote (entrada)</span></div>
+          <div class="dish-ingredients">
+            <div class="ing-row"><span class="ing-name">Ayote / calabaza</span><span class="ing-qty">18–20 kg</span></div>
+            <div class="ing-row"><span class="ing-name">Agua o caldo</span><span class="ing-qty">25–28 l</span></div>
+            <div class="ing-row"><span class="ing-name">Leche o crema</span><span class="ing-qty">4 l</span></div>
+            <div class="ing-row"><span class="ing-name">Cebolla</span><span class="ing-qty">2 kg</span></div>
+            <div class="ing-row"><span class="ing-name">Ajo</span><span class="ing-qty">150 g</span></div>
+            <div class="ing-row"><span class="ing-name">Sal</span><span class="ing-qty">300 g</span></div>
+            <div class="ing-row"><span class="ing-name">Mantequilla / aceite</span><span class="ing-qty">500 ml</span></div>
+          </div>
+        </div>
+
+        <div class="dish-card gold">
+          <div class="dish-name-bar gold"><span class="dish-name-icon">🍚</span><span class="dish-name-text gold">Arroz con zanahoria</span></div>
+          <div class="dish-ingredients">
+            <div class="ing-row"><span class="ing-name">Arroz</span><span class="ing-qty">16 kg</span></div>
+            <div class="ing-row"><span class="ing-name">Zanahoria</span><span class="ing-qty">2.4 kg</span></div>
+            <div class="ing-row"><span class="ing-name">Ajo</span><span class="ing-qty">80 g</span></div>
+            <div class="ing-row"><span class="ing-name">Sal</span><span class="ing-qty">190 g</span></div>
+            <div class="ing-row"><span class="ing-name">Aceite</span><span class="ing-qty">800 ml</span></div>
+            <div class="ing-row"><span class="ing-name">Agua</span><span class="ing-qty">29–30 l</span></div>
+          </div>
+        </div>
+
+        <div class="dish-card teal">
+          <div class="dish-name-bar teal"><span class="dish-name-icon">🍗</span><span class="dish-name-text teal">Pechuga en salsa blanca (160 filets)</span></div>
+          <div class="dish-ingredients">
+            <div class="ing-row"><span class="ing-name">Pechuga de pollo</span><span class="ing-qty">28.8 kg</span></div>
+            <div class="ing-row"><span class="ing-name">Leche</span><span class="ing-qty">16 l</span></div>
+            <div class="ing-row"><span class="ing-name">Harina</span><span class="ing-qty">1.6 kg</span></div>
+            <div class="ing-row"><span class="ing-name">Mantequilla</span><span class="ing-qty">1.6 kg</span></div>
+            <div class="ing-row"><span class="ing-name">Crema</span><span class="ing-qty">3 l</span></div>
+            <div class="ing-row"><span class="ing-name">Sal + especias</span><span class="ing-qty">al gusto</span></div>
+          </div>
+        </div>
+
+        <div class="dish-card rose">
+          <div class="dish-name-bar rose"><span class="dish-name-icon">🥦</span><span class="dish-name-text rose">Vegetales a la mantequilla</span></div>
+          <div class="dish-ingredients">
+            <div class="ing-row"><span class="ing-name">Zucchini</span><span class="ing-qty">6.5 kg</span></div>
+            <div class="ing-row"><span class="ing-name">Brócoli</span><span class="ing-qty">6.5 kg</span></div>
+            <div class="ing-row"><span class="ing-name">Chayote</span><span class="ing-qty">6.5 kg</span></div>
+            <div class="ing-row"><span class="ing-name">Mantequilla</span><span class="ing-qty">1.5 kg</span></div>
+            <div class="ing-row"><span class="ing-name">Sal</span><span class="ing-qty">150 g</span></div>
+            <div class="ing-row"><span class="ing-name">Ajo</span><span class="ing-qty">100 g</span></div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- ──────────── JUEVES ──────────── -->
+  <div class="day-panel" id="panel-jue">
+    <div class="print-title">🍽️ Menú CRPTG 11 — Jueves</div>
+    <div class="print-subtitle">Costa Rica Para Tu Gloria 2026 · 160 personas</div>
+    <div class="print-bar">
+      <button class="btn-print" onclick="imprimirDia('jue')">
+        <svg viewBox="0 0 24 24"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+        Imprimir Jueves
+      </button>
+    </div>
+
+    <div class="meal-section">
+      <div class="meal-header">
+        <span class="meal-icon">🌅</span>
+        <span class="meal-title gold">Desayuno</span>
+        <span class="meal-badge badge-desayuno">Desayuno</span>
+      </div>
+      <div class="dishes-grid">
+        <div class="dish-card gold">
+          <div class="dish-name-bar gold"><span class="dish-name-icon">🍚</span><span class="dish-name-text gold">Gallo pinto</span></div>
+          <div class="dish-ingredients">
+            <div class="ing-row"><span class="ing-name">Arroz crudo</span><span class="ing-qty">16 kg</span></div>
+            <div class="ing-row"><span class="ing-name">Frijoles cocidos</span><span class="ing-qty">8 kg</span></div>
+            <div class="ing-row"><span class="ing-name">Agua</span><span class="ing-qty">29–30 l</span></div>
+            <div class="ing-row"><span class="ing-name">Aceite</span><span class="ing-qty">1.5 l</span></div>
+            <div class="ing-row"><span class="ing-name">Cebolla</span><span class="ing-qty">3 kg</span></div>
+            <div class="ing-row"><span class="ing-name">Chile dulce</span><span class="ing-qty">2.5 kg</span></div>
+            <div class="ing-row"><span class="ing-name">Ajo</span><span class="ing-qty">200 g</span></div>
+            <div class="ing-row"><span class="ing-name">Culantro</span><span class="ing-qty">500 g</span></div>
+            <div class="ing-row"><span class="ing-name">Salsa Lizano</span><span class="ing-qty">1.5–2 l</span></div>
+            <div class="ing-row"><span class="ing-name">Sal</span><span class="ing-qty">200–250 g</span></div>
+          </div>
+        </div>
+        <div class="dish-card teal">
+          <div class="dish-name-bar teal"><span class="dish-name-icon">🥚</span><span class="dish-name-text teal">Huevo (2 por persona)</span></div>
+          <div class="dish-ingredients">
+            <div class="ing-row"><span class="ing-name">Huevos (~11 cartones)</span><span class="ing-qty">320 und</span></div>
+            <div class="ing-row"><span class="ing-name">Leche (opcional)</span><span class="ing-qty">al gusto</span></div>
+          </div>
+        </div>
+        <div class="dish-card lav">
+          <div class="dish-name-bar lav"><span class="dish-name-icon">🧀</span><span class="dish-name-text lav">Queso y natilla</span></div>
+          <div class="dish-ingredients">
+            <div class="ing-row"><span class="ing-name">Queso (40–50g/p)</span><span class="ing-qty">6.5–8 kg</span></div>
+            <div class="ing-row"><span class="ing-name">Natilla (30g/p)</span><span class="ing-qty">5 kg</span></div>
+          </div>
+        </div>
+        <div class="dish-card rose">
+          <div class="dish-name-bar rose"><span class="dish-name-icon">🍌</span><span class="dish-name-text rose">Plátano maduro (tajadas)</span></div>
+          <div class="dish-ingredients">
+            <div class="ing-row"><span class="ing-name">Plátanos maduros</span><span class="ing-qty">40 und</span></div>
+            <div class="ing-row"><span class="ing-name">Tajadas totales</span><span class="ing-qty">320 und</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="meal-section">
+      <div class="meal-header">
+        <span class="meal-icon">☀️</span>
+        <span class="meal-title teal">Almuerzo</span>
+        <span class="meal-badge badge-almuerzo">Almuerzo</span>
+      </div>
+      <div class="dishes-grid">
+        <div class="dish-card gold">
+          <div class="dish-name-bar gold"><span class="dish-name-icon">🍚</span><span class="dish-name-text gold">Arroz blanco 8oz</span></div>
+          <div class="dish-ingredients">
+            <div class="ing-row"><span class="ing-name">Arroz crudo</span><span class="ing-qty">16 kg</span></div>
+            <div class="ing-row"><span class="ing-name">Agua</span><span class="ing-qty">29–30 l</span></div>
+            <div class="ing-row"><span class="ing-name">Sal</span><span class="ing-qty">180–200 g</span></div>
+            <div class="ing-row"><span class="ing-name">Aceite</span><span class="ing-qty">700–800 ml</span></div>
+            <div class="ing-row"><span class="ing-name">Ajo</span><span class="ing-qty">80 g</span></div>
+          </div>
+        </div>
+        <div class="dish-card teal">
+          <div class="dish-name-bar teal"><span class="dish-name-icon">🍖</span><span class="dish-name-text teal">Costilla de res con papas</span></div>
+          <div class="dish-ingredients">
+            <div class="ing-row"><span class="ing-name">Costilla de res</span><span class="ing-qty">50–56 kg</span></div>
+            <div class="ing-row"><span class="ing-name">Papa</span><span class="ing-qty">24 kg</span></div>
+            <div class="ing-row"><span class="ing-name">Cebolla</span><span class="ing-qty">4 kg</span></div>
+            <div class="ing-row"><span class="ing-name">Chile dulce</span><span class="ing-qty">3 kg</span></div>
+            <div class="ing-row"><span class="ing-name">Ajo</span><span class="ing-qty">300 g</span></div>
+            <div class="ing-row"><span class="ing-name">Culantro</span><span class="ing-qty">500 g</span></div>
+            <div class="ing-row"><span class="ing-name">Salsa inglesa/Lizano</span><span class="ing-qty">1.5 l</span></div>
+            <div class="ing-row"><span class="ing-name">Sal</span><span class="ing-qty">350 g</span></div>
+          </div>
+        </div>
+        <div class="dish-card lav">
+          <div class="dish-name-bar lav"><span class="dish-name-icon">🫘</span><span class="dish-name-text lav">Frijoles rojos 6oz</span></div>
+          <div class="dish-ingredients">
+            <div class="ing-row"><span class="ing-name">Frijol crudo</span><span class="ing-qty">12–13 kg</span></div>
+            <div class="ing-row"><span class="ing-name">Agua</span><span class="ing-qty">~30 l</span></div>
+            <div class="ing-row"><span class="ing-name">Sal</span><span class="ing-qty">200 g</span></div>
+            <div class="ing-row"><span class="ing-name">Ajo</span><span class="ing-qty">100 g</span></div>
+            <div class="ing-row"><span class="ing-name">Cebolla</span><span class="ing-qty">2 kg</span></div>
+            <div class="ing-row"><span class="ing-name">Chile dulce</span><span class="ing-qty">1.5 kg</span></div>
+          </div>
+        </div>
+        <div class="dish-card rose">
+          <div class="dish-name-bar rose"><span class="dish-name-icon">🥗</span><span class="dish-name-text rose">Ensalada repollo + zanahoria</span></div>
+          <div class="dish-ingredients">
+            <div class="ing-row"><span class="ing-name">Repollo blanco</span><span class="ing-qty">6 kg</span></div>
+            <div class="ing-row"><span class="ing-name">Repollo morado</span><span class="ing-qty">4 kg</span></div>
+            <div class="ing-row"><span class="ing-name">Zanahoria</span><span class="ing-qty">6 kg</span></div>
+            <div class="ing-row"><span class="ing-name">Mayonesa</span><span class="ing-qty">3 kg</span></div>
+            <div class="ing-row"><span class="ing-name">Vinagre</span><span class="ing-qty">1 l</span></div>
+            <div class="ing-row"><span class="ing-name">Azúcar</span><span class="ing-qty">500 g</span></div>
+            <div class="ing-row"><span class="ing-name">Sal</span><span class="ing-qty">150 g</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="meal-section">
+      <div class="meal-header">
+        <span class="meal-icon">🌙</span>
+        <span class="meal-title lav">Cena</span>
+        <span class="meal-badge badge-cena">Cena</span>
+      </div>
+      <div class="dishes-grid">
+        <div class="dish-card gold">
+          <div class="dish-name-bar gold"><span class="dish-name-icon">🍚</span><span class="dish-name-text gold">Arroz blanco con maíz 8oz</span></div>
+          <div class="dish-ingredients">
+            <div class="ing-row"><span class="ing-name">Arroz crudo</span><span class="ing-qty">20 kg</span></div>
+            <div class="ing-row"><span class="ing-name">Agua</span><span class="ing-qty">36–38 l</span></div>
+            <div class="ing-row"><span class="ing-name">Maíz dulce</span><span class="ing-qty">6 kg</span></div>
+            <div class="ing-row"><span class="ing-name">Sal</span><span class="ing-qty">220–250 g</span></div>
+            <div class="ing-row"><span class="ing-name">Aceite</span><span class="ing-qty">900 ml</span></div>
+            <div class="ing-row"><span class="ing-name">Ajo</span><span class="ing-qty">100 g</span></div>
+          </div>
+        </div>
+        <div class="dish-card teal">
+          <div class="dish-name-bar teal"><span class="dish-name-icon">🍗</span><span class="dish-name-text teal">Pollo caribeño (200 muslos)</span></div>
+          <div class="dish-ingredients">
+            <div class="ing-row"><span class="ing-name">Muslos enteros</span><span class="ing-qty">40–44 kg</span></div>
+            <div class="ing-row"><span class="ing-name">Leche de coco</span><span class="ing-qty">12–14 l</span></div>
+            <div class="ing-row"><span class="ing-name">Cebolla</span><span class="ing-qty">4 kg</span></div>
+            <div class="ing-row"><span class="ing-name">Chile dulce</span><span class="ing-qty">3 kg</span></div>
+            <div class="ing-row"><span class="ing-name">Ajo</span><span class="ing-qty">300 g</span></div>
+            <div class="ing-row"><span class="ing-name">Jengibre</span><span class="ing-qty">200 g</span></div>
+            <div class="ing-row"><span class="ing-name">Culantro</span><span class="ing-qty">600 g</span></div>
+            <div class="ing-row"><span class="ing-name">Salsa Lizano</span><span class="ing-qty">2 l</span></div>
+            <div class="ing-row"><span class="ing-name">Azúcar</span><span class="ing-qty">1.5–2 kg</span></div>
+            <div class="ing-row"><span class="ing-name">Sal</span><span class="ing-qty">350–400 g</span></div>
+          </div>
+        </div>
+        <div class="dish-card lav">
+          <div class="dish-name-bar lav"><span class="dish-name-icon">🥗</span><span class="dish-name-text lav">Pico de gallo + lechuga</span></div>
+          <div class="dish-ingredients">
+            <div class="ing-row"><span class="ing-name">Tomate</span><span class="ing-qty">12 kg</span></div>
+            <div class="ing-row"><span class="ing-name">Cebolla</span><span class="ing-qty">4 kg</span></div>
+            <div class="ing-row"><span class="ing-name">Culantro</span><span class="ing-qty">500 g</span></div>
+            <div class="ing-row"><span class="ing-name">Jugo de limón</span><span class="ing-qty">1.5 l</span></div>
+            <div class="ing-row"><span class="ing-name">Sal</span><span class="ing-qty">150 g</span></div>
+            <div class="ing-row"><span class="ing-name">Pepino</span><span class="ing-qty">6–8 kg</span></div>
+            <div class="ing-row"><span class="ing-name">Lechuga</span><span class="ing-qty">200 hojas</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ──────────── VIERNES ──────────── -->
+  <div class="day-panel" id="panel-vie">
+    <div class="print-title">🍽️ Menú CRPTG 11 — Viernes</div>
+    <div class="print-subtitle">Costa Rica Para Tu Gloria 2026 · 160 personas</div>
+    <div class="print-bar">
+      <button class="btn-print" onclick="imprimirDia('vie')">
+        <svg viewBox="0 0 24 24"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+        Imprimir Viernes
+      </button>
+    </div>
+
+    <div class="meal-section">
+      <div class="meal-header">
+        <span class="meal-icon">🌅</span>
+        <span class="meal-title gold">Desayuno</span>
+        <span class="meal-badge badge-desayuno">Desayuno</span>
+      </div>
+      <div class="dishes-grid">
+        <div class="dish-card teal">
+          <div class="dish-name-bar teal"><span class="dish-name-icon">🌯</span><span class="dish-name-text teal">Burritos de carne (83)</span></div>
+          <div class="dish-ingredients">
+            <div class="ing-row"><span class="ing-name">Tortillas grandes</span><span class="ing-qty">150 und</span></div>
+            <div class="ing-row"><span class="ing-name">Carne de res</span><span class="ing-qty">10 kg</span></div>
+            <div class="ing-row"><span class="ing-name">Cebolla</span><span class="ing-qty">2 kg</span></div>
+            <div class="ing-row"><span class="ing-name">Chile dulce</span><span class="ing-qty">1.5 kg</span></div>
+            <div class="ing-row"><span class="ing-name">Ajo</span><span class="ing-qty">150 g</span></div>
+            <div class="ing-row"><span class="ing-name">Aceite</span><span class="ing-qty">400 ml</span></div>
+            <div class="ing-row"><span class="ing-name">Sal</span><span class="ing-qty">150 g</span></div>
+          </div>
+        </div>
+        <div class="dish-card gold">
+          <div class="dish-name-bar gold"><span class="dish-name-icon">🌯</span><span class="dish-name-text gold">Burritos de pollo (55)</span></div>
+          <div class="dish-ingredients">
+            <div class="ing-row"><span class="ing-name">Pollo desmenuzado</span><span class="ing-qty">7 kg</span></div>
+            <div class="ing-row"><span class="ing-name">Cebolla</span><span class="ing-qty">1.5 kg</span></div>
+            <div class="ing-row"><span class="ing-name">Chile dulce</span><span class="ing-qty">1 kg</span></div>
+            <div class="ing-row"><span class="ing-name">Ajo</span><span class="ing-qty">120 g</span></div>
+            <div class="ing-row"><span class="ing-name">Aceite</span><span class="ing-qty">300 ml</span></div>
+            <div class="ing-row"><span class="ing-name">Sal</span><span class="ing-qty">120 g</span></div>
+          </div>
+        </div>
+        <div class="dish-card lav">
+          <div class="dish-name-bar lav"><span class="dish-name-icon">🧀</span><span class="dish-name-text lav">Extras del burrito</span></div>
+          <div class="dish-ingredients">
+            <div class="ing-row"><span class="ing-name">Queso rallado</span><span class="ing-qty">6–7 kg</span></div>
+            <div class="ing-row"><span class="ing-name">Natilla</span><span class="ing-qty">4–5 l</span></div>
+          </div>
+        </div>
+        <div class="dish-card rose">
+          <div class="dish-name-bar rose"><span class="dish-name-icon">🥣</span><span class="dish-name-text rose">Niños (10): cereal con leche</span></div>
+          <div class="dish-ingredients">
+            <div class="ing-row"><span class="ing-name">Cereal</span><span class="ing-qty">1 kg</span></div>
+            <div class="ing-row"><span class="ing-name">Leche</span><span class="ing-qty">3 l</span></div>
+            <div class="ing-row"><span class="ing-name">Banano</span><span class="ing-qty">10–12 und</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="meal-section">
+      <div class="meal-header">
+        <span class="meal-icon">☀️</span>
+        <span class="meal-title teal">Almuerzo</span>
+        <span class="meal-badge badge-almuerzo">Almuerzo</span>
+      </div>
+      <div class="dishes-grid">
+        <div class="dish-card teal">
+          <div class="dish-name-bar teal"><span class="dish-name-icon">🍝</span><span class="dish-name-text teal">Spaghetti (160p)</span></div>
+          <div class="dish-ingredients">
+            <div class="ing-row"><span class="ing-name">Spaghetti</span><span class="ing-qty">16 kg</span></div>
+          </div>
+        </div>
+        <div class="dish-card rose">
+          <div class="dish-name-bar rose"><span class="dish-name-icon">🍅</span><span class="dish-name-text rose">Salsa roja con carne (112p)</span></div>
+          <div class="dish-ingredients">
+            <div class="ing-row"><span class="ing-name">Carne molida</span><span class="ing-qty">18–20 kg</span></div>
+            <div class="ing-row"><span class="ing-name">Tomate triturado</span><span class="ing-qty">18–20 l</span></div>
+            <div class="ing-row"><span class="ing-name">Pasta de tomate</span><span class="ing-qty">2 kg</span></div>
+            <div class="ing-row"><span class="ing-name">Cebolla</span><span class="ing-qty">4 kg</span></div>
+            <div class="ing-row"><span class="ing-name">Chile dulce</span><span class="ing-qty">3 kg</span></div>
+            <div class="ing-row"><span class="ing-name">Ajo</span><span class="ing-qty">300 g</span></div>
+            <div class="ing-row"><span class="ing-name">Aceite</span><span class="ing-qty">1 l</span></div>
+            <div class="ing-row"><span class="ing-name">Sal</span><span class="ing-qty">300 g</span></div>
+            <div class="ing-row"><span class="ing-name">Azúcar</span><span class="ing-qty">500 g</span></div>
+            <div class="ing-row"><span class="ing-name">Orégano</span><span class="ing-qty">150 g</span></div>
+          </div>
+        </div>
+        <div class="dish-card lav">
+          <div class="dish-name-bar lav"><span class="dish-name-icon">🤍</span><span class="dish-name-text lav">Salsa blanca con pollo (48p)</span></div>
+          <div class="dish-ingredients">
+            <div class="ing-row"><span class="ing-name">Pollo</span><span class="ing-qty">9–10 kg</span></div>
+            <div class="ing-row"><span class="ing-name">Leche</span><span class="ing-qty">10–12 l</span></div>
+            <div class="ing-row"><span class="ing-name">Crema</span><span class="ing-qty">3 l</span></div>
+            <div class="ing-row"><span class="ing-name">Harina</span><span class="ing-qty">1.2 kg</span></div>
+            <div class="ing-row"><span class="ing-name">Mantequilla</span><span class="ing-qty">1.2 kg</span></div>
+            <div class="ing-row"><span class="ing-name">Ajo</span><span class="ing-qty">150 g</span></div>
+            <div class="ing-row"><span class="ing-name">Cebolla</span><span class="ing-qty">2 kg</span></div>
+            <div class="ing-row"><span class="ing-name">Sal</span><span class="ing-qty">200 g</span></div>
+          </div>
+        </div>
+        <div class="dish-card gold">
+          <div class="dish-name-bar gold"><span class="dish-name-icon">🥖</span><span class="dish-name-text gold">Pan con ajo (160 panes)</span></div>
+          <div class="dish-ingredients">
+            <div class="ing-row"><span class="ing-name">Pan (bollito)</span><span class="ing-qty">160 und</span></div>
+            <div class="ing-row"><span class="ing-name">Mantequilla</span><span class="ing-qty">3.5–4 kg</span></div>
+            <div class="ing-row"><span class="ing-name">Ajo</span><span class="ing-qty">200 g</span></div>
+          </div>
+        </div>
+        <div class="dish-card teal">
+          <div class="dish-name-bar teal"><span class="dish-name-icon">🥗</span><span class="dish-name-text teal">Ensalada repollo + lechuga</span></div>
+          <div class="dish-ingredients">
+            <div class="ing-row"><span class="ing-name">Repollo</span><span class="ing-qty">6 kg</span></div>
+            <div class="ing-row"><span class="ing-name">Lechuga</span><span class="ing-qty">5 kg</span></div>
+            <div class="ing-row"><span class="ing-name">Tomate (160 rodajas)</span><span class="ing-qty">12 kg</span></div>
+            <div class="ing-row"><span class="ing-name">Mayonesa</span><span class="ing-qty">3 kg</span></div>
+            <div class="ing-row"><span class="ing-name">Vinagre</span><span class="ing-qty">1 l</span></div>
+            <div class="ing-row"><span class="ing-name">Azúcar</span><span class="ing-qty">400 g</span></div>
+            <div class="ing-row"><span class="ing-name">Sal</span><span class="ing-qty">150 g</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="meal-section">
+      <div class="meal-header">
+        <span class="meal-icon">🌙</span>
+        <span class="meal-title lav">Cena</span>
+        <span class="meal-badge badge-cena">Cena</span>
+      </div>
+      <div class="dishes-grid">
+        <div class="dish-card teal">
+          <div class="dish-name-bar teal"><span class="dish-name-icon">🍛</span><span class="dish-name-text teal">Arroz con pollo</span></div>
+          <div class="dish-ingredients">
+            <div class="ing-row"><span class="ing-name">Arroz crudo</span><span class="ing-qty">16 kg</span></div>
+            <div class="ing-row"><span class="ing-name">Pollo desmenuzado</span><span class="ing-qty">18–20 kg</span></div>
+            <div class="ing-row"><span class="ing-name">Zanahoria</span><span class="ing-qty">4 kg</span></div>
+            <div class="ing-row"><span class="ing-name">Arvejas</span><span class="ing-qty">3 kg</span></div>
+            <div class="ing-row"><span class="ing-name">Maíz dulce</span><span class="ing-qty">3 kg</span></div>
+            <div class="ing-row"><span class="ing-name">Cebolla</span><span class="ing-qty">4 kg</span></div>
+            <div class="ing-row"><span class="ing-name">Chile dulce</span><span class="ing-qty">3 kg</span></div>
+            <div class="ing-row"><span class="ing-name">Ajo</span><span class="ing-qty">300 g</span></div>
+            <div class="ing-row"><span class="ing-name">Culantro</span><span class="ing-qty">600 g</span></div>
+            <div class="ing-row"><span class="ing-name">Agua / caldo</span><span class="ing-qty">28–30 l</span></div>
+            <div class="ing-row"><span class="ing-name">Salsa Lizano</span><span class="ing-qty">2–2.5 l</span></div>
+            <div class="ing-row"><span class="ing-name">Aceite</span><span class="ing-qty">1.5 l</span></div>
+            <div class="ing-row"><span class="ing-name">Sal</span><span class="ing-qty">350–400 g</span></div>
+          </div>
+        </div>
+        <div class="dish-card lav">
+          <div class="dish-name-bar lav"><span class="dish-name-icon">🫘</span><span class="dish-name-text lav">Frijoles molidos</span></div>
+          <div class="dish-ingredients">
+            <div class="ing-row"><span class="ing-name">Frijoles molidos</span><span class="ing-qty">16 kg</span></div>
+            <div class="ing-row"><span class="ing-name">Agua / caldo</span><span class="ing-qty">2–4 l</span></div>
+            <div class="ing-row"><span class="ing-name">Ajo</span><span class="ing-qty">50 g</span></div>
+            <div class="ing-row"><span class="ing-name">Culantro</span><span class="ing-qty">100 g</span></div>
+          </div>
+        </div>
+        <div class="dish-card gold">
+          <div class="dish-name-bar gold"><span class="dish-name-icon">🥔</span><span class="dish-name-text gold">Chips de papa (30g/p)</span></div>
+          <div class="dish-ingredients">
+            <div class="ing-row"><span class="ing-name">Chips</span><span class="ing-qty">5 kg</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ──────────── SÁBADO ──────────── -->
+  <div class="day-panel" id="panel-sab">
+    <div class="print-title">🍽️ Menú CRPTG 11 — Sábado</div>
+    <div class="print-subtitle">Costa Rica Para Tu Gloria 2026 · 160 personas</div>
+    <div class="print-bar">
+      <button class="btn-print" onclick="imprimirDia('sab')">
+        <svg viewBox="0 0 24 24"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+        Imprimir Sábado
+      </button>
+    </div>
+
+    <div class="meal-section">
+      <div class="meal-header">
+        <span class="meal-icon">🌅</span>
+        <span class="meal-title gold">Desayuno</span>
+        <span class="meal-badge badge-desayuno">Desayuno</span>
+      </div>
+      <div class="dishes-grid">
+        <div class="dish-card gold">
+          <div class="dish-name-bar gold"><span class="dish-name-icon">🥣</span><span class="dish-name-text gold">Yogurt, muffins y fruta</span></div>
+          <div class="dish-ingredients">
+            <div class="ing-row"><span class="ing-name">Yogurt</span><span class="ing-qty">138 und</span></div>
+            <div class="ing-row"><span class="ing-name">Muffins</span><span class="ing-qty">138 und</span></div>
+            <div class="ing-row"><span class="ing-name">Banano</span><span class="ing-qty">80 und</span></div>
+            <div class="ing-row"><span class="ing-name">Manzanas</span><span class="ing-qty">70 und</span></div>
+            <div class="ing-row"><span class="ing-name">Cereal</span><span class="ing-qty">1 kg</span></div>
+            <div class="ing-row"><span class="ing-name">Leche</span><span class="ing-qty">2 l</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="meal-section">
+      <div class="meal-header">
+        <span class="meal-icon">☀️</span>
+        <span class="meal-title teal">Almuerzo</span>
+        <span class="meal-badge badge-almuerzo">Almuerzo</span>
+      </div>
+      <div class="dishes-grid">
+        <div class="dish-card gold">
+          <div class="dish-name-bar gold"><span class="dish-name-icon">🍚</span><span class="dish-name-text gold">Congrí (arroz con frijoles negros)</span></div>
+          <div class="dish-ingredients">
+            <div class="ing-row"><span class="ing-name">Arroz</span><span class="ing-qty">16 kg</span></div>
+            <div class="ing-row"><span class="ing-name">Frijoles negros</span><span class="ing-qty">4.8 kg</span></div>
+            <div class="ing-row"><span class="ing-name">Cebolla</span><span class="ing-qty">3.2 kg</span></div>
+            <div class="ing-row"><span class="ing-name">Chile dulce verde</span><span class="ing-qty">1.6 kg</span></div>
+            <div class="ing-row"><span class="ing-name">Tomate</span><span class="ing-qty">4 kg</span></div>
+            <div class="ing-row"><span class="ing-name">Salsa de tomate</span><span class="ing-qty">4 kg</span></div>
+            <div class="ing-row"><span class="ing-name">Laurel</span><span class="ing-qty">65 hojas</span></div>
+            <div class="ing-row"><span class="ing-name">Comino</span><span class="ing-qty">150 g</span></div>
+            <div class="ing-row"><span class="ing-name">Consomé de pollo</span><span class="ing-qty">100 g</span></div>
+            <div class="ing-row"><span class="ing-name">Sazón completo</span><span class="ing-qty">80 g</span></div>
+            <div class="ing-row"><span class="ing-name">Aceite neutro</span><span class="ing-qty">1.2 l</span></div>
+            <div class="ing-row"><span class="ing-name">Aceite de oliva</span><span class="ing-qty">1.6 l</span></div>
+          </div>
+        </div>
+        <div class="dish-card teal">
+          <div class="dish-name-bar teal"><span class="dish-name-icon">🥗</span><span class="dish-name-text teal">Ensalada de caracoles con atún</span></div>
+          <div class="dish-ingredients">
+            <div class="ing-row"><span class="ing-name">Pasta caracol (cruda)</span><span class="ing-qty">14–16 kg</span></div>
+            <div class="ing-row"><span class="ing-name">Atún escurrido</span><span class="ing-qty">10–11 kg</span></div>
+            <div class="ing-row"><span class="ing-name">Mayonesa</span><span class="ing-qty">6 kg</span></div>
+            <div class="ing-row"><span class="ing-name">Sal</span><span class="ing-qty">150–180 g</span></div>
+            <div class="ing-row"><span class="ing-name">Mostaza</span><span class="ing-qty">500 g</span></div>
+            <div class="ing-row"><span class="ing-name">Vinagre / limón</span><span class="ing-qty">500ml–1l</span></div>
+            <div class="ing-row"><span class="ing-name">Zanahoria rallada</span><span class="ing-qty">5 kg</span></div>
+            <div class="ing-row"><span class="ing-name">Maíz dulce</span><span class="ing-qty">4 kg</span></div>
+            <div class="ing-row"><span class="ing-name">Cebolla</span><span class="ing-qty">2 kg</span></div>
+            <div class="ing-row"><span class="ing-name">Chile dulce</span><span class="ing-qty">2 kg</span></div>
+            <div class="ing-row"><span class="ing-name">Culantro</span><span class="ing-qty">300 g</span></div>
+          </div>
+        </div>
+        <div class="dish-card lav">
+          <div class="dish-name-bar lav"><span class="dish-name-icon">🍽️</span><span class="dish-name-text lav">Yuca al mojo (160p)</span></div>
+          <div class="dish-ingredients">
+            <div class="ing-row"><span class="ing-name">Yuca</span><span class="ing-qty">40 kg</span></div>
+            <div class="ing-row"><span class="ing-name">Aceite de oliva</span><span class="ing-qty">2.5–3 l</span></div>
+            <div class="ing-row"><span class="ing-name">Ajo</span><span class="ing-qty">400 g</span></div>
+            <div class="ing-row"><span class="ing-name">Cebolla</span><span class="ing-qty">5 kg</span></div>
+            <div class="ing-row"><span class="ing-name">Jugo de limón</span><span class="ing-qty">2–2.5 l</span></div>
+            <div class="ing-row"><span class="ing-name">Sal</span><span class="ing-qty">300–350 g</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="meal-section">
+      <div class="meal-header">
+        <span class="meal-icon">🌙</span>
+        <span class="meal-title lav">Cena</span>
+        <span class="meal-badge badge-cena">Cena</span>
+      </div>
+      <div class="dishes-grid">
+        <div class="dish-card rose">
+          <div class="dish-name-bar rose"><span class="dish-name-icon">🐟</span><span class="dish-name-text rose">Fondo de pescado</span></div>
+          <div class="dish-ingredients">
+            <div class="ing-row"><span class="ing-name">Cabezas de pargo</span><span class="ing-qty">12–15 kg</span></div>
+            <div class="ing-row"><span class="ing-name">Agua inicial</span><span class="ing-qty">40 l</span></div>
+            <div class="ing-row"><span class="ing-name">Cebolla</span><span class="ing-qty">3 kg</span></div>
+            <div class="ing-row"><span class="ing-name">Apio</span><span class="ing-qty">2 kg</span></div>
+            <div class="ing-row"><span class="ing-name">Ajo</span><span class="ing-qty">200 g</span></div>
+            <div class="ing-row"><span class="ing-name">Culantro</span><span class="ing-qty">400 g</span></div>
+            <div class="ing-row"><span class="ing-name">Cocción</span><span class="ing-qty">45–60 min</span></div>
+          </div>
+        </div>
+        <div class="dish-card teal">
+          <div class="dish-name-bar teal"><span class="dish-name-icon">🍲</span><span class="dish-name-text teal">Arroz con pescado (170p)</span></div>
+          <div class="dish-ingredients">
+            <div class="ing-row"><span class="ing-name">Arroz</span><span class="ing-qty">17 kg</span></div>
+            <div class="ing-row"><span class="ing-name">Fondo de pescado</span><span class="ing-qty">30–31 l</span></div>
+            <div class="ing-row"><span class="ing-name">Tilapia</span><span class="ing-qty">25 kg</span></div>
+            <div class="ing-row"><span class="ing-name">Aceite</span><span class="ing-qty">800 ml</span></div>
+            <div class="ing-row"><span class="ing-name">Ajo</span><span class="ing-qty">100 g</span></div>
+            <div class="ing-row"><span class="ing-name">Cebolla</span><span class="ing-qty">3 kg</span></div>
+            <div class="ing-row"><span class="ing-name">Chile dulce</span><span class="ing-qty">2 kg</span></div>
+            <div class="ing-row"><span class="ing-name">Culantro</span><span class="ing-qty">500 g</span></div>
+            <div class="ing-row"><span class="ing-name">Sal</span><span class="ing-qty">200–250 g</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ──────────── FRESCOS ──────────── -->
+  <div class="day-panel" id="panel-frescos">
+    <div class="print-title">🥤 Menú CRPTG 11 — Frescos y Bebidas</div>
+    <div class="print-subtitle">Costa Rica Para Tu Gloria 2026 · 160 personas</div>
+    <div class="print-bar">
+      <button class="btn-print" onclick="imprimirDia('frescos')">
+        <svg viewBox="0 0 24 24"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+        Imprimir Frescos
+      </button>
+    </div>
+    <div class="section-heading">🥤 <span>Bebidas y frescos</span> · 160 personas</div>
+    <div class="frescos-grid">
+      <div class="dish-card teal">
+        <div class="dish-name-bar teal"><span class="dish-name-icon">🥤</span><span class="dish-name-text teal">Fresco de guayaba</span></div>
+        <div class="dish-ingredients">
+          <div class="ing-row"><span class="ing-name">Guayaba</span><span class="ing-qty">15 kg</span></div>
+          <div class="ing-row"><span class="ing-name">Azúcar</span><span class="ing-qty">5 kg</span></div>
+          <div class="ing-row"><span class="ing-name">Agua</span><span class="ing-qty">55 l</span></div>
+        </div>
+      </div>
+      <div class="dish-card gold">
+        <div class="dish-name-bar gold"><span class="dish-name-icon">☕</span><span class="dish-name-text gold">Café</span></div>
+        <div class="dish-ingredients">
+          <div class="ing-row"><span class="ing-name">Café</span><span class="ing-qty">2 kg</span></div>
+          <div class="ing-row"><span class="ing-name">Agua</span><span class="ing-qty">32 l</span></div>
+          <div class="ing-row"><span class="ing-name">Azúcar</span><span class="ing-qty">4–5 kg</span></div>
+        </div>
+      </div>
+      <div class="dish-card lav">
+        <div class="dish-name-bar lav"><span class="dish-name-icon">🧊</span><span class="dish-name-text lav">Té frío en polvo</span></div>
+        <div class="dish-ingredients">
+          <div class="ing-row"><span class="ing-name">Té frío en polvo</span><span class="ing-qty">6 kg</span></div>
+          <div class="ing-row"><span class="ing-name">Azúcar</span><span class="ing-qty">4 kg</span></div>
+          <div class="ing-row"><span class="ing-name">Jugo de limón</span><span class="ing-qty">1.5 l</span></div>
+          <div class="ing-row"><span class="ing-name">Agua</span><span class="ing-qty">57 l</span></div>
+        </div>
+      </div>
+      <div class="dish-card rose">
+        <div class="dish-name-bar rose"><span class="dish-name-icon">🥤</span><span class="dish-name-text rose">Fresco de cas</span></div>
+        <div class="dish-ingredients">
+          <div class="ing-row"><span class="ing-name">Cas</span><span class="ing-qty">12 kg</span></div>
+          <div class="ing-row"><span class="ing-name">Azúcar</span><span class="ing-qty">5–6 kg</span></div>
+          <div class="ing-row"><span class="ing-name">Agua</span><span class="ing-qty">57 l</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ──────────── LISTA DE COMPRAS ──────────── -->
+  <div class="day-panel" id="panel-compras">
+    <div class="print-title">🛒 Menú CRPTG 11 — Lista de Compras</div>
+    <div class="print-subtitle">Costa Rica Para Tu Gloria 2026 · Todos los menús</div>
+    <div class="print-bar">
+      <button class="btn-print" onclick="imprimirDia('compras')">
+        <svg viewBox="0 0 24 24"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+        Imprimir Lista
+      </button>
+    </div>
+    <div class="section-heading">🛒 <span>Lista total de compras</span> · Todos los menús</div>
+    <div class="shopping-grid">
+      <div class="shop-cat">
+        <div class="shop-cat-header gold">🌾 Granos y cereales</div>
+        <div class="shop-items">
+          <div class="shop-item"><span class="shop-item-name">Arroz</span><span class="shop-item-qty">115 kg</span></div>
+          <div class="shop-item"><span class="shop-item-name">Frijoles rojos</span><span class="shop-item-qty">27 kg</span></div>
+          <div class="shop-item"><span class="shop-item-name">Frijoles negros</span><span class="shop-item-qty">5 kg</span></div>
+          <div class="shop-item"><span class="shop-item-name">Spaghetti</span><span class="shop-item-qty">16 kg</span></div>
+        </div>
+      </div>
+      <div class="shop-cat">
+        <div class="shop-cat-header teal">🍗 Carnes y proteínas</div>
+        <div class="shop-items">
+          <div class="shop-item"><span class="shop-item-name">Pechuga de pollo</span><span class="shop-item-qty">29 kg</span></div>
+          <div class="shop-item"><span class="shop-item-name">Pollo (muslo entero)</span><span class="shop-item-qty">42 kg</span></div>
+          <div class="shop-item"><span class="shop-item-name">Pollo desmenuzado</span><span class="shop-item-qty">13 kg</span></div>
+          <div class="shop-item"><span class="shop-item-name">Costilla de res</span><span class="shop-item-qty">55 kg</span></div>
+          <div class="shop-item"><span class="shop-item-name">Carne molida</span><span class="shop-item-qty">14 kg</span></div>
+          <div class="shop-item"><span class="shop-item-name">Tilapia</span><span class="shop-item-qty">22 kg</span></div>
+          <div class="shop-item"><span class="shop-item-name">Atún escurrido</span><span class="shop-item-qty">~11 kg</span></div>
+          <div class="shop-item"><span class="shop-item-name">Huevos</span><span class="shop-item-qty">320 und</span></div>
+          <div class="shop-item"><span class="shop-item-name">Cabezas de pargo</span><span class="shop-item-qty">15 kg</span></div>
+        </div>
+      </div>
+      <div class="shop-cat">
+        <div class="shop-cat-header lav">🥛 Lácteos y derivados</div>
+        <div class="shop-items">
+          <div class="shop-item"><span class="shop-item-name">Leche</span><span class="shop-item-qty">26 l</span></div>
+          <div class="shop-item"><span class="shop-item-name">Crema dulce</span><span class="shop-item-qty">5 l</span></div>
+          <div class="shop-item"><span class="shop-item-name">Natilla</span><span class="shop-item-qty">10 kg</span></div>
+          <div class="shop-item"><span class="shop-item-name">Queso</span><span class="shop-item-qty">15 kg</span></div>
+          <div class="shop-item"><span class="shop-item-name">Mantequilla</span><span class="shop-item-qty">8 kg</span></div>
+          <div class="shop-item"><span class="shop-item-name">Leche de coco</span><span class="shop-item-qty">14 l</span></div>
+        </div>
+      </div>
+      <div class="shop-cat">
+        <div class="shop-cat-header rose">🍞 Pan y tortillas</div>
+        <div class="shop-items">
+          <div class="shop-item"><span class="shop-item-name">Pan (bollito)</span><span class="shop-item-qty">160 und</span></div>
+          <div class="shop-item"><span class="shop-item-name">Tortillas grandes</span><span class="shop-item-qty">160 und</span></div>
+        </div>
+      </div>
+      <div class="shop-cat">
+        <div class="shop-cat-header teal">🥕 Verduras y hortalizas</div>
+        <div class="shop-items">
+          <div class="shop-item"><span class="shop-item-name">Papa</span><span class="shop-item-qty">24 kg</span></div>
+          <div class="shop-item"><span class="shop-item-name">Zanahoria</span><span class="shop-item-qty">27 kg</span></div>
+          <div class="shop-item"><span class="shop-item-name">Ayote / calabaza</span><span class="shop-item-qty">20 kg</span></div>
+          <div class="shop-item"><span class="shop-item-name">Chayote</span><span class="shop-item-qty">6.5 kg</span></div>
+          <div class="shop-item"><span class="shop-item-name">Zucchini</span><span class="shop-item-qty">6.5 kg</span></div>
+          <div class="shop-item"><span class="shop-item-name">Brócoli</span><span class="shop-item-qty">6.5 kg</span></div>
+          <div class="shop-item"><span class="shop-item-name">Repollo blanco</span><span class="shop-item-qty">18 kg</span></div>
+          <div class="shop-item"><span class="shop-item-name">Repollo morado</span><span class="shop-item-qty">8 kg</span></div>
+          <div class="shop-item"><span class="shop-item-name">Lechuga</span><span class="shop-item-qty">10 kg</span></div>
+          <div class="shop-item"><span class="shop-item-name">Tomate</span><span class="shop-item-qty">22 kg</span></div>
+          <div class="shop-item"><span class="shop-item-name">Cebolla</span><span class="shop-item-qty">25 kg</span></div>
+          <div class="shop-item"><span class="shop-item-name">Chile dulce</span><span class="shop-item-qty">16 kg</span></div>
+          <div class="shop-item"><span class="shop-item-name">Ajo</span><span class="shop-item-qty">2 kg</span></div>
+          <div class="shop-item"><span class="shop-item-name">Culantro</span><span class="shop-item-qty">3 kg</span></div>
+          <div class="shop-item"><span class="shop-item-name">Apio</span><span class="shop-item-qty">6 kg</span></div>
+          <div class="shop-item"><span class="shop-item-name">Remolacha</span><span class="shop-item-qty">5 kg</span></div>
+          <div class="shop-item"><span class="shop-item-name">Pepino</span><span class="shop-item-qty">12 kg</span></div>
+          <div class="shop-item"><span class="shop-item-name">Yuca</span><span class="shop-item-qty">40 kg</span></div>
+        </div>
+      </div>
+      <div class="shop-cat">
+        <div class="shop-cat-header gold">🍌 Frutas</div>
+        <div class="shop-items">
+          <div class="shop-item"><span class="shop-item-name">Banano</span><span class="shop-item-qty">~100 und</span></div>
+          <div class="shop-item"><span class="shop-item-name">Plátano maduro</span><span class="shop-item-qty">200 und</span></div>
+          <div class="shop-item"><span class="shop-item-name">Manzana</span><span class="shop-item-qty">70 und</span></div>
+          <div class="shop-item"><span class="shop-item-name">Guayaba</span><span class="shop-item-qty">15 kg</span></div>
+          <div class="shop-item"><span class="shop-item-name">Cas</span><span class="shop-item-qty">12 kg</span></div>
+          <div class="shop-item"><span class="shop-item-name">Limón (jugo)</span><span class="shop-item-qty">6 l</span></div>
+        </div>
+      </div>
+      <div class="shop-cat">
+        <div class="shop-cat-header green">🧂 Condimentos</div>
+        <div class="shop-items">
+          <div class="shop-item"><span class="shop-item-name">Sal</span><span class="shop-item-qty">3 kg</span></div>
+          <div class="shop-item"><span class="shop-item-name">Azúcar</span><span class="shop-item-qty">30–35 kg</span></div>
+          <div class="shop-item"><span class="shop-item-name">Aceite</span><span class="shop-item-qty">5 l</span></div>
+          <div class="shop-item"><span class="shop-item-name">Aceite de oliva</span><span class="shop-item-qty">~4 l</span></div>
+          <div class="shop-item"><span class="shop-item-name">Salsa Lizano</span><span class="shop-item-qty">6 l</span></div>
+          <div class="shop-item"><span class="shop-item-name">Vinagre</span><span class="shop-item-qty">3 l</span></div>
+          <div class="shop-item"><span class="shop-item-name">Mayonesa</span><span class="shop-item-qty">~15 kg</span></div>
+          <div class="shop-item"><span class="shop-item-name">Pasta de tomate</span><span class="shop-item-qty">2 kg</span></div>
+          <div class="shop-item"><span class="shop-item-name">Salsa de tomate</span><span class="shop-item-qty">4 kg</span></div>
+          <div class="shop-item"><span class="shop-item-name">Pimienta</span><span class="shop-item-qty">200 g</span></div>
+          <div class="shop-item"><span class="shop-item-name">Orégano / albahaca</span><span class="shop-item-qty">200 g</span></div>
+          <div class="shop-item"><span class="shop-item-name">Mostaza</span><span class="shop-item-qty">500 g</span></div>
+          <div class="shop-item"><span class="shop-item-name">Comino</span><span class="shop-item-qty">150 g</span></div>
+          <div class="shop-item"><span class="shop-item-name">Achiote</span><span class="shop-item-qty">al gusto</span></div>
+        </div>
+      </div>
+      <div class="shop-cat">
+        <div class="shop-cat-header lav">📦 Otros</div>
+        <div class="shop-items">
+          <div class="shop-item"><span class="shop-item-name">Maíz dulce</span><span class="shop-item-qty">6 kg</span></div>
+          <div class="shop-item"><span class="shop-item-name">Arvejas</span><span class="shop-item-qty">3 kg</span></div>
+          <div class="shop-item"><span class="shop-item-name">Pasta caracol</span><span class="shop-item-qty">14–16 kg</span></div>
+          <div class="shop-item"><span class="shop-item-name">Chips</span><span class="shop-item-qty">5 kg</span></div>
+          <div class="shop-item"><span class="shop-item-name">Té frío en polvo</span><span class="shop-item-qty">6 kg</span></div>
+          <div class="shop-item"><span class="shop-item-name">Café</span><span class="shop-item-qty">5 kg</span></div>
+          <div class="shop-item"><span class="shop-item-name">Cereal</span><span class="shop-item-qty">2 kg</span></div>
+          <div class="shop-item"><span class="shop-item-name">Yogurt</span><span class="shop-item-qty">138 und</span></div>
+          <div class="shop-item"><span class="shop-item-name">Muffins</span><span class="shop-item-qty">138 und</span></div>
+          <div class="shop-item"><span class="shop-item-name">Jugo de naranja</span><span class="shop-item-qty">15 l</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- Access overlay -->
+<div id="acceso-overlay" style="display:none;position:fixed;inset:0;background:rgba(11,13,19,.97);z-index:9999;align-items:center;justify-content:center;flex-direction:column">
+  <div style="background:#13161f;border:1px solid #22263a;border-radius:24px;padding:40px 42px;text-align:center;max-width:360px;width:90%;box-shadow:0 24px 64px rgba(0,0,0,.6)">
+    <div style="font-size:2.4rem;margin-bottom:12px">🔐</div>
+    <div style="font-family:'Playfair Display',serif;font-size:1.3rem;color:#e8e8f0;margin-bottom:6px">Acceso restringido</div>
+    <div style="color:#7a7d95;font-size:13px;margin-bottom:24px;line-height:1.5">Esta área es solo para personal de logística.<br>Ingresa tu clave para continuar.</div>
+    <input type="password" id="acceso-input" placeholder="••••••••"
+      onkeydown="if(event.key==='Enter')verificarAcceso()"
+      style="width:100%;background:#0b0d13;border:1px solid #22263a;color:#e8e8f0;font-family:'DM Sans',sans-serif;font-size:15px;padding:11px 16px;border-radius:12px;outline:none;text-align:center;letter-spacing:3px;margin-bottom:10px;transition:border-color .2s;box-sizing:border-box"
+      onfocus="this.style.borderColor='#e8a838'" onblur="this.style.borderColor='#22263a'">
+    <button onclick="verificarAcceso()" style="width:100%;padding:12px;border-radius:12px;border:none;background:#e8a838;color:#000;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:700;cursor:pointer">Ingresar</button>
+    <div id="acceso-error" style="color:#e86b8b;font-size:12px;margin-top:10px;min-height:16px"></div>
+    <div style="margin-top:22px;padding-top:18px;border-top:1px solid #22263a">
+      <a href="https://logistica-crptg11.netlify.app/bienvenida.html" style="display:inline-block;padding:9px 22px;border-radius:10px;border:1px solid #22263a;color:#7a7d95;font-family:'DM Sans',sans-serif;font-size:13px;text-decoration:none">Ver información del evento →</a>
+    </div>
+  </div>
+</div>
+
+<script>
+function showDay(dia, btn) {
+  document.querySelectorAll(".day-panel").forEach(p => p.classList.remove("visible"));
+  document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
+  document.getElementById("panel-" + dia).classList.add("visible");
+  btn.classList.add("active");
+}
+
+function imprimirDia(dia) {
+  document.querySelectorAll(".day-panel").forEach(p => p.classList.remove("printing"));
+  document.getElementById("panel-" + dia).classList.add("printing");
+  window.print();
+  setTimeout(function(){ document.getElementById("panel-" + dia).classList.remove("printing"); }, 1000);
+}
+
+(function(){
+  const ok = localStorage.getItem("crptg11-auth")==="ok" || localStorage.getItem("crptg11-ver")==="ok";
+  if(!ok) document.getElementById("acceso-overlay").style.display="flex";
+  document.documentElement.style.visibility="visible";
+
+  window.verificarAcceso = function(){
+    const v = document.getElementById("acceso-input").value.trim();
+    const e = document.getElementById("acceso-error");
+    if(v==="IglesiaRestaurada2026"){
+      localStorage.setItem("crptg11-auth","ok");
+      document.getElementById("acceso-overlay").style.display="none";
+    } else if(v==="LogisticaCRPTG11"){
+      localStorage.setItem("crptg11-ver","ok");
+      document.getElementById("acceso-overlay").style.display="none";
+    } else {
+      e.textContent="Clave incorrecta";
+      document.getElementById("acceso-input").value="";
+      document.getElementById("acceso-input").focus();
+    }
+  };
+})();
+</script>
+</body>
+</html>

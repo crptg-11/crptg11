@@ -4,20 +4,6 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>CRPTG 11 — Panel Central</title>
-<script>
-  // ── CONTROL DE ACCESO ─────────────────────────────────────
-  const CLAVE_VER    = "LogisticaCRPTG11";
-  const CLAVE_OPERAR = "IglesiaRestaurada2026";
-  const URL_PUBLICA  = "bienvenida.html"; // ← CAMBIAR por tu URL pública
-
-  const tieneAcceso =
-    localStorage.getItem("crptg11-auth") === "ok" ||
-    localStorage.getItem("crptg11-ver")  === "ok";
-
-  if (!tieneAcceso) {
-    document.documentElement.style.visibility = "hidden";
-  }
-</script>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
@@ -145,60 +131,15 @@ h1 span{color:var(--gold)}
       <div class="card-desc">Montos por participación, alimentación y hospedaje. Totales por persona y resumen general.</div>
       <span class="card-arrow">→</span>
     </a>
+    <a href="menu.html" class="card lav">
+      <span class="card-icon">🍳</span>
+      <div class="card-title">Menú</div>
+      <div class="card-desc">Planificación y detalle del menú por día y tiempo de comida para todos los participantes.</div>
+      <span class="card-arrow">→</span>
+    </a>
   </div>
 
   <div class="footer">CRPTG 11 · Sistema de gestión de participantes</div>
 </div>
-
-<!-- ── OVERLAY DE ACCESO ───────────────────────────────── -->
-<div id="acceso-overlay" style="display:none;position:fixed;inset:0;background:rgba(11,13,19,.97);z-index:9999;align-items:center;justify-content:center;flex-direction:column">
-  <div style="background:#13161f;border:1px solid #22263a;border-radius:24px;padding:40px 42px;text-align:center;max-width:360px;width:90%;box-shadow:0 24px 64px rgba(0,0,0,.6)">
-    <div style="font-size:2.4rem;margin-bottom:12px">🔐</div>
-    <div style="font-family:'Playfair Display',serif;font-size:1.3rem;color:#e8e8f0;margin-bottom:6px">Acceso restringido</div>
-    <div style="color:#7a7d95;font-size:13px;margin-bottom:24px;line-height:1.5">Esta área es solo para personal de logística.<br>Ingresa tu clave para continuar.</div>
-    <input type="password" id="acceso-input" placeholder="••••••••"
-      onkeydown="if(event.key==='Enter')verificarAcceso()"
-      style="width:100%;background:#0b0d13;border:1px solid #22263a;color:#e8e8f0;font-family:'DM Sans',sans-serif;font-size:15px;padding:11px 16px;border-radius:12px;outline:none;text-align:center;letter-spacing:3px;margin-bottom:10px;transition:border-color .2s;box-sizing:border-box"
-      onfocus="this.style.borderColor='#e8a838'" onblur="this.style.borderColor='#22263a'">
-    <button onclick="verificarAcceso()" style="width:100%;padding:12px;border-radius:12px;border:none;background:#e8a838;color:#000;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:700;cursor:pointer">Ingresar</button>
-    <div id="acceso-error" style="color:#e86b8b;font-size:12px;margin-top:10px;min-height:16px"></div>
-    <div style="margin-top:22px;padding-top:18px;border-top:1px solid #22263a">
-      <div style="color:#7a7d95;font-size:12px;margin-bottom:10px">¿Eres participante del evento?</div>
-      <a href="https://logistica-crptg11.netlify.app/bienvenida.html" style="display:inline-block;padding:9px 22px;border-radius:10px;border:1px solid #22263a;color:#7a7d95;font-family:'DM Sans',sans-serif;font-size:13px;text-decoration:none">Ver información del evento →</a>
-    </div>
-  </div>
-</div>
-
-<script>
-  (function() {
-    const CLAVE_VER    = "LogisticaCRPTG11";
-    const CLAVE_OPERAR = "IglesiaRestaurada2026";
-
-    const tieneAcceso =
-      localStorage.getItem("crptg11-auth") === "ok" ||
-      localStorage.getItem("crptg11-ver")  === "ok";
-
-    if (!tieneAcceso) {
-      document.getElementById("acceso-overlay").style.display = "flex";
-    }
-    document.documentElement.style.visibility = "visible";
-
-    window.verificarAcceso = function() {
-      const val   = document.getElementById("acceso-input").value.trim();
-      const error = document.getElementById("acceso-error");
-      if (val === CLAVE_OPERAR) {
-        localStorage.setItem("crptg11-auth", "ok");
-        document.getElementById("acceso-overlay").style.display = "none";
-      } else if (val === CLAVE_VER) {
-        localStorage.setItem("crptg11-ver", "ok");
-        document.getElementById("acceso-overlay").style.display = "none";
-      } else {
-        error.textContent = "Clave incorrecta";
-        document.getElementById("acceso-input").value = "";
-        document.getElementById("acceso-input").focus();
-      }
-    };
-  })();
-</script>
 </body>
 </html>
