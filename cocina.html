@@ -424,14 +424,16 @@ const db    = getDatabase(fbApp);
 const DB_PATH = "cocina";
 
 // ── ESTADO ────────────────────────────────────────────────────
-let asignaciones    = JSON.parse(localStorage.getItem("crptg11-cocina-asig")       || "{}");
-let asignSab        = JSON.parse(localStorage.getItem("crptg11-cocina-sab")        || "{}");
-let notas           = JSON.parse(localStorage.getItem("crptg11-cocina-notas")      || "[]");
-let equipoDia       = JSON.parse(localStorage.getItem("crptg11-cocina-equipo")     || "{}");
-let ayudantesExtra  = JSON.parse(localStorage.getItem("crptg11-cocina-extra")      || "{}");
-if(Array.isArray(ayudantesExtra)) ayudantesExtra = {};
-let picadoresEquipo = JSON.parse(localStorage.getItem("crptg11-cocina-picadores")  || "{}");
+// Empieza con valores en memoria; localStorage es solo caché secundaria.
+// Firebase es la fuente de verdad — se carga en el primer onValue.
+let asignaciones    = {};
+let asignSab        = {};
+let notas           = [];
+let equipoDia       = {};
+let ayudantesExtra  = {};
+let picadoresEquipo = {};
 let diaActivo       = "mie";
+let _fbLoaded       = false; // true cuando Firebase ya respondió al menos una vez
 let _fbIgnore       = false; // evita loop al recibir el propio cambio
 
 // Indicador de sync en el header
@@ -441,48 +443,60 @@ function _syncUI(estado){
   if(estado === "ok")      { el.textContent = "☁️ Sincronizado";  el.style.color = "var(--accent)"; }
   else if(estado === "saving") { el.textContent = "⏳ Guardando…";   el.style.color = "var(--gold)";   }
   else if(estado === "err")    { el.textContent = "⚠️ Sin conexión"; el.style.color = "var(--rose)";   }
+  else if(estado === "loading"){ el.textContent = "🔄 Cargando…";   el.style.color = "var(--muted)";  }
 }
+_syncUI("loading");
 
 // Escuchar cambios en Firebase en tiempo real (otros dispositivos)
+// Firebase SIEMPRE tiene prioridad. _fbIgnore solo bloquea el eco del propio guardar().
 onValue(ref(db, DB_PATH), snap => {
   if(_fbIgnore) return;
   const data = snap.val();
-  if(!data) return;
-  asignaciones    = data.asig       || {};
-  asignSab        = data.sab        || {};
-  notas           = data.notas      || [];
-  equipoDia       = data.equipo     || {};
-  ayudantesExtra  = data.extra      || {};
-  picadoresEquipo = data.picadores  || {};
-  // Actualizar caché local
+  if(data){
+    asignaciones    = data.asig       || {};
+    asignSab        = data.sab        || {};
+    notas           = Array.isArray(data.notas) ? data.notas : [];
+    equipoDia       = data.equipo     || {};
+    ayudantesExtra  = data.extra      || {};
+    if(Array.isArray(ayudantesExtra)) ayudantesExtra = {};
+    picadoresEquipo = data.picadores  || {};
+  }
+  // Actualizar caché local (solo para consultas offline rápidas, no como fuente de verdad)
   localStorage.setItem("crptg11-cocina-asig",      JSON.stringify(asignaciones));
   localStorage.setItem("crptg11-cocina-sab",       JSON.stringify(asignSab));
   localStorage.setItem("crptg11-cocina-notas",     JSON.stringify(notas));
   localStorage.setItem("crptg11-cocina-equipo",    JSON.stringify(equipoDia));
   localStorage.setItem("crptg11-cocina-extra",     JSON.stringify(ayudantesExtra));
   localStorage.setItem("crptg11-cocina-picadores", JSON.stringify(picadoresEquipo));
+
+  if(!_fbLoaded){
+    _fbLoaded = true;
+    // Primera carga: si Firebase no tenía datos Y localStorage sí tiene, migramos
+    if(!snap.val()){
+      const localAsig = JSON.parse(localStorage.getItem("crptg11-cocina-asig") || "{}");
+      const localSab  = JSON.parse(localStorage.getItem("crptg11-cocina-sab")  || "{}");
+      const localNotas= JSON.parse(localStorage.getItem("crptg11-cocina-notas")|| "[]");
+      const localEq   = JSON.parse(localStorage.getItem("crptg11-cocina-equipo")|| "{}");
+      const localExt  = JSON.parse(localStorage.getItem("crptg11-cocina-extra") || "{}");
+      const localPic  = JSON.parse(localStorage.getItem("crptg11-cocina-picadores") || "{}");
+      const hayDatosLocales = Object.keys(localAsig).length || Object.keys(localSab).length ||
+                              Object.keys(localEq).length   || Object.keys(localPic).length;
+      if(hayDatosLocales){
+        // Subir localStorage a Firebase (única vez — migración)
+        asignaciones    = localAsig;
+        asignSab        = localSab;
+        notas           = localNotas;
+        equipoDia       = localEq;
+        ayudantesExtra  = Array.isArray(localExt) ? {} : localExt;
+        picadoresEquipo = localPic;
+        guardar();
+      }
+    }
+  }
+
   renderTodo();
   _syncUI("ok");
 }, err => { console.error(err); _syncUI("err"); });
-
-// Migrar datos existentes de localStorage a Firebase (primera vez)
-(async () => {
-  try {
-    const snap = await get(ref(db, DB_PATH));
-    if(!snap.exists()){
-      // No hay datos en Firebase → subir lo que hay en localStorage
-      const payload = {
-        asig:      asignaciones,
-        sab:       asignSab,
-        notas:     notas,
-        equipo:    equipoDia,
-        extra:     ayudantesExtra,
-        picadores: picadoresEquipo,
-      };
-      await set(ref(db, DB_PATH), payload);
-    }
-  } catch(e){ console.warn("Migración Firebase:", e); }
-})();
 
 // ── LIMPIEZA DE CLAVES BASURA ay_sab_*** ─────────────────────
 // Los slots del sábado deben vivir en `asignSab` (nodo "sab", claves "sab_aux_***").
@@ -518,6 +532,7 @@ async function migrarSabado(){
 
     // Guardar en Firebase
     _fbIgnore = true;
+    clearTimeout(guardar._ignoreTimer);
     await set(ref(db, DB_PATH), {
       asig:      asignaciones,
       sab:       asignSab,
@@ -526,7 +541,7 @@ async function migrarSabado(){
       extra:     ayudantesExtra,
       picadores: picadoresEquipo,
     });
-    setTimeout(() => { _fbIgnore = false; }, 1000);
+    guardar._ignoreTimer = setTimeout(() => { _fbIgnore = false; }, 1500);
 
     localStorage.setItem("crptg11-cocina-asig", JSON.stringify(asignaciones));
     localStorage.setItem("crptg11-cocina-sab",  JSON.stringify(asignSab));
@@ -584,7 +599,11 @@ function guardar(){
   localStorage.setItem("crptg11-cocina-extra",     JSON.stringify(ayudantesExtra));
   localStorage.setItem("crptg11-cocina-picadores", JSON.stringify(picadoresEquipo));
   _syncUI("saving");
+  // _fbIgnore: solo bloquea el eco inmediato de nuestra propia escritura.
+  // Se activa justo antes de set() y se desactiva 1.5s después para
+  // no perder actualizaciones de otros dispositivos que lleguen después.
   _fbIgnore = true;
+  clearTimeout(guardar._ignoreTimer);
   set(ref(db, DB_PATH), {
     asig:      asignaciones,
     sab:       asignSab,
@@ -594,7 +613,7 @@ function guardar(){
     picadores: picadoresEquipo,
   }).then(()=>{
     _syncUI("ok");
-    setTimeout(()=>{ _fbIgnore = false; }, 1000);
+    guardar._ignoreTimer = setTimeout(()=>{ _fbIgnore = false; }, 1500);
   }).catch(err=>{
     console.error("Firebase guardar:", err);
     _syncUI("err");
@@ -896,6 +915,16 @@ async function generarPDF(){
 function renderSeccionDia(){
   const sec = document.getElementById("seccion-dia");
   const eq  = document.getElementById("card-equipo-general");
+  // Si Firebase aún no ha cargado, mostrar indicador
+  if(!_fbLoaded){
+    sec.innerHTML = `<div class="card" style="text-align:center;padding:36px;color:var(--muted)">
+      <div style="font-size:2rem;margin-bottom:10px">☁️</div>
+      <div style="font-size:13px;font-weight:600">Conectando con Firebase…</div>
+      <div style="font-size:12px;margin-top:4px">Los datos se cargarán en un momento.</div>
+    </div>`;
+    eq.style.display = "none";
+    return;
+  }
   if(diaActivo === "gen"){
     sec.innerHTML = renderVistaGeneralHTML();
     eq.style.display = "none";
