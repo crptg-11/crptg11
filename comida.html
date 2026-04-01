@@ -613,12 +613,16 @@ document.addEventListener('DOMContentLoaded', function(){
   // After auth/showApp, if there's a scan param, route it
   if(_scanParam && s){
     const _autoScan = setInterval(()=>{
-      if(DATA.length && Object.keys(FB_DATA).length){
+      // Must wait until THIS specific participant is in DATA.
+      // EXT- entries load async (after CSV), so DATA.length>0 is not enough.
+      const ready = DATA.find(x=>x.id===_scanParam);
+      if(ready && Object.keys(FB_DATA).length){
         clearInterval(_autoScan);
         routeScanParam(_scanParam);
       }
     }, 200);
-    setTimeout(()=>clearInterval(_autoScan), 10000);
+    // Fallback: after 12s if still not found, show error
+    setTimeout(()=>{ clearInterval(_autoScan); if(!DATA.find(x=>x.id===_scanParam)) showToast('⚠️ Participante no encontrado: '+_scanParam); }, 12000);
   }
 });
 
@@ -686,19 +690,32 @@ function showApp(fromAuth){
     if(fromAuth && window._pendingScanId){
       const pid=window._pendingScanId;
       const _t=setInterval(()=>{
-        if(DATA.length && Object.keys(FB_DATA).length){
+        // Wait until this specific participant is loaded (EXT- arrive after CSV)
+        const ready=DATA.find(x=>x.id===pid);
+        if(ready && Object.keys(FB_DATA).length){
           clearInterval(_t);
           routeScanParam(pid);
           window._pendingScanId=null;
         }
       },200);
-      setTimeout(()=>clearInterval(_t),10000);
+      setTimeout(()=>clearInterval(_t),12000);
     }
   } else {
     buildDayTabs(); renderMain(); renderNoFood(); updateStats();
     if(fromAuth && window._pendingScanId){
-      routeScanParam(window._pendingScanId);
+      const pid=window._pendingScanId;
       window._pendingScanId=null;
+      // Even here, EXT- may not be in DATA yet if waitFB hasn't resolved
+      if(DATA.find(x=>x.id===pid)){
+        routeScanParam(pid);
+      } else {
+        const _t=setInterval(()=>{
+          if(DATA.find(x=>x.id===pid) && Object.keys(FB_DATA).length){
+            clearInterval(_t); routeScanParam(pid);
+          }
+        },200);
+        setTimeout(()=>clearInterval(_t),12000);
+      }
     }
   }
 }
@@ -1257,13 +1274,12 @@ function pubTryAuth(){
     document.getElementById('ps-pw-err').textContent='';
     closePubScanModal();
     showApp(true);
-    // Re-open pub modal now logged in
     const pid=_pubScanId||new URLSearchParams(window.location.search).get('scan');
     if(pid){
       const _t=setInterval(()=>{
-        if(DATA.length&&Object.keys(FB_DATA).length){ clearInterval(_t); openScanConfirm(pid); }
+        if(DATA.find(x=>x.id===pid)&&Object.keys(FB_DATA).length){ clearInterval(_t); openScanConfirm(pid); }
       },150);
-      setTimeout(()=>clearInterval(_t),8000);
+      setTimeout(()=>clearInterval(_t),12000);
     }
   } else if(v===VIEWER_PASS){
     isAdmin=false;
@@ -1274,9 +1290,9 @@ function pubTryAuth(){
     const pid=_pubScanId||new URLSearchParams(window.location.search).get('scan');
     if(pid){
       const _t=setInterval(()=>{
-        if(DATA.length&&Object.keys(FB_DATA).length){ clearInterval(_t); openPubScanModal(pid,false); }
+        if(DATA.find(x=>x.id===pid)&&Object.keys(FB_DATA).length){ clearInterval(_t); openPubScanModal(pid,false); }
       },150);
-      setTimeout(()=>clearInterval(_t),8000);
+      setTimeout(()=>clearInterval(_t),12000);
     }
   } else {
     document.getElementById('ps-pw-err').textContent='Contraseña incorrecta';
