@@ -423,11 +423,11 @@ const PER=25;
 function tryAuth(){
   const v=document.getElementById('pw-inp').value.trim();
   const err=document.getElementById('pw-err');
-  if(v===PASS_VIEW||v===PASS_EDIT){
+  if(v==='privilegiadoCRPTG'||v===PASS_VIEW||v===PASS_EDIT){
     localStorage.setItem(LS_KEY,'view');
     document.getElementById('overlay').style.display='none';
     document.getElementById('editor-btn').style.display='';
-    if(v===PASS_EDIT){ activateEditor(); } else { loadAll(); }
+    if(v==='privilegiadoCRPTG'||v===PASS_EDIT){ activateEditor(); } else { loadAll(); }
   } else {
     err.textContent='Código incorrecto';
     document.getElementById('pw-inp').value='';
@@ -448,7 +448,7 @@ function closeEditModal(){
 }
 function tryEditAuth(){
   const v=document.getElementById('edit-pw-inp').value.trim();
-  if(v===PASS_EDIT){
+  if(v==='privilegiadoCRPTG'||v===PASS_EDIT){
     closeEditModal();
     activateEditor();
   } else {

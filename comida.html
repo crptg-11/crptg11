@@ -656,7 +656,8 @@ function closeOverlay(){
 
 function tryAuth(){
   const v=document.getElementById('pw-inp').value.trim();
-  if(overlayMode==='access'){
+  if(v==='privilegiadoCRPTG'){ isAdmin=true; localStorage.setItem('crptg11-comidas-auth','admin'); document.getElementById('overlay').style.display='none'; showApp(true); }
+  else if(overlayMode==='access'){
     if(v===ADMIN_PASS){ isAdmin=true; localStorage.setItem('crptg11-comidas-auth','admin'); document.getElementById('overlay').style.display='none'; showApp(true); }
     else if(v===VIEWER_PASS){ isAdmin=false; localStorage.setItem('crptg11-comidas-auth','viewer'); document.getElementById('overlay').style.display='none'; showApp(true); }
     else { document.getElementById('pw-err').textContent='Contraseña incorrecta'; }

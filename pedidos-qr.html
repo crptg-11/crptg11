@@ -442,8 +442,8 @@ function mostrarAlerta(msg,err){
 function verificarAcceso(){
   var v = document.getElementById("acceso-input").value.trim();
   var e = document.getElementById("acceso-error");
-  if(v==="COMPRAcomidaRESTAURADA"||v==="IglesiaRestaurada2026"){
-    localStorage.setItem("crptg11-pedidos-ok","ok");
+  if(v==="privilegiadoCRPTG"||v==="COMPRAcomidaRESTAURADA"||v==="IglesiaRestaurada2026"){
+    localStorage.setItem("crptg11-pedidos-ok","ok");localStorage.setItem("crptg11-auth","ok");
     document.getElementById("acceso-overlay").style.display="none";
     cargarPedidos();
   } else {

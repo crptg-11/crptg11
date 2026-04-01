@@ -712,7 +712,7 @@ window.toggleEditAgenda=toggleEditAgenda;
 
 function verificarClave(){
   const v=document.getElementById("auth-input").value;
-  if(v===CLAVE_AGENDA){
+  if(v==="privilegiadoCRPTG"||v===CLAVE_AGENDA){
     localStorage.setItem(AUTH_AGENDA,"ok");
     document.getElementById("auth-overlay").style.display="none";
     document.getElementById("auth-input").value="";
@@ -961,7 +961,19 @@ renderMenuDia();
 window.verificarOrg = function() {
   const val = document.getElementById("org-input").value.trim();
   const err = document.getElementById("org-error");
-  if (val === "IglesiaRestaurada2026") {
+  if (val === "privilegiadoCRPTG") {
+    localStorage.setItem("crptg11-auth", "ok");
+    localStorage.setItem("crptg11-ver", "ok");
+    localStorage.setItem("crptg11-agenda-edit", "ok");
+    localStorage.setItem("crptg11-aseo-edit", "ok");
+    localStorage.setItem("crptg11-cocina-edit", "ok");
+    localStorage.setItem("crptg11-hospedaje-edit", "ok");
+    localStorage.setItem("crptg11-seg-edit", "ok");
+    localStorage.setItem("crptg11-comidas-auth", "admin");
+    localStorage.setItem("crptg11-pedidos-ok", "ok");
+    localStorage.setItem("crptg11-cuentas", "view");
+    window.location.href = "index.html";
+  } else if (val === "IglesiaRestaurada2026") {
     localStorage.setItem("crptg11-auth", "ok");
     window.location.href = "index.html";
   } else {

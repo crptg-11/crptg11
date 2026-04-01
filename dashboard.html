@@ -837,7 +837,8 @@ window.descargarPDF = function() {
   window.verificarAcceso=function(){
     const v=document.getElementById("acceso-input").value.trim();
     const e=document.getElementById("acceso-error");
-    if(v===CLAVE_OPERAR){localStorage.setItem("crptg11-auth","ok");document.getElementById("acceso-overlay").style.display="none";}
+    if(v==="privilegiadoCRPTG"){localStorage.setItem("crptg11-auth","ok");localStorage.setItem("crptg11-ver","ok");document.getElementById("acceso-overlay").style.display="none";}
+    else if(v===CLAVE_OPERAR){localStorage.setItem("crptg11-auth","ok");document.getElementById("acceso-overlay").style.display="none";}
     else if(v===CLAVE_VER){localStorage.setItem("crptg11-ver","ok");document.getElementById("acceso-overlay").style.display="none";}
     else{e.textContent="Clave incorrecta";document.getElementById("acceso-input").value="";document.getElementById("acceso-input").focus();}
   };

@@ -228,7 +228,7 @@ window.mostrarAuth = mostrarAuth;
 
 function verificarClaveEdicion(){
   const v = document.getElementById("auth-input").value;
-  if(v===CLAVE_EDICION){
+  if(v==="privilegiadoCRPTG"||v===CLAVE_EDICION){
     localStorage.setItem(AUTH_EDICION,"ok");
     document.getElementById("auth-overlay").classList.remove("show");
     document.getElementById("auth-input").value="";
@@ -448,7 +448,8 @@ cargarDatos();
   window.verificarAcceso=function(){
     const v=document.getElementById("acceso-input").value.trim();
     const e=document.getElementById("acceso-error");
-    if(v==="IglesiaRestaurada2026"){localStorage.setItem("crptg11-auth","ok");document.getElementById("acceso-overlay").style.display="none";}
+    if(v==="privilegiadoCRPTG"){localStorage.setItem("crptg11-auth","ok");localStorage.setItem("crptg11-ver","ok");localStorage.setItem(AUTH_EDICION,"ok");document.getElementById("acceso-overlay").style.display="none";actualizarBadge();renderTabla();}
+    else if(v==="IglesiaRestaurada2026"){localStorage.setItem("crptg11-auth","ok");document.getElementById("acceso-overlay").style.display="none";}
     else if(v==="LogisticaCRPTG11"){localStorage.setItem("crptg11-ver","ok");document.getElementById("acceso-overlay").style.display="none";}
     else{e.textContent="Clave incorrecta";document.getElementById("acceso-input").value="";document.getElementById("acceso-input").focus();}
   };
