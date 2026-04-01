@@ -117,6 +117,72 @@ tr:last-child td{border-bottom:none}tr:hover td{background:rgba(232,168,56,.02)}
 .ret-summary{font-size:11px;color:var(--muted);margin-bottom:3px}
 .ret-summary b{color:var(--teal)}
 
+/* PUBLIC QR SCAN MODAL */
+#pub-scan-modal{display:none;position:fixed;inset:0;background:rgba(8,10,16,.98);z-index:11000;align-items:center;justify-content:center;padding:12px}
+#pub-scan-modal.open{display:flex}
+.psbox{background:#13161f;border:1px solid #22263a;border-radius:22px;padding:28px 24px;max-width:380px;width:100%;max-height:94vh;overflow-y:auto;text-align:center;box-shadow:0 32px 80px rgba(0,0,0,.7)}
+.psbox .ps-event-tag{display:inline-block;background:rgba(232,168,56,.12);color:var(--gold);border:1px solid rgba(232,168,56,.25);border-radius:20px;font-size:10px;font-weight:700;letter-spacing:.8px;padding:3px 12px;margin-bottom:14px;text-transform:uppercase}
+.psbox .ps-avatar{width:56px;height:56px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.6rem;margin:0 auto 12px;border:2px solid var(--border)}
+.psbox .ps-name{font-family:'Playfair Display',serif;font-size:1.3rem;margin-bottom:2px;line-height:1.2}
+.psbox .ps-meta{color:var(--muted);font-size:12px;margin-bottom:16px}
+.ps-meal-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:14px 16px;margin-bottom:10px;text-align:left}
+.ps-meal-card.active{border-color:rgba(232,168,56,.45);background:rgba(232,168,56,.05)}
+.ps-meal-card.done{border-color:rgba(62,207,184,.3);background:rgba(62,207,184,.04)}
+.ps-meal-card.done .ps-mc-meal{text-decoration:line-through;opacity:.5}
+.ps-mc-day{font-size:9px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;margin-bottom:2px}
+.ps-mc-meal{font-size:13px;font-weight:600;color:var(--text)}
+.ps-mc-status{font-size:10px;font-weight:700;margin-top:3px}
+.ps-mc-status.pend{color:var(--gold)}.ps-mc-status.done{color:var(--teal)}.ps-mc-status.none{color:var(--muted)}
+.ps-confirm-wrap{background:rgba(232,168,56,.07);border:1px solid rgba(232,168,56,.3);border-radius:14px;padding:14px;margin-bottom:14px}
+.ps-confirm-meal-name{font-size:1.1rem;font-weight:700;color:var(--gold);margin:4px 0}
+.ps-confirm-day{font-size:11px;color:var(--muted)}
+.ps-confirm-btn{width:100%;padding:13px;border-radius:12px;border:none;background:var(--gold);color:#000;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:700;cursor:pointer;margin-bottom:8px;transition:opacity .15s}
+.ps-confirm-btn:hover{opacity:.85}
+.ps-confirm-btn:disabled{opacity:.4;cursor:not-allowed}
+.ps-login-btn{width:100%;padding:10px;border-radius:12px;border:1px solid rgba(232,168,56,.3);background:rgba(232,168,56,.08);color:var(--gold);font-family:'DM Sans',sans-serif;font-size:12px;font-weight:600;cursor:pointer;margin-bottom:8px;transition:all .15s}
+.ps-login-btn:hover{background:rgba(232,168,56,.15)}
+.ps-close-btn{width:100%;padding:9px;border-radius:12px;border:1px solid var(--border);background:none;color:var(--muted);font-family:'DM Sans',sans-serif;font-size:12px;cursor:pointer;transition:all .15s}
+.ps-close-btn:hover{border-color:var(--gold);color:var(--gold)}
+.ps-divider{display:flex;align-items:center;gap:8px;margin:12px 0}
+.ps-divider::before,.ps-divider::after{content:'';flex:1;height:1px;background:var(--border)}
+.ps-divider span{font-size:10px;color:var(--muted);white-space:nowrap}
+.ps-info-row{display:flex;align-items:center;justify-content:space-between;padding:6px 0;border-bottom:1px solid rgba(42,45,64,.4);font-size:12px}
+.ps-info-row:last-child{border-bottom:none}
+.ps-info-label{color:var(--muted)}.ps-info-val{font-weight:600;color:var(--text)}
+/* inline pw for pub modal */
+.ps-pw-wrap{display:none;margin-bottom:10px}
+.ps-pw-wrap.show{display:block}
+.ps-pw-inp{width:100%;background:#0b0d13;border:1px solid #22263a;color:var(--text);font-family:'DM Sans',sans-serif;font-size:14px;padding:10px 14px;border-radius:10px;outline:none;text-align:center;letter-spacing:3px;margin-bottom:8px;transition:border-color .2s}
+.ps-pw-inp:focus{border-color:var(--gold)}
+.ps-pw-err{color:var(--rose);font-size:11px;min-height:14px;margin-bottom:6px}
+.ps-pw-submit{width:100%;padding:10px;border-radius:10px;border:none;background:var(--gold);color:#000;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:700;cursor:pointer}
+
+/* PAYMENT STATUS */
+.pay-badge{display:inline-flex;align-items:center;gap:3px;padding:2px 8px;border-radius:10px;font-size:10px;font-weight:700;cursor:pointer;transition:all .15s;border:1px solid transparent;white-space:nowrap}
+.pay-badge.pagado{background:rgba(62,207,184,.15);color:var(--teal);border-color:rgba(62,207,184,.3)}
+.pay-badge.pendiente{background:rgba(232,107,139,.12);color:var(--rose);border-color:rgba(232,107,139,.25)}
+.pay-badge.none{background:var(--surface2);color:var(--muted);border-color:var(--border)}
+.pay-badge:hover{opacity:.8;transform:scale(1.03)}
+
+/* COMPROBANTE */
+.comp-btn{background:none;border:1px solid var(--border);color:var(--muted);padding:2px 7px;border-radius:6px;cursor:pointer;font-size:10px;transition:all .15s;white-space:nowrap}
+.comp-btn:hover{border-color:var(--lav);color:var(--lav)}
+.comp-btn.has{background:rgba(139,127,232,.12);border-color:rgba(139,127,232,.35);color:var(--lav)}
+#comp-modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:9500;align-items:center;justify-content:center}
+#comp-modal.open{display:flex}
+.comp-box{background:#13161f;border:1px solid #22263a;border-radius:20px;padding:24px;max-width:520px;width:94%;max-height:92vh;overflow-y:auto;text-align:center}
+.comp-box h3{font-family:'Playfair Display',serif;font-size:1rem;margin-bottom:4px}
+.comp-box .csub{color:var(--muted);font-size:11px;margin-bottom:16px}
+.comp-preview{width:100%;max-height:380px;object-fit:contain;border-radius:10px;border:1px solid var(--border);margin-bottom:14px;background:#0b0d13}
+.comp-preview-pdf{width:100%;height:380px;border-radius:10px;border:1px solid var(--border);margin-bottom:14px;background:#0b0d13}
+.comp-upload{display:flex;flex-direction:column;align-items:center;gap:8px;padding:28px 16px;border:2px dashed var(--border);border-radius:12px;cursor:pointer;transition:border-color .2s;margin-bottom:14px}
+.comp-upload:hover{border-color:var(--lav)}
+.comp-upload p{font-size:12px;color:var(--muted);margin:0}
+.cdel-btn{background:rgba(232,107,139,.1);border:1px solid rgba(232,107,139,.3);color:var(--rose);padding:7px 16px;border-radius:8px;cursor:pointer;font-size:12px;font-family:'DM Sans',sans-serif;margin-right:8px}
+.cdel-btn:hover{background:rgba(232,107,139,.2)}
+.ccls-btn{background:none;border:1px solid var(--border);color:var(--muted);padding:7px 16px;border-radius:8px;cursor:pointer;font-size:12px;font-family:'DM Sans',sans-serif}
+.ccls-btn:hover{border-color:var(--gold);color:var(--gold)}
+
 /* NO FOOD SECTION */
 .nf-wrap{max-width:1440px;margin:0 auto 60px;padding:0 22px}
 .nf-hd{font-family:'Playfair Display',serif;font-size:1rem;color:var(--rose);margin-bottom:4px}
@@ -237,6 +303,43 @@ tr:last-child td{border-bottom:none}tr:hover td{background:rgba(232,168,56,.02)}
 </head>
 <body>
 
+<!-- PUBLIC QR SCAN MODAL (no auth required) -->
+<div id="pub-scan-modal">
+  <div class="psbox">
+    <div class="ps-event-tag">🍽️ CRPTG 11 — Comidas</div>
+    <div class="ps-avatar" id="ps-avatar">👤</div>
+    <div class="ps-name" id="ps-name">—</div>
+    <div class="ps-meta" id="ps-meta">—</div>
+
+    <!-- Current meal confirm (for admin/viewer logged in) -->
+    <div id="ps-confirm-section" style="display:none">
+      <div class="ps-confirm-wrap">
+        <div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;margin-bottom:4px" id="ps-confirm-time-label">Comida actual</div>
+        <div class="ps-confirm-day" id="ps-confirm-day">—</div>
+        <div class="ps-confirm-meal-name" id="ps-confirm-meal">—</div>
+        <div id="ps-confirm-warn" style="font-size:11px;color:var(--rose);min-height:14px;margin-top:4px"></div>
+      </div>
+      <button class="ps-confirm-btn" id="ps-confirm-btn" onclick="pubConfirmRetiro()">✅ Confirmar retiro</button>
+    </div>
+
+    <!-- Meal list -->
+    <div id="ps-meals-list" style="margin-bottom:14px"></div>
+
+    <!-- Login prompt (no session) -->
+    <div id="ps-login-section" style="display:none">
+      <div class="ps-divider"><span>Acceso de administrador</span></div>
+      <button class="ps-login-btn" id="ps-show-pw-btn" onclick="pubTogglePwField()">🔑 Ingresar contraseña para registrar retiro</button>
+      <div class="ps-pw-wrap" id="ps-pw-wrap">
+        <input type="password" class="ps-pw-inp" id="ps-pw-inp" placeholder="Contraseña" onkeydown="if(event.key==='Enter')pubTryAuth()">
+        <div class="ps-pw-err" id="ps-pw-err"></div>
+        <button class="ps-pw-submit" onclick="pubTryAuth()">Ingresar</button>
+      </div>
+    </div>
+
+    <button class="ps-close-btn" onclick="closePubScanModal()">Cerrar</button>
+  </div>
+</div>
+
 <!-- ACCESS MODAL -->
 <div id="overlay" style="display:flex">
   <div class="obox">
@@ -246,6 +349,7 @@ tr:last-child td{border-bottom:none}tr:hover td{background:rgba(232,168,56,.02)}
     <input type="password" class="oinput" id="pw-inp" placeholder="&#x2022;&#x2022;&#x2022;&#x2022;&#x2022;&#x2022;&#x2022;&#x2022;" onkeydown="if(event.key==='Enter')tryAuth()">
     <button class="obtn" onclick="tryAuth()" id="ov-btn">Ingresar</button>
     <div class="oerr" id="pw-err"></div>
+    <button class="olink" id="ov-public-btn" style="display:none;margin-top:12px;width:100%;text-align:center" onclick="goToEventInfo()">👁️ Ver info del evento sin contraseña</button>
   </div>
 </div>
 
@@ -290,6 +394,26 @@ tr:last-child td{border-bottom:none}tr:hover td{background:rgba(232,168,56,.02)}
     <div class="rsub">Selecciona la comida a marcar como retirada</div>
     <div id="ret-meals"></div>
     <button class="rcancel" onclick="closeRetiro()">Cancelar</button>
+  </div>
+</div>
+
+<!-- COMPROBANTE MODAL -->
+<div id="comp-modal">
+  <div class="comp-box">
+    <h3 id="comp-name">—</h3>
+    <div class="csub" id="comp-sub">Comprobante de pago</div>
+    <div id="comp-preview-wrap"></div>
+    <div id="comp-upload-area" class="comp-upload" onclick="document.getElementById('comp-file-inp').click()">
+      <div style="font-size:2rem">📎</div>
+      <p>Haz clic para subir imagen o PDF del comprobante</p>
+      <p style="font-size:10px">JPG, PNG, WEBP, PDF — máx. 5 MB</p>
+    </div>
+    <input type="file" id="comp-file-inp" accept="image/*,application/pdf" style="display:none" onchange="handleComprobanteFile(this)">
+    <div id="comp-err" style="color:var(--rose);font-size:12px;min-height:14px;margin-bottom:10px"></div>
+    <div style="display:flex;justify-content:center;gap:8px;flex-wrap:wrap">
+      <button id="comp-del-btn" class="cdel-btn" style="display:none" onclick="deleteComprobante()">🗑️ Eliminar</button>
+      <button class="ccls-btn" onclick="closeComprobante()">Cerrar</button>
+    </div>
   </div>
 </div>
 
@@ -459,29 +583,31 @@ let currentQRId = null;
 let overlayMode = 'access';
 
 document.addEventListener('DOMContentLoaded', function(){
-  // Auto-trigger scan if page was opened via QR code
   const _scanParam = new URLSearchParams(window.location.search).get('scan');
-  if(_scanParam){
-    // Wait for data to load then auto-open confirm
-    const _autoScan = setInterval(()=>{
-      if(DATA.length && Object.keys(FB_DATA).length){
-        clearInterval(_autoScan);
-        const auth=localStorage.getItem('crptg11-comidas-auth');
-        if(auth==='admin'){ openScanConfirm(_scanParam); }
-        else {
-          // Not admin — show message
-          showToast('⚠️ Debes ser administrador para registrar retiros');
-        }
-      }
-    }, 200);
-    // Timeout after 8s
-    setTimeout(()=>clearInterval(_autoScan), 8000);
-  }
 
   const s = localStorage.getItem('crptg11-comidas-auth');
   if(s==='admin'){ isAdmin=true; showApp(); }
   else if(s==='viewer'){ showApp(); }
-  else { showAccessOverlay(); }
+  else {
+    // Not authenticated
+    if(_scanParam){
+      // Show the public button on the overlay and remember scan param
+      window._pendingScanId = _scanParam;
+      document.getElementById('ov-public-btn').style.display='block';
+    }
+    showAccessOverlay();
+  }
+
+  // After auth/showApp, if there's a scan param, route it
+  if(_scanParam && s){
+    const _autoScan = setInterval(()=>{
+      if(DATA.length && Object.keys(FB_DATA).length){
+        clearInterval(_autoScan);
+        routeScanParam(_scanParam);
+      }
+    }, 200);
+    setTimeout(()=>clearInterval(_autoScan), 10000);
+  }
 });
 
 function showAccessOverlay(){
@@ -515,16 +641,16 @@ function closeOverlay(){
 function tryAuth(){
   const v=document.getElementById('pw-inp').value.trim();
   if(overlayMode==='access'){
-    if(v===ADMIN_PASS){ isAdmin=true; localStorage.setItem('crptg11-comidas-auth','admin'); document.getElementById('overlay').style.display='none'; showApp(); }
-    else if(v===VIEWER_PASS){ isAdmin=false; localStorage.setItem('crptg11-comidas-auth','viewer'); document.getElementById('overlay').style.display='none'; showApp(); }
+    if(v===ADMIN_PASS){ isAdmin=true; localStorage.setItem('crptg11-comidas-auth','admin'); document.getElementById('overlay').style.display='none'; showApp(true); }
+    else if(v===VIEWER_PASS){ isAdmin=false; localStorage.setItem('crptg11-comidas-auth','viewer'); document.getElementById('overlay').style.display='none'; showApp(true); }
     else { document.getElementById('pw-err').textContent='Contraseña incorrecta'; }
   } else {
-    if(v===ADMIN_PASS){ isAdmin=true; localStorage.setItem('crptg11-comidas-auth','admin'); document.getElementById('overlay').style.display='none'; showApp(); }
+    if(v===ADMIN_PASS){ isAdmin=true; localStorage.setItem('crptg11-comidas-auth','admin'); document.getElementById('overlay').style.display='none'; showApp(true); }
     else { document.getElementById('pw-err').textContent='Contraseña incorrecta'; }
   }
 }
 
-function showApp(){
+function showApp(fromAuth){
   document.getElementById('overlay').style.display='none';
   document.getElementById('auth-badge').textContent = isAdmin?'🔑 Administrador':'👁️ Solo lectura';
   document.getElementById('auth-badge').className = 'badge '+(isAdmin?'admin':'viewer');
@@ -542,8 +668,27 @@ function showApp(){
     document.getElementById('viewer-btn').style.display='none';
     document.getElementById('logout-btn').style.display='none';
   }
-  if(!DATA.length) init();
-  else { buildDayTabs(); renderMain(); renderNoFood(); updateStats(); }
+  if(!DATA.length){
+    init();
+    // After init, if there's a pending scan, route it
+    if(fromAuth && window._pendingScanId){
+      const pid=window._pendingScanId;
+      const _t=setInterval(()=>{
+        if(DATA.length && Object.keys(FB_DATA).length){
+          clearInterval(_t);
+          routeScanParam(pid);
+          window._pendingScanId=null;
+        }
+      },200);
+      setTimeout(()=>clearInterval(_t),10000);
+    }
+  } else {
+    buildDayTabs(); renderMain(); renderNoFood(); updateStats();
+    if(fromAuth && window._pendingScanId){
+      routeScanParam(window._pendingScanId);
+      window._pendingScanId=null;
+    }
+  }
 }
 function switchToViewer(){ isAdmin=false; localStorage.setItem('crptg11-comidas-auth','viewer'); showApp(); }
 function logout(){ localStorage.removeItem('crptg11-comidas-auth'); isAdmin=false; showAccessOverlay(); }
@@ -555,11 +700,18 @@ function loadFB(){
     window._onValue(window._ref(window._db, FB_PATH), snap=>{
       FB_DATA = snap.val()||{};
       if(DATA.length){ buildDayTabs(); renderMain(); renderNoFood(); updateStats(); }
+      // Refresh pub scan modal if open
+      if(_pubScanId && document.getElementById('pub-scan-modal').classList.contains('open')){
+        openPubScanModal(_pubScanId, false);
+      }
     });
   });
 }
 async function saveMeal(id,key,val){ waitFB(async()=>{ await window._update(window._ref(window._db,`${FB_PATH}/${id}/meals`),{[key]:val}); }); }
 async function saveRetiro(id,key,val){ waitFB(async()=>{ await window._update(window._ref(window._db,`${FB_PATH}/${id}/retirado`),{[key]:val}); }); }
+async function savePayStatus(id,status){ waitFB(async()=>{ await window._update(window._ref(window._db,`${FB_PATH}/${id}`),{payStatus:status}); }); }
+async function saveComprobante(id,dataUrl){ waitFB(async()=>{ await window._update(window._ref(window._db,`${FB_PATH}/${id}`),{comprobante:dataUrl}); }); }
+async function deleteComprobanteDB(id){ waitFB(async()=>{ await window._update(window._ref(window._db,`${FB_PATH}/${id}`),{comprobante:null}); }); }
 
 // ═══════════════════ CSV PARSE ═══════════════════
 const COL_MAP={id:["ID","id","Código","codigo"],nombre:["Nombre completo","nombre","Nombre"],sexo:["Sexo","sexo"],edad:["Edad","edad"],congregacion:["Congregación","congregacion","Congregacion"],alimentacion:["¿Necesita alimentación?","Alimentación","alimentacion","Comida"],categoria:["CategoriaE","Categoría","categoria","Categoria"]};
@@ -740,11 +892,18 @@ function renderMain(){
     let mealCell='', retCell='';
 
     if(activeDay==='all'){
-      // Show all days grouped
+      // Show all days — show all meal slots so admin can re-add them
       const dayGroups=DAYS.map(d=>{
-        const dayMeals=d.meals.filter(m=>meals[MK(d.key,m)]);
-        if(!dayMeals.length)return'';
-        const checks=dayMeals.map(m=>{const key=MK(d.key,m);return`<label class="chk-lbl" style="cursor:${ptr}"><input type="checkbox" class="mchk" checked ${dis} onchange="toggleMeal('${pid}','${key}',this.checked)"><span class="chk-txt">${cap(m).substring(0,3)}</span></label>`;}).join('');
+        const anyAssigned = d.meals.some(m=>meals[MK(d.key,m)]);
+        const anyInDay = isAdmin; // admins see all slots to re-enable
+        if(!anyAssigned && !isAdmin) return '';
+        const checks=d.meals.map(m=>{
+          const key=MK(d.key,m);
+          const isOn=!!meals[key];
+          if(!isAdmin && !isOn) return ''; // viewers only see assigned
+          return`<label class="chk-lbl" style="cursor:${isAdmin?'pointer':'default'}"><input type="checkbox" class="mchk" ${isOn?'checked':''} ${isAdmin?'':'disabled'} onchange="toggleMeal('${pid}','${key}',this.checked)"><span class="chk-txt" style="color:${isOn?'var(--text)':'var(--muted)'}">${cap(m).substring(0,3)}</span></label>`;
+        }).join('');
+        if(!checks.trim()) return '';
         return`<div class="day-grp"><div class="day-grp-hd">${d.short}</div>${checks}</div>`;
       }).join('');
       mealCell=dayGroups||'<span style="color:var(--muted);font-size:11px">Sin comidas</span>';
@@ -773,10 +932,17 @@ function renderMain(){
       }
 
     } else {
-      // Single day
+      // Single day — show all meals so admin can toggle back on
       const d=DAYS.find(x=>x.key===activeDay);
       const mToShow=activeMeal==='all'?d.meals:[activeMeal];
-      mealCell=mToShow.filter(m=>meals[MK(d.key,m)]).map(m=>{const key=MK(d.key,m);return`<label class="chk-lbl" style="cursor:${ptr}"><input type="checkbox" class="mchk" checked ${dis} onchange="toggleMeal('${pid}','${key}',this.checked)"><span class="chk-txt">${cap(m)}</span></label>`;}).join('')||'<span style="color:var(--muted);font-size:11px">—</span>';
+      if(isAdmin){
+        mealCell=mToShow.map(m=>{
+          const key=MK(d.key,m);const isOn=!!meals[key];
+          return`<label class="chk-lbl" style="cursor:pointer"><input type="checkbox" class="mchk" ${isOn?'checked':''} onchange="toggleMeal('${pid}','${key}',this.checked)"><span class="chk-txt" style="color:${isOn?'var(--text)':'var(--muted)'}">${cap(m)}</span></label>`;
+        }).join('')||'—';
+      } else {
+        mealCell=mToShow.filter(m=>meals[MK(d.key,m)]).map(m=>{const key=MK(d.key,m);return`<label class="chk-lbl" style="cursor:default"><input type="checkbox" class="mchk" checked disabled><span class="chk-txt">${cap(m)}</span></label>`;}).join('')||'<span style="color:var(--muted);font-size:11px">—</span>';
+      }
       retCell=mToShow.filter(m=>meals[MK(d.key,m)]).map(m=>{const key=MK(d.key,m);const done=ret[key];return`<label class="chk-lbl" style="cursor:${ptr}"><input type="checkbox" class="rchk" ${done?'checked':''} ${dis} onchange="toggleRetiro('${pid}','${key}',this.checked)"><span class="chk-txt" style="color:${done?'var(--teal)':'var(--muted)'}">${done?'✅ Ret.':'⏳ Pend.'}</span></label>`;}).join('')||'<span style="color:var(--muted);font-size:11px">—</span>';
     }
 
@@ -784,8 +950,25 @@ function renderMain(){
       ? `<td>${mealCell}</td>`
       : `<td>${mealCell}</td><td>${retCell}</td>`;
 
+    const extTag = p._external
+      ? `<span style="margin-left:4px;background:rgba(62,207,184,.15);color:var(--teal);font-size:9px;padding:1px 5px;border-radius:4px;font-weight:700">EXT</span>`
+      : '';
+    // Payment status for EXT
+    let payCell = '';
+    if(p._external || (pid && pid.toLowerCase().startsWith('ext'))){
+      const ps = (FB_DATA[pid]||{}).payStatus||'none';
+      const hasComp = !!((FB_DATA[pid]||{}).comprobante);
+      const payLabel = ps==='pagado'?'✅ Pagado':ps==='pendiente'?'⏳ Pendiente':'💲 Sin estado';
+      const payClass = ps==='pagado'?'pagado':ps==='pendiente'?'pendiente':'none';
+      const toggleFn = isAdmin?`onclick="cyclePayStatus('${pid}')"`:'';
+      payCell = `<div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap;margin-top:3px">
+        <span class="pay-badge ${payClass}" ${toggleFn} title="${isAdmin?'Clic para cambiar':'Estado de pago'}">${payLabel}</span>
+        <button class="comp-btn ${hasComp?'has':''}" onclick="openComprobante('${pid}')" title="${hasComp?'Ver comprobante':'Subir comprobante'}">${hasComp?'📄 Ver comprobante':'📎 Comprobante'}</button>
+      </div>`;
+    }
+
     return`<tr>
-      <td style="font-size:11px;color:var(--muted);font-weight:600">${pid}${p._external?'<span style="margin-left:4px;background:rgba(62,207,184,.15);color:var(--teal);font-size:9px;padding:1px 5px;border-radius:4px;font-weight:700">EXT</span>':''}</td>
+      <td style="font-size:11px;color:var(--muted);font-weight:600">${pid}${extTag}${payCell}</td>
       <td><div class="nm">${p.nombre}</div><div class="cg">${p.congregacion||''}</div></td>
       <td style="font-size:12px">${p.congregacion||'—'}</td>
       ${extraTds}
@@ -817,8 +1000,23 @@ function renderNoFood(){
     } else {
       ac='<span style="color:var(--muted);font-size:11px">Solo administradores</span>';
     }
+    const extTag2 = p._external
+      ? `<span style="margin-left:4px;background:rgba(62,207,184,.15);color:var(--teal);font-size:9px;padding:1px 5px;border-radius:4px;font-weight:700">EXT</span>`
+      : '';
+    let payCell2 = '';
+    if(p._external || (pid && pid.toLowerCase().startsWith('ext'))){
+      const ps = (FB_DATA[pid]||{}).payStatus||'none';
+      const hasComp = !!((FB_DATA[pid]||{}).comprobante);
+      const payLabel = ps==='pagado'?'✅ Pagado':ps==='pendiente'?'⏳ Pendiente':'💲 Sin estado';
+      const payClass = ps==='pagado'?'pagado':ps==='pendiente'?'pendiente':'none';
+      const toggleFn = isAdmin?`onclick="cyclePayStatus('${pid}')"`:'';
+      payCell2 = `<div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap;margin-top:3px">
+        <span class="pay-badge ${payClass}" ${toggleFn}>${payLabel}</span>
+        <button class="comp-btn ${hasComp?'has':''}" onclick="openComprobante('${pid}')">${hasComp?'📄 Ver comprobante':'📎 Comprobante'}</button>
+      </div>`;
+    }
     return`<tr>
-      <td style="font-size:11px;color:var(--muted);font-weight:600">${pid}${p._external?'<span style="margin-left:4px;background:rgba(62,207,184,.15);color:var(--teal);font-size:9px;padding:1px 5px;border-radius:4px;font-weight:700">EXT</span>':''}</td>
+      <td style="font-size:11px;color:var(--muted);font-weight:600">${pid}${extTag2}${payCell2}</td>
       <td><div class="nm">${p.nombre}</div><div class="cg">${p.congregacion||''}</div></td>
       <td style="font-size:12px">${p.congregacion||'—'}</td>
       <td>${ac}</td>
@@ -833,6 +1031,224 @@ function doSortNF(c){
 }
 
 // ═══════════════════ TOGGLE MEALS / RETIRO ═══════════════════
+
+// ═══════════════════ PUBLIC QR SCAN MODAL ═══════════════════
+let _pubScanId = null;
+let _pubScanMealData = null;
+
+function routeScanParam(id){
+  // Decide what to show based on auth state
+  const auth = localStorage.getItem('crptg11-comidas-auth');
+  if(auth === 'admin'){
+    openScanConfirm(id);
+  } else if(auth === 'viewer'){
+    openPubScanModal(id, false);
+  } else {
+    openPubScanModal(id, false);
+  }
+}
+
+function goToEventInfo(){
+  // Redirect to bienvenida.html, preserving the scan param so the user can come back
+  const scanParam = new URLSearchParams(window.location.search).get('scan');
+  const returnUrl = encodeURIComponent(window.location.href);
+  let dest = 'bienvenida.html';
+  if(scanParam) dest += '?from=scan&returnTo=' + returnUrl;
+  window.location.href = dest;
+}
+
+function openPubScanFromOverlay(){
+  // Close overlay without auth, open public modal
+  const pid = window._pendingScanId;
+  if(!pid) return;
+  document.getElementById('overlay').style.display='none';
+  // Load data first if needed
+  if(!DATA.length){
+    init();
+    const _t = setInterval(()=>{
+      if(DATA.length && Object.keys(FB_DATA).length){
+        clearInterval(_t);
+        openPubScanModal(pid, false);
+        window._pendingScanId = null;
+      }
+    }, 200);
+    setTimeout(()=>clearInterval(_t), 10000);
+  } else {
+    openPubScanModal(pid, false);
+    window._pendingScanId = null;
+  }
+}
+
+function openPubScanModal(id, canConfirm){
+  _pubScanId = id;
+  _pubScanMealData = null;
+  const p = DATA.find(x=>x.id===id);
+  const fb = FB_DATA[id]||{};
+  const meals = fb.meals||{};
+  const ret = fb.retirado||{};
+
+  if(!p){ showToast('⚠️ Participante no encontrado'); return; }
+
+  // Avatar emoji by categoria
+  const avatarMap = {Adulto:'👤', Joven:'🧑', Menor:'👦'};
+  const avatar = avatarMap[p.categoria||'Adulto']||'👤';
+  const catColors = {Adulto:'#8b7fe8', Joven:'#e8a838', Menor:'#3ecf6a'};
+  const catColor = catColors[p.categoria||'Adulto']||'#8b7fe8';
+  document.getElementById('ps-avatar').textContent = avatar;
+  document.getElementById('ps-avatar').style.borderColor = catColor;
+  document.getElementById('ps-name').textContent = p.nombre;
+  document.getElementById('ps-meta').textContent = `${p.id}${p.congregacion?' • '+p.congregacion:''}${p.categoria?' • '+p.categoria:''}`;
+
+  // Meal list
+  const allAssigned = ALL_MEALS.filter(({day,meal})=>meals[MK(day,meal)]);
+  const mealListEl = document.getElementById('ps-meals-list');
+  if(allAssigned.length){
+    // Group by day
+    let html = '';
+    DAYS.forEach(d=>{
+      const dm = d.meals.filter(m=>meals[MK(d.key,m)]);
+      if(!dm.length) return;
+      dm.forEach(m=>{
+        const key = MK(d.key,m);
+        const done = !!ret[key];
+        const mealIcon = m==='desayuno'?'🌅':m==='almuerzo'?'☀️':'🌙';
+        html+=`<div class="ps-meal-card ${done?'done':''}">
+          <div class="ps-mc-day">${d.label}</div>
+          <div class="ps-mc-meal">${mealIcon} ${cap(m)}</div>
+          <div class="ps-mc-status ${done?'done':'pend'}">${done?'✅ Retirado':'⏳ Pendiente'}</div>
+        </div>`;
+      });
+    });
+    mealListEl.innerHTML = html;
+  } else {
+    mealListEl.innerHTML = '<div style="color:var(--muted);font-size:12px;padding:10px 0">Sin comidas asignadas</div>';
+  }
+
+  // Current meal logic
+  const cm = getCurrentMeal();
+  const confirmSection = document.getElementById('ps-confirm-section');
+  const loginSection = document.getElementById('ps-login-section');
+  const auth = localStorage.getItem('crptg11-comidas-auth');
+  const loggedIn = auth==='admin' || auth==='viewer';
+
+  // Reset pw field
+  document.getElementById('ps-pw-wrap').className='ps-pw-wrap';
+  document.getElementById('ps-pw-inp').value='';
+  document.getElementById('ps-pw-err').textContent='';
+  document.getElementById('ps-show-pw-btn').textContent='🔑 Ingresar contraseña para registrar retiro';
+
+  if(loggedIn && cm){
+    const key = MK(cm.dayKey, cm.meal);
+    const hasThisMeal = !!meals[key];
+    const alreadyDone = !!ret[key];
+    const mealIcon = cm.meal==='desayuno'?'🌅':cm.meal==='almuerzo'?'☀️':'🌙';
+
+    confirmSection.style.display='';
+    loginSection.style.display='none';
+
+    document.getElementById('ps-confirm-day').textContent = cm.dayLabel;
+    document.getElementById('ps-confirm-meal').textContent = mealIcon+' '+cap(cm.meal);
+    document.getElementById('ps-confirm-time-label').textContent = 'Comida actual — '+new Date().toLocaleTimeString('es-CR',{hour:'2-digit',minute:'2-digit'});
+
+    let warn = '';
+    const btn = document.getElementById('ps-confirm-btn');
+    if(!hasThisMeal){
+      warn='⚠️ Esta persona no tiene asignada esta comida';
+      btn.disabled=true;
+    } else if(alreadyDone){
+      warn='⚠️ Esta comida ya fue retirada anteriormente';
+      btn.style.background='var(--teal)';
+      btn.textContent='↩️ Anular retiro';
+      btn.disabled=false;
+    } else {
+      btn.disabled=false;
+      btn.style.background='var(--gold)';
+      btn.textContent='✅ Confirmar retiro';
+    }
+    document.getElementById('ps-confirm-warn').textContent=warn;
+    _pubScanMealData = {dayKey:cm.dayKey, dayLabel:cm.dayLabel, meal:cm.meal};
+
+    if(auth!=='admin'){
+      btn.disabled=true;
+      document.getElementById('ps-confirm-warn').textContent=(warn||'')+(warn?'\n':'')+'Solo administradores pueden registrar retiros.';
+    }
+  } else if(loggedIn && !cm){
+    // Logged in but no active meal time
+    confirmSection.style.display='none';
+    loginSection.style.display='none';
+  } else {
+    // Not logged in
+    confirmSection.style.display='none';
+    loginSection.style.display='';
+  }
+
+  document.getElementById('pub-scan-modal').classList.add('open');
+}
+
+function closePubScanModal(){
+  document.getElementById('pub-scan-modal').classList.remove('open');
+  _pubScanId=null; _pubScanMealData=null;
+}
+
+async function pubConfirmRetiro(){
+  if(!isAdmin){showToast('Solo administradores pueden registrar retiros');return;}
+  if(!_pubScanId||!_pubScanMealData) return;
+  const key = MK(_pubScanMealData.dayKey, _pubScanMealData.meal);
+  const fb = FB_DATA[_pubScanId]||{};
+  const alreadyDone = !!(fb.retirado&&fb.retirado[key]);
+  await saveRetiro(_pubScanId, key, !alreadyDone);
+  const p = DATA.find(x=>x.id===_pubScanId);
+  showToast(alreadyDone?`↩️ Retiro anulado`:`✅ ${p?p.nombre:_pubScanId} — ${cap(_pubScanMealData.meal)} registrado`);
+  closePubScanModal();
+}
+
+function pubTogglePwField(){
+  const wrap = document.getElementById('ps-pw-wrap');
+  const showing = wrap.classList.contains('show');
+  if(showing){
+    wrap.classList.remove('show');
+    document.getElementById('ps-show-pw-btn').textContent='🔑 Ingresar contraseña para registrar retiro';
+  } else {
+    wrap.classList.add('show');
+    document.getElementById('ps-show-pw-btn').textContent='✕ Cancelar';
+    setTimeout(()=>document.getElementById('ps-pw-inp').focus(),100);
+  }
+}
+
+function pubTryAuth(){
+  const v = document.getElementById('ps-pw-inp').value.trim();
+  if(v===ADMIN_PASS){
+    isAdmin=true;
+    localStorage.setItem('crptg11-comidas-auth','admin');
+    document.getElementById('ps-pw-err').textContent='';
+    closePubScanModal();
+    showApp(true);
+    // Re-open pub modal now logged in
+    const pid=_pubScanId||new URLSearchParams(window.location.search).get('scan');
+    if(pid){
+      const _t=setInterval(()=>{
+        if(DATA.length&&Object.keys(FB_DATA).length){ clearInterval(_t); openScanConfirm(pid); }
+      },150);
+      setTimeout(()=>clearInterval(_t),8000);
+    }
+  } else if(v===VIEWER_PASS){
+    isAdmin=false;
+    localStorage.setItem('crptg11-comidas-auth','viewer');
+    document.getElementById('ps-pw-err').textContent='';
+    closePubScanModal();
+    showApp(true);
+    const pid=_pubScanId||new URLSearchParams(window.location.search).get('scan');
+    if(pid){
+      const _t=setInterval(()=>{
+        if(DATA.length&&Object.keys(FB_DATA).length){ clearInterval(_t); openPubScanModal(pid,false); }
+      },150);
+      setTimeout(()=>clearInterval(_t),8000);
+    }
+  } else {
+    document.getElementById('ps-pw-err').textContent='Contraseña incorrecta';
+  }
+}
+
 async function toggleMeal(id,key,val){
   if(!isAdmin){showToast('Solo administradores');return;}
   const fb=FB_DATA[id]||{};
@@ -1129,6 +1545,94 @@ async function saveAddParticipant(){
 
 // Close add modal on backdrop click
 document.getElementById('add-modal').addEventListener('click',e=>{if(e.target===e.currentTarget)closeAddModal();});
+
+// ═══════════════════ PAYMENT STATUS ═══════════════════
+async function cyclePayStatus(id){
+  if(!isAdmin){showToast('Solo administradores');return;}
+  const cur=(FB_DATA[id]||{}).payStatus||'none';
+  const next=cur==='none'?'pendiente':cur==='pendiente'?'pagado':'none';
+  await savePayStatus(id,next);
+  const label=next==='pagado'?'✅ Marcado como Pagado':next==='pendiente'?'⏳ Marcado como Pendiente':'💲 Estado de pago removido';
+  showToast(label);
+}
+
+// ═══════════════════ COMPROBANTE ═══════════════════
+let _compId=null;
+function openComprobante(id){
+  _compId=id;
+  const p=DATA.find(x=>x.id===id);
+  const fb=FB_DATA[id]||{};
+  document.getElementById('comp-name').textContent=p?p.nombre:id;
+  document.getElementById('comp-sub').textContent=`ID: ${id}  •  Comprobante de pago`;
+  document.getElementById('comp-err').textContent='';
+  renderComprobantePreview(fb.comprobante||null);
+  document.getElementById('comp-modal').classList.add('open');
+}
+function closeComprobante(){
+  document.getElementById('comp-modal').classList.remove('open');
+  _compId=null;
+}
+function renderComprobantePreview(dataUrl){
+  const wrap=document.getElementById('comp-preview-wrap');
+  const uploadArea=document.getElementById('comp-upload-area');
+  const delBtn=document.getElementById('comp-del-btn');
+  wrap.innerHTML='';
+  if(dataUrl){
+    uploadArea.style.display='none';
+    delBtn.style.display='';
+    if(dataUrl.startsWith('data:application/pdf')){
+      const iframe=document.createElement('iframe');
+      iframe.src=dataUrl;
+      iframe.className='comp-preview-pdf';
+      iframe.style.border='none';
+      wrap.appendChild(iframe);
+    } else {
+      const img=document.createElement('img');
+      img.src=dataUrl;
+      img.className='comp-preview';
+      img.alt='Comprobante';
+      // Click to view fullscreen
+      img.style.cursor='zoom-in';
+      img.onclick=()=>{
+        const win=window.open();
+        win.document.write(`<html><head><title>Comprobante</title><style>body{margin:0;background:#111;display:flex;justify-content:center;align-items:flex-start}img{max-width:100%;height:auto}</style></head><body><img src="${dataUrl}"></body></html>`);
+      };
+      wrap.appendChild(img);
+    }
+    if(isAdmin){
+      uploadArea.style.display='flex';
+      uploadArea.querySelector('p').textContent='Subir nuevo comprobante (reemplaza el actual)';
+    }
+  } else {
+    uploadArea.style.display='flex';
+    uploadArea.querySelector('p').textContent='Haz clic para subir imagen o PDF del comprobante';
+    delBtn.style.display='none';
+  }
+}
+function handleComprobanteFile(input){
+  if(!isAdmin){showToast('Solo administradores');return;}
+  const file=input.files[0];
+  if(!file){return;}
+  if(file.size>5*1024*1024){document.getElementById('comp-err').textContent='El archivo supera 5 MB.';return;}
+  document.getElementById('comp-err').textContent='Subiendo...';
+  const reader=new FileReader();
+  reader.onload=async(e)=>{
+    const dataUrl=e.target.result;
+    await saveComprobante(_compId,dataUrl);
+    document.getElementById('comp-err').textContent='';
+    showToast('📎 Comprobante guardado');
+  };
+  reader.onerror=()=>{ document.getElementById('comp-err').textContent='Error al leer el archivo.'; };
+  reader.readAsDataURL(file);
+}
+async function deleteComprobante(){
+  if(!isAdmin||!_compId){return;}
+  if(!confirm('¿Eliminar el comprobante?'))return;
+  await deleteComprobanteDB(_compId);
+  showToast('🗑️ Comprobante eliminado');
+  closeComprobante();
+}
+document.getElementById('comp-modal').addEventListener('click',e=>{if(e.target===e.currentTarget)closeComprobante();});
 
 // ═══════════════════ TOAST ═══════════════════
 function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');clearTimeout(t._to);t._to=setTimeout(()=>t.classList.remove('show'),2500);}
@@ -1452,6 +1956,8 @@ document.getElementById('qr-modal').addEventListener('click',e=>{if(e.target===e
 document.getElementById('scan-confirm').addEventListener('click',e=>{if(e.target===e.currentTarget)closeScanConfirm();});
 document.getElementById('ret-modal').addEventListener('click',e=>{if(e.target===e.currentTarget)closeRetiro();});
 document.getElementById('gallery-modal').addEventListener('keydown',e=>{if(e.key==='Escape')closeGallery();});
+document.getElementById('pub-scan-modal').addEventListener('click',e=>{if(e.target===e.currentTarget)closePubScanModal();});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&document.getElementById('pub-scan-modal').classList.contains('open'))closePubScanModal();});
 </script>
 </body>
 </html>
