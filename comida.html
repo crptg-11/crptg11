@@ -1137,43 +1137,65 @@ function openPubScanModal(id, canConfirm){
   document.getElementById('ps-pw-err').textContent='';
   document.getElementById('ps-show-pw-btn').textContent='🔑 Ingresar contraseña para registrar retiro';
 
-  if(loggedIn && cm){
-    const key = MK(cm.dayKey, cm.meal);
-    const hasThisMeal = !!meals[key];
-    const alreadyDone = !!ret[key];
-    const mealIcon = cm.meal==='desayuno'?'🌅':cm.meal==='almuerzo'?'☀️':'🌙';
-
-    confirmSection.style.display='';
-    loginSection.style.display='none';
-
-    document.getElementById('ps-confirm-day').textContent = cm.dayLabel;
-    document.getElementById('ps-confirm-meal').textContent = mealIcon+' '+cap(cm.meal);
-    document.getElementById('ps-confirm-time-label').textContent = 'Comida actual — '+new Date().toLocaleTimeString('es-CR',{hour:'2-digit',minute:'2-digit'});
-
-    let warn = '';
-    const btn = document.getElementById('ps-confirm-btn');
-    if(!hasThisMeal){
-      warn='⚠️ Esta persona no tiene asignada esta comida';
-      btn.disabled=true;
-    } else if(alreadyDone){
-      warn='⚠️ Esta comida ya fue retirada anteriormente';
-      btn.style.background='var(--teal)';
-      btn.textContent='↩️ Anular retiro';
-      btn.disabled=false;
-    } else {
-      btn.disabled=false;
-      btn.style.background='var(--gold)';
-      btn.textContent='✅ Confirmar retiro';
+  if(loggedIn && (cm || auth==='admin')){
+    // Determine which meal to show: current active meal, or next pending for admin outside hours
+    let effectiveCm = cm;
+    let isOutsideHours = false;
+    if(!cm && auth==='admin'){
+      // Find next pending meal for this participant
+      const pending = ALL_MEALS.filter(({day,meal})=>meals[MK(day,meal)]&&!ret[MK(day,meal)]);
+      if(pending.length){
+        const nx = pending[0];
+        const d = DAYS.find(x=>x.key===nx.day);
+        effectiveCm = {dayKey:nx.day, dayLabel:d?d.label:nx.day, meal:nx.meal};
+        isOutsideHours = true;
+      }
     }
-    document.getElementById('ps-confirm-warn').textContent=warn;
-    _pubScanMealData = {dayKey:cm.dayKey, dayLabel:cm.dayLabel, meal:cm.meal};
 
-    if(auth!=='admin'){
-      btn.disabled=true;
-      document.getElementById('ps-confirm-warn').textContent=(warn||'')+(warn?'\n':'')+'Solo administradores pueden registrar retiros.';
+    if(effectiveCm){
+      const key = MK(effectiveCm.dayKey, effectiveCm.meal);
+      const hasThisMeal = !!meals[key];
+      const alreadyDone = !!ret[key];
+      const mealIcon = effectiveCm.meal==='desayuno'?'🌅':effectiveCm.meal==='almuerzo'?'☀️':'🌙';
+
+      confirmSection.style.display='';
+      loginSection.style.display='none';
+
+      document.getElementById('ps-confirm-day').textContent = effectiveCm.dayLabel;
+      document.getElementById('ps-confirm-meal').textContent = mealIcon+' '+cap(effectiveCm.meal);
+      document.getElementById('ps-confirm-time-label').textContent = isOutsideHours
+        ? '⏰ Fuera de horario — próxima comida pendiente'
+        : 'Comida actual — '+new Date().toLocaleTimeString('es-CR',{hour:'2-digit',minute:'2-digit'});
+
+      let warn = '';
+      const btn = document.getElementById('ps-confirm-btn');
+      if(!hasThisMeal){
+        warn='⚠️ Esta persona no tiene asignada esta comida';
+        btn.disabled=true;
+      } else if(alreadyDone){
+        warn='⚠️ Esta comida ya fue retirada anteriormente';
+        btn.style.background='var(--teal)';
+        btn.textContent='↩️ Anular retiro';
+        btn.disabled=false;
+      } else {
+        btn.disabled=false;
+        btn.style.background='var(--gold)';
+        btn.textContent='✅ Confirmar retiro';
+      }
+      document.getElementById('ps-confirm-warn').textContent=warn;
+      _pubScanMealData = {dayKey:effectiveCm.dayKey, dayLabel:effectiveCm.dayLabel, meal:effectiveCm.meal};
+
+      if(auth!=='admin'){
+        btn.disabled=true;
+        document.getElementById('ps-confirm-warn').textContent=(warn||'')+(warn?'\n':'')+'Solo administradores pueden registrar retiros.';
+      }
+    } else {
+      // Logged in but no meal to show (all meals done or none assigned)
+      confirmSection.style.display='none';
+      loginSection.style.display='none';
     }
   } else if(loggedIn && !cm){
-    // Logged in but no active meal time
+    // Viewer logged in, outside meal hours
     confirmSection.style.display='none';
     loginSection.style.display='none';
   } else {
